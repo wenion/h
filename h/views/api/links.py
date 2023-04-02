@@ -1,6 +1,7 @@
 from h.views.api.config import api_config
 from h.views.api.helpers.angular import AngularRouteTemplater
 
+import json
 
 @api_config(
     versions=["v1", "v2"],
@@ -35,3 +36,23 @@ def links(_context, request):
         "user": templater.route_template("stream.user_query"),
         "websocket": websocket_url,
     }
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.event",
+    request_method="POST",
+    link_name="event",
+    description="Create an user interaction",
+)
+def event(request):
+    user = request.user
+    event = json.loads(request.body)
+
+    print("event", user, event)
+    print("")
+
+    return {
+        "test": "request.response",
+    }
+

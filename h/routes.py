@@ -99,6 +99,7 @@ def includeme(config):  # pylint: disable=too-many-statements
     # template generator in `h/views/api.py`
     config.add_route("api.index", "/api/")
     config.add_route("api.links", "/api/links")
+    config.add_route("api.event", "/api/event")
     config.add_route(
         "api.annotations", "/api/annotations", factory="h.traversal:AnnotationRoot"
     )
