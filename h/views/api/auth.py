@@ -168,6 +168,11 @@ class OAuthAuthorizeController:
             self.request.url, scopes=scopes, credentials=credentials
         )
 
+        # obtain browser extension origin to pass auth
+        header_list = headers["Location"].split('?')
+        header_list[0] = self.request.params.getone('origin') + '?'
+        headers["Location"] = ''.join(header_list)
+
         try:
             return HTTPFound(location=headers["Location"])
         except KeyError as err:
