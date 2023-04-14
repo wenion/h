@@ -164,6 +164,7 @@ def includeme(config):  # pylint: disable=too-many-statements
         traverse="/{pubid}",
     )
     config.add_route("api.search", "/api/search")
+    config.add_route("api.query", "/api/query")
     config.add_route("api.users", "/api/users", factory="h.traversal.UserRoot")
     config.add_route(
         "api.user_read",
