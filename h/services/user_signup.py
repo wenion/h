@@ -37,7 +37,7 @@ class UserSignupService:
         self.password_service = password_service
         self.subscription_service = subscription_service
 
-    def signup(self, require_activation: bool = True, **kwargs) -> User:
+    def signup(self, require_activation: bool = False, **kwargs) -> User:
         """
         Create a new user.
 

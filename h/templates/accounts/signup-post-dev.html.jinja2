@@ -1,0 +1,14 @@
+{% extends "h:templates/accounts/base.html.jinja2" %}
+
+{% block page_title %}{{ heading|default("Sign up for Hypothesis") }}{% endblock %}
+
+{% set form_message %}
+  {% if not form %}
+    {% if message %}<p>{{ message }}</p>{% endif %}
+
+    <p>Please click the link to <a href="/login">log in</a>.</p>
+
+  {% endif %}
+{% endset %}
+
+{% set login_message = "Already have an account?" %}
