@@ -36,6 +36,8 @@ from h.models.subscriptions import Subscriptions
 from h.models.token import Token
 from h.models.user import User
 from h.models.user_identity import UserIdentity
+from h.models.user_collection import UserCollection
+from h.models.document_library import DocumentLibrary
 
 __all__ = (
     "Activation",
@@ -61,4 +63,6 @@ __all__ = (
     "Token",
     "User",
     "UserIdentity",
+    "UserCollection",
+    "DocumentLibrary",
 )

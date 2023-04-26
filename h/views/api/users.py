@@ -7,7 +7,8 @@ from h.security import Permission
 from h.services.user_unique import DuplicateUserError
 from h.views.api.config import api_config
 from h.views.api.exceptions import PayloadError
-
+from h.models import UserCollection
+import datetime
 
 @api_config(
     versions=["v1", "v2"],
@@ -102,3 +103,36 @@ def _json_payload(request):
         return request.json_body
     except ValueError as err:
         raise PayloadError() from err
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.user_collect",
+    request_method="POST",
+    link_name="user.collect",
+    description="Collect a document",
+)
+def collect(request):
+    appstruct = _json_payload(request)
+    userId = request.authenticated_userid
+    document_data = data.pop("document", {})
+    documentId = document_data["id"]
+    collection = UserCollection(user_id=userId, document_id=documentId)
+    request.db.add(collection)
+    request.db.flush()
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.user_cancel_collect",
+    request_method="POST",
+    link_name="user.cancel_collect",
+    description="Cancel the collection of a document",
+)
+def cancel_collect(request):
+    appstruct = _json_payload(request)
+    userId = request.authenticated_userid
+    document_data = data.pop("document", {})
+    documentId = document_data["id"]
+    collection = request.db.query(UserCollection).filter_by(UserCollection.user_id==userId, UserCollection.document_id==documentId).one()
+    collection.cancelled = True
+    collection.updated = datetime.datetime.utcnow
+    request.db.commit()

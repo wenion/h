@@ -179,6 +179,8 @@ def includeme(config):  # pylint: disable=too-many-statements
         factory="h.traversal.UserByNameRoot",
         traverse="/{username}",
     )
+    config.add_route("api.user_collect","/api/users/collect")
+    config.add_route("api.user_cancel_collect","/api/users/cancel_collect")
     config.add_route("badge", "/api/badge")
     config.add_route("token", "/api/token")
     config.add_route("oauth_authorize", "/oauth/authorize")
