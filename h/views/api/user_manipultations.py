@@ -58,7 +58,6 @@ def upload(request):
     input_file = request.POST['file-upload'].file
 
     meta = request.POST['meta']
-    print("meta", meta)
 
     if meta:
         lnk = json.loads(meta)['link']
@@ -90,3 +89,45 @@ def upload(request):
     return {"succ": fullname + "has been saved"}
 
 
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.repository",
+    request_method="GET",
+    permission=Permission.Annotation.CREATE,
+    link_name="repository",
+    description="Get user cloud repository",
+)
+def repository(request):
+    username = split_user(request.authenticated_userid)["username"]
+    settings = request.registry.settings
+
+    try:
+        # check the user directory
+        dir = os.path.join(settings.get("user_root"), username)
+        if not os.path.exists(dir):
+            os.mkdir(dir)
+            return {
+                'current_path' : dir,
+                'current_dir' : []
+            }
+
+        current_dir = []
+        with os.scandir(dir) as it:
+            for entry in it:
+                type = 'dir'
+                if entry.is_file():
+                    type = 'file'
+                elif entry.is_symlink():
+                    type = 'symlink'
+                item = {'name' : entry.name, 'path' : entry.path, 'type' : type}
+                current_dir.append(item)
+        return {
+            'current_path' : dir,
+            'current_dir' : current_dir
+        }
+
+    except Exception as e:
+        return {
+            'current_path' : 'error occurs, could not access the repository',
+            'current_dir' : []
+            }
