@@ -169,6 +169,7 @@ def includeme(config):  # pylint: disable=too-many-statements
         "api.upload", "/api/upload"# , factory="h.traversal:FileRoot" TODO implement when finish database
     )
     config.add_route("api.repository", "/api/repository")
+    config.add_route("api.client_url", "/api/client-url")
     config.add_route("api.users", "/api/users", factory="h.traversal.UserRoot")
     config.add_route(
         "api.user_read",

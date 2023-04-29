@@ -131,3 +131,16 @@ def repository(request):
             'current_path' : 'error occurs, could not access the repository',
             'current_dir' : []
             }
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.client_url",
+    request_method="GET",
+    link_name="client",
+    description="Get the Client location",
+)
+def client_url(request):
+    return {
+        'home': request.registry.settings.get("homepage_url")
+    }

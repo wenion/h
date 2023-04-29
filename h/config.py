@@ -62,6 +62,7 @@ def configure(environ=None, settings=None):  # pylint: disable=too-many-statemen
 
     # Configuration for User root directory
     settings_manager.set("user_root", "USER_ROOT")
+    settings_manager.set("homepage_url", "HOMEPAGE_URL")
 
     # Configuration for Pyramid
     settings_manager.set("secret_key", "SECRET_KEY", type_=_to_utf8, required=True)
