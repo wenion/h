@@ -101,17 +101,20 @@ def repository(request):
     username = split_user(request.authenticated_userid)["username"]
     settings = request.registry.settings
 
+    ret = {
+        'current_path' : '',
+        'current_dir' : []
+        }
+
     try:
         # check the user directory
         dir = os.path.join(settings.get("user_root"), username)
         if not os.path.exists(dir):
             os.mkdir(dir)
-            return {
-                'current_path' : dir,
-                'current_dir' : []
-            }
+            return ret
 
         current_dir = []
+        id = 0
         with os.scandir(dir) as it:
             for entry in it:
                 type = 'dir'
@@ -119,18 +122,22 @@ def repository(request):
                     type = 'file'
                 elif entry.is_symlink():
                     type = 'symlink'
-                item = {'name' : entry.name, 'path' : entry.path, 'type' : type}
+                item = {
+                    'id' : str(id),
+                    'name' : entry.name,
+                    'path' : entry.path,
+                    'type' : type,
+                    'location': 'local',
+                    'link' : os.path.join(settings.get("user_root_url"), 'static', username, entry.name)}
                 current_dir.append(item)
-        return {
-            'current_path' : dir,
-            'current_dir' : current_dir
-        }
+                id += 1
+        ret['current_path'] = dir
+        ret['current_dir'] = current_dir
 
     except Exception as e:
-        return {
-            'current_path' : 'error occurs, could not access the repository',
-            'current_dir' : []
-            }
+        ret['current_path'] = 'error occurs, could not access the repository'
+
+    return ret
 
 
 @api_config(
