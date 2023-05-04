@@ -14,6 +14,12 @@ class DocumentLibrary(Base):
     
     #: The denormalized value of the "best" http(s) DocumentURI for this Document.
     web_uri = sa.Column("web_uri", sa.UnicodeText())
+
+    #: The digest value of document using sha-256/sha-512
+    digest = sa.Column("digest", sa.String(128))
+
+    #: The visibility of document, could be public, private ...
+    visibility = sa.Column("visibility", sa.String(64))
     
     #: The timestamp when the document was created.
     created = sa.Column(
