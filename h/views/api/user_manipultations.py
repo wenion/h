@@ -72,6 +72,9 @@ def upload(request):
                 else:
                     fullname = re.search(r"(?P<domain>https?://)(?P<host>[^/:]+)", domain).group("host") + '.html'
 
+        name = json.loads(meta)['title']
+        if name != '':
+            fullname = name
     try:
         # check the user directory
         dir = os.path.join(settings.get("user_root"), username)
