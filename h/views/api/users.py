@@ -108,6 +108,7 @@ def _json_payload(request):
     versions=["v1", "v2"],
     route_name="api.user_collect",
     request_method="POST",
+    permission=Permission.Annotation.CREATE,
     link_name="user.collect",
     description="Collect a document",
 )
@@ -116,14 +117,21 @@ def collect(request):
     userId = request.authenticated_userid
     document_data = data.pop("document", {})
     documentId = document_data["id"]
-    collection = UserCollection(user_id=userId, document_id=documentId)
-    request.db.add(collection)
-    request.db.flush()
+    collection = request.db.query(UserCollection).filter_by(UserCollection.user_id==userId, UserCollection.document_id==documentId).one()
+    if collection is None:
+        collection = UserCollection(user_id=userId, document_id=documentId)
+        request.db.add(collection)
+        request.db.flush()
+    else:
+        collection.cancelled = False
+        collection.updated = datetime.datetime.utcnow
+        request.db.commit()
 
 @api_config(
     versions=["v1", "v2"],
     route_name="api.user_cancel_collect",
     request_method="POST",
+    permission=Permission.Annotation.UPDATE,
     link_name="user.cancel_collect",
     description="Cancel the collection of a document",
 )
