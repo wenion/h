@@ -5,6 +5,7 @@ from h.db import Base, types
 
 class DocumentLibrary(Base):
     __tablename__ = "document_library"
+    __table_args__ = (sa.UniqueConstraint("digest"), sa.UniqueConstraint("web_uri"))
     
     #: The document id
     id = sa.Column(types.URLSafeUUID, server_default=sa.func.uuid_generate_v1mc(), primary_key=True)
@@ -13,10 +14,10 @@ class DocumentLibrary(Base):
     title = sa.Column("title", sa.UnicodeText())
     
     #: The denormalized value of the "best" http(s) DocumentURI for this Document.
-    web_uri = sa.Column("web_uri", sa.UnicodeText())
+    web_uri = sa.Column("web_uri", sa.UnicodeText(), nullable=True)
 
     #: The digest value of document using sha-256/sha-512
-    digest = sa.Column("digest", sa.String(128))
+    digest = sa.Column("digest", sa.String(128), nullable=True)
 
     #: The visibility of document, could be public, private ...
     visibility = sa.Column("visibility", sa.String(64))
