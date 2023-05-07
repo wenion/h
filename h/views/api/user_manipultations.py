@@ -94,6 +94,33 @@ def upload(request):
 
 @api_config(
     versions=["v1", "v2"],
+    route_name="api.delete",
+    request_method="DELETE",
+    permission=Permission.Annotation.CREATE,
+    link_name="delete",
+    description="Delete files to the cloud",
+)
+def delete(request):
+    username = split_user(request.authenticated_userid)["username"]
+    settings = request.registry.settings
+
+    file_name = request.params['name']
+    if file_name:
+        try:
+            # check the user directory
+            dir = os.path.join(settings.get("user_root"), username, file_name)
+
+            if not os.path.exists(dir):
+                return {'error': 'could not find user repository'}
+            else:
+                os.remove(dir)
+                return {'succ': file_name + ' has been removed successfully'}
+        except Exception as e:
+            return {"error": repr(e)}
+
+
+@api_config(
+    versions=["v1", "v2"],
     route_name="api.repository",
     request_method="GET",
     permission=Permission.Annotation.CREATE,
