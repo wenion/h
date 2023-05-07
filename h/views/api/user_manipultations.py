@@ -54,7 +54,7 @@ def upload(request):
     if request.POST['file-upload'] is None:
         return {"error": "no file"}
     
-    fullname = request.POST['file-upload'].filename
+    fullname = None # request.POST['file-upload'].filename
     input_file = request.POST['file-upload'].file
 
     meta = request.POST['meta']
@@ -87,9 +87,9 @@ def upload(request):
         with open(file_path, 'wb') as output_file:
             shutil.copyfileobj(input_file, output_file)
     except Exception as e:
-        return {"error": e}
+        return {"error": repr(e)}
 
-    return {"succ": fullname + "has been saved"}
+    return {"succ": fullname + ' has been saved'}
 
 
 @api_config(
@@ -152,5 +152,6 @@ def repository(request):
 )
 def client_url(request):
     return {
-        'home': request.registry.settings.get("homepage_url")
+        'base_url': request.registry.settings.get("homepage_url"),
+        'url_string': '/query',
     }
