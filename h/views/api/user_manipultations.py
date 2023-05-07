@@ -73,7 +73,7 @@ def upload(request):
                     fullname = re.search(r"(?P<domain>https?://)(?P<host>[^/:]+)", domain).group("host") + '.html'
 
         name = json.loads(meta)['title']
-        if name != '':
+        if name != '' and '/' not in name:
             fullname = name
     try:
         # check the user directory
@@ -87,7 +87,7 @@ def upload(request):
         with open(file_path, 'wb') as output_file:
             shutil.copyfileobj(input_file, output_file)
     except Exception as e:
-        return {"error": repr(e)}
+        return {"server error": repr(e)}
 
     return {"succ": fullname + ' has been saved'}
 
