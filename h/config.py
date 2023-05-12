@@ -64,6 +64,7 @@ def configure(environ=None, settings=None):  # pylint: disable=too-many-statemen
     settings_manager.set("user_root", "USER_ROOT")
     settings_manager.set("user_root_url", "USER_ROOT_URL") # TODO Merge with user root when file management was served
     settings_manager.set("homepage_url", "HOMEPAGE_URL")
+    settings_manager.set("query_url", "QUERY_URL")
 
     # Configuration for Pyramid
     settings_manager.set("secret_key", "SECRET_KEY", type_=_to_utf8, required=True)
