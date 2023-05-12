@@ -53,7 +53,7 @@ def query(request):
     else:
         print('Request failed with status code:', response.status_code)
         return {
-            'status' : "proxy reverse can't get the response, status code: " + response.status_code,
+            'status' : "proxy reverse can't get the response, status code: " + str(response.status_code),
             'query' : query,
             'context' : []
         }
