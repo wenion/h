@@ -104,19 +104,46 @@ def delete(request):
     username = split_user(request.authenticated_userid)["username"]
     settings = request.registry.settings
 
-    file_name = request.params['name']
-    if file_name:
-        try:
-            # check the user directory
-            dir = os.path.join(settings.get("user_root"), username, file_name)
+    file_path = request.GET.get('file')
 
-            if not os.path.exists(dir):
-                return {'error': 'could not find user repository'}
-            else:
-                os.remove(dir)
-                return {'succ': file_name + ' has been removed successfully'}
-        except Exception as e:
-            return {"error": repr(e)}
+    try:
+        # check the user directory
+        # dir = os.path.join(settings.get("user_root"), username, file_name)
+
+        if not os.path.exists(file_path):
+            return {'error': 'could not find the file in user repository'}
+        else:
+            os.remove(file_path)
+            return {'succ': file_path + ' has been removed successfully'}
+    except Exception as e:
+        return {"error": repr(e)}
+
+
+def iterate_directory(dir, name, url):
+    directory_node = {
+        'path': dir,
+        'id': dir,
+        'name': name,
+        'type': 'dir', # dir | file
+        'link': os.path.join(url, name),
+        'children': []
+    }
+    with os.scandir(dir) as it:
+        for entry in it:
+            if entry.is_file():
+                file_node = {
+                    'path': os.path.join(dir, entry.name),
+                    'id': dir,
+                    'name': entry.name,
+                    'type': 'file',
+                    'link': os.path.join(url, entry.name),
+                    'children': []
+                }
+                directory_node['children'].append(file_node)
+            elif entry.is_dir():
+                directory_node['children'].append(iterate_directory(os.path.join(dir, entry.name), entry.name, url))
+
+    return directory_node
 
 
 @api_config(
@@ -130,44 +157,12 @@ def delete(request):
 def repository(request):
     username = split_user(request.authenticated_userid)["username"]
     settings = request.registry.settings
+    url = os.path.join(settings.get("user_root_url"), 'static', username)
 
-    ret = {
-        'current_path' : '',
-        'current_dir' : []
-        }
-
-    try:
-        # check the user directory
-        dir = os.path.join(settings.get("user_root"), username)
-        if not os.path.exists(dir):
+    dir = os.path.join(settings.get("user_root"), username)
+    if not os.path.exists(dir):
             os.mkdir(dir)
-            return ret
-
-        current_dir = []
-        id = 0
-        with os.scandir(dir) as it:
-            for entry in it:
-                type = 'dir'
-                if entry.is_file():
-                    type = 'file'
-                elif entry.is_symlink():
-                    type = 'symlink'
-                item = {
-                    'id' : str(id),
-                    'name' : entry.name,
-                    'path' : entry.path,
-                    'type' : type,
-                    'location': 'local',
-                    'link' : os.path.join(settings.get("user_root_url"), 'static', username, entry.name)}
-                current_dir.append(item)
-                id += 1
-        ret['current_path'] = dir
-        ret['current_dir'] = current_dir
-
-    except Exception as e:
-        ret['current_path'] = 'error occurs, could not access the repository'
-
-    return ret
+    return iterate_directory(dir, settings.get("user_root"), url)
 
 
 @api_config(
