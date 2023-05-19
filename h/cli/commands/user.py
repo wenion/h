@@ -27,6 +27,13 @@ def add(ctx, username, email, password, authority):
         "email": email,
         "password": password,
         "require_activation": False,
+        # KMASS Project
+        "faculty": "",
+        "teaching_role": "",
+        "teaching_unit": "",
+        "joined_year": 0,
+        "years_of_experience":0,
+
     }
     if authority:
         signup_kwargs["authority"] = authority
