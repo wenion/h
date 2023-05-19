@@ -23,7 +23,7 @@ PAGE_SIZE = 200
 
 
 @view_defaults(
-    route_name="activity.search", renderer="h:templates/activity/search.html.jinja2"
+    route_name="activity.search", renderer="h:templates/activity/kmass-search.html.jinja2"
 )
 class SearchController:
     """View callables for the "activity.search" route."""
@@ -84,7 +84,7 @@ class SearchController:
 
 @view_defaults(
     route_name="group_read",
-    renderer="h:templates/activity/search.html.jinja2",
+    renderer="h:templates/activity/kmass-search.html.jinja2",
     request_method="GET",
 )
 class GroupSearchController(SearchController):
@@ -343,7 +343,7 @@ class GroupSearchController(SearchController):
 
 @view_defaults(
     route_name="activity.user_search",
-    renderer="h:templates/activity/search.html.jinja2",
+    renderer="h:templates/activity/kmass-search.html.jinja2",
 )
 class UserSearchController(SearchController):
     """View callables unique to the "activity.user_search" route."""
