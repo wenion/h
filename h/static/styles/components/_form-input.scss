@@ -166,9 +166,9 @@
     --bottom-padding: #{$bottom-padding-no-label};
   }
 
-  select.form-input__input {
-    margin-top: $top-padding;
-  }
+  // select.form-input__input {
+  //   margin-top: $top-padding;
+  // }
 
   .form-input__input.has-hint {
     .env-js-capable & {
