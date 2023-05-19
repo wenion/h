@@ -5,7 +5,7 @@ from pyramid import httpexceptions
 from pyramid.view import view_config, view_defaults
 
 from h import i18n
-from h.accounts import schemas
+from h.accounts import kmass_schemas
 from h.services.exceptions import ConflictError
 
 _ = i18n.TranslationString
@@ -19,7 +19,7 @@ def _login_redirect_url(request):
 class SignupController:
     def __init__(self, request):
         self.request = request
-        self.schema = schemas.RegisterSchema().bind(request=self.request)
+        self.schema = kmass_schemas.RegisterSchema().bind(request=self.request)
         self.form = request.create_form(
             self.schema,
             buttons=(deform.Button(title=_("Sign up")),),
@@ -27,7 +27,7 @@ class SignupController:
         )
 
     @view_config(
-        request_method="GET", renderer="h:templates/accounts/signup.html.jinja2"
+        request_method="GET", renderer="h:templates/accounts/kmass-signup.html.jinja2"
     )
     def get(self):
         """Render the empty registration form."""
@@ -36,7 +36,7 @@ class SignupController:
         return {"form": self.form.render()}
 
     @view_config(
-        request_method="POST", renderer="h:templates/accounts/signup-post-dev.html.jinja2"
+        request_method="POST", renderer="h:templates/accounts/kmass-signup-post.html.jinja2"
     )
     def post(self):
         """Handle submission of the new user registration form."""
@@ -56,7 +56,13 @@ class SignupController:
                 email=appstruct["email"],
                 password=appstruct["password"],
                 privacy_accepted=datetime.datetime.utcnow(),
-                comms_opt_in=appstruct["comms_opt_in"],
+                # KMASS Project comms_opt_in=appstruct["comms_opt_in"],
+                comms_opt_in=True,
+                faculty=appstruct["faculty"],
+                teaching_role=appstruct["teaching_role"],
+                teaching_unit=appstruct["teaching_unit"],
+                joined_year=int(appstruct["joined_year"]),
+                years_of_experience=int(appstruct["years_of_experience"]),
             )
         except ConflictError as exc:
             template_context["heading"] = _("Account already registered")

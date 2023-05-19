@@ -9,6 +9,7 @@ from h.services import SubscriptionService
 from h.services.exceptions import ConflictError
 from h.services.user_password import UserPasswordService
 from h.tasks import mailer as tasks_mailer
+from h.models_redis import UserRole
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class UserSignupService:
         self.password_service = password_service
         self.subscription_service = subscription_service
 
-    def signup(self, require_activation: bool = False, **kwargs) -> User:
+    def signup(self, require_activation: bool = False, **kwargs) -> User: # KMASS Project
         """
         Create a new user.
 
@@ -62,12 +63,26 @@ class UserSignupService:
         # Extract any passed identities for this new user
         identities = kwargs.pop("identities", [])
 
+        # KMASS Project
+        user_role_kwargs = {
+            "userid": "acct:" + kwargs["username"] + "@" + kwargs["authority"],
+            "faculty": kwargs.pop("faculty"),
+            "teaching_role": kwargs.pop("teaching_role"),
+            "teaching_unit": kwargs.pop("teaching_unit"),
+            "joined_year": kwargs.pop("joined_year"),
+            "years_of_experience": kwargs.pop("years_of_experience"),
+        }
+
         user = User(**kwargs)
 
         # Add identity relations to this new user, if provided
         user.identities = [UserIdentity(user=user, **i_args) for i_args in identities]
 
         self.session.add(user)
+
+        # KMASS Project
+        user_role = UserRole(**user_role_kwargs)
+        user_role.save()
 
         if password is not None:
             self.password_service.update_password(user, password)
