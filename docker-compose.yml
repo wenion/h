@@ -20,6 +20,15 @@ services:
     ports:
       - '127.0.0.1:5672:5672'
       - '127.0.0.1:15672:15672'
+  redis-stack:
+    image: redis/redis-stack:latest
+    ports:
+      - '127.0.0.1:6379:6379'
+      - '127.0.0.1:18001:8001'
+    volumes:
+      - /home/hypothesis/:/data
+    networks:
+      - dbs
 
 networks:
   # This external network allows FDW connections between H, LMS and report DBs.

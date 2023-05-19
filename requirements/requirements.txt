@@ -137,6 +137,7 @@ pycparser==2.20
     # via cffi
 pycryptodomex==3.17
     # via -r requirements/requirements.in
+pydantic==1.9.0
 pyjwt==2.6.0
     # via -r requirements/requirements.in
 pyparsing==3.0.9
@@ -176,6 +177,8 @@ python-dateutil==2.8.2
 python-slugify==8.0.1
     # via -r requirements/requirements.in
 pytz==2021.3
+redis==4.1.4
+redis-om==0.0.20
     # via celery
 repoze-sendmail==4.3
 requests==2.30.0
@@ -184,7 +187,7 @@ rfc3339-validator==0.1.4
     # via -r requirements/requirements.in
 sentry-sdk==1.17.0
     # via h-pyramid-sentry
-six==1.15.0
+six==1.16.0
     # via
     #   bleach
     #   click-repl

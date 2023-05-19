@@ -102,6 +102,8 @@ def includeme(config):
     # pyramid-sanity should be activated as late as possible
     config.include("pyramid_sanity")
 
+    config.include("h.models_redis")
+
 
 def _configure_jinja2_assets(config):
     jinja2_env = config.get_jinja2_environment()
