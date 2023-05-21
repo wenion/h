@@ -24,7 +24,7 @@ services:
     image: redis/redis-stack:latest
     ports:
       - '127.0.0.1:6379:6379'
-      - '127.0.0.1:18001:8001'
+      - '18001:8001'
     volumes:
       - /home/hypothesis/:/data
     networks:
