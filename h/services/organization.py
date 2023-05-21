@@ -61,7 +61,7 @@ class OrganizationService:
             )
 
             default_org.logo = (
-                importlib_resources.files("h") / "static/images/icons/logo.svg"
+                importlib_resources.files("h") / "static/images/icons/kmass-logo.svg"
             ).read_text()
 
             self.session.add(default_org)
