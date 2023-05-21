@@ -44,7 +44,7 @@ class OAuthAuthorizeController:
         self.oauth = self.request.find_service(name="oauth_provider")
 
     @view_config(
-        request_method="GET", renderer="h:templates/oauth/authorize.html.jinja2"
+        request_method="GET", renderer="h:templates/oauth/kmass-authorize.html.jinja2"
     )
     def get(self):
         """

@@ -80,7 +80,7 @@ def error_validation(error, request):
     return ajax_payload(request, {"status": "failure", "errors": error.error.asdict()})
 
 
-@view_defaults(route_name="login", renderer="h:templates/accounts/login.html.jinja2")
+@view_defaults(route_name="login", renderer="h:templates/accounts/kmass-login.html.jinja2")
 class AuthController:
     def __init__(self, request):
         form_footer = '<a class="link" href="{href}">{text}</a>'.format(  # pylint: disable=consider-using-f-string
