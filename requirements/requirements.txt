@@ -117,6 +117,7 @@ passlib==1.7.4
     # via -r requirements/requirements.in
 pastedeploy==2.1.0
     # via plaster-pastedeploy
+pathlib==1.0.1
 peppercorn==0.6
     # via deform
 plaster==1.0
@@ -137,7 +138,7 @@ pycparser==2.20
     # via cffi
 pycryptodomex==3.17
     # via -r requirements/requirements.in
-pydantic==1.9.0
+pydantic==1.10.7
 pyjwt==2.6.0
     # via -r requirements/requirements.in
 pyparsing==3.0.9
@@ -177,8 +178,8 @@ python-dateutil==2.8.2
 python-slugify==8.0.1
     # via -r requirements/requirements.in
 pytz==2021.3
-redis==4.1.4
-redis-om==0.0.20
+redis==4.5.5
+redis-om==0.1.2
     # via celery
 repoze-sendmail==4.3
 requests==2.30.0
