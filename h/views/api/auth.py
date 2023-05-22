@@ -63,7 +63,7 @@ class OAuthAuthorizeController:
     @view_config(
         request_method="GET",
         request_param="response_mode=web_message",
-        renderer="h:templates/oauth/authorize.html.jinja2",
+        renderer="h:templates/oauth/kmass-authorize.html.jinja2",
     )
     def get_web_message(self):
         """
