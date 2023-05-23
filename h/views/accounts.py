@@ -20,6 +20,7 @@ from h.accounts.events import (
 from h.emails import reset_password
 from h.schemas.forms.accounts import (
     EditProfileSchema,
+    KmassEditProfileSchema,
     ForgotPasswordSchema,
     LoginSchema,
     ResetCode,
@@ -28,6 +29,7 @@ from h.schemas.forms.accounts import (
 from h.services import SubscriptionService
 from h.tasks import mailer
 from h.util.view import json_view
+from h.models_redis import UserRole
 
 _ = i18n.TranslationString
 
@@ -391,7 +393,7 @@ class ActivateController:
 
 @view_defaults(
     route_name="account",
-    renderer="h:templates/accounts/account.html.jinja2",
+    renderer="h:templates/accounts/kmass-account.html.jinja2",
     is_authenticated=True,
 )
 class AccountController:
@@ -467,11 +469,11 @@ class AccountController:
         }
 
 
-@view_defaults(
-    route_name="account_profile",
-    renderer="h:templates/accounts/profile.html.jinja2",
-    is_authenticated=True,
-)
+# @view_defaults(
+#     route_name="account_profile",
+#     renderer="h:templates/accounts/profile.html.jinja2",
+#     is_authenticated=True,
+# )
 class EditProfileController:
     def __init__(self, request):
         self.request = request
@@ -514,6 +516,70 @@ class EditProfileController:
         user.location = appstruct["location"]
         user.uri = appstruct["link"]
         user.orcid = appstruct["orcid"]
+
+
+@view_defaults(
+    route_name="account_profile",
+    renderer="h:templates/accounts/kmass-profile.html.jinja2",
+    is_authenticated=True,
+)
+class KmassEditProfileController:
+    def __init__(self, request):
+        self.request = request
+        self.schema = KmassEditProfileSchema().bind(request=self.request)
+        self.form = request.create_form(
+            self.schema, buttons=(_("Save"),), use_inline_editing=True
+        )
+
+    @view_config(request_method="GET")
+    def get(self):
+        """Render the 'Edit Profile' form."""
+        if not self.request.user_role:
+            user = self.request.user
+            user_role_kwargs = {
+                "userid": user.userid,
+                "faculty": "",
+                "teaching_role": "",
+                "teaching_unit": "",
+                "joined_year": 0,
+                "years_of_experience": 0,
+            }
+            user_role = UserRole(**user_role_kwargs)
+            user_role.save()
+
+        user_role = self.request.user_role
+        self.form.set_appstruct(
+            {
+                "faculty": user_role.faculty or "",
+                "teaching_role": user_role.teaching_role or "",
+                "teaching_unit": user_role.teaching_unit or "",
+                "joined_year": user_role.joined_year if user_role.joined_year != 0 else "",
+                "years_of_experience": user_role.years_of_experience if user_role.years_of_experience != 0 else "",
+            }
+        )
+        return self._template_data()
+
+    @view_config(request_method="POST")
+    def post(self):
+        return form.handle_form_submission(
+            self.request,
+            self.form,
+            on_success=self._update_user,
+            on_failure=self._template_data,
+        )
+
+    def _template_data(self):
+        return {"form": self.form.render()}
+
+    def _update_user(self, appstruct):
+        user_role = self.request.user_role
+        print("user role", user_role)
+        user_role.faculty = appstruct["faculty"]
+        user_role.teaching_role = appstruct["teaching_role"]
+        user_role.teaching_unit = appstruct["teaching_unit"]
+        user_role.joined_year = int(appstruct["joined_year"])
+        user_role.years_of_experience = int(appstruct["years_of_experience"])
+        user_role.save()
 
 
 @view_defaults(

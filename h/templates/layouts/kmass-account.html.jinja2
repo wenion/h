@@ -1,0 +1,40 @@
+{% extends "h:templates/layouts/base.html.jinja2" %}
+
+{%- set nav_pages = [
+    ('account', 'Account'),
+    ('account_profile', 'Edit profile'),
+    ('account_notifications', 'Notifications'),
+    ('account_developer', 'Developer'),
+] -%}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block header %}
+  {% from "h:templates/includes/kmass-navbar.html.jinja2" import navbar with context %}
+  {{ navbar() }}
+{% endblock %}
+
+{% block content %}
+  <div class="content paper">
+    <div class="form-container">
+      <nav class="tabs">
+        <ul>
+          {% for route, title in nav_pages %}
+            <li class="tabs__item">
+                <a href="{{ request.route_url(route) }}"
+                   class="tabs__link{% if route == page_route %} is-active{% endif %}">
+                  {{ title }}
+                </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </nav>
+      {% include "h:templates/includes/flash-messages.html.jinja2" %}
+      {{ self.page_content() }}
+
+      <footer class="form-footer--no-border">
+        {% include "h:templates/includes/back_link.html.jinja2" %}
+      </footer>
+    </div>
+  </div>
+{% endblock content %}
