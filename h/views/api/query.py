@@ -15,12 +15,11 @@ authorization system. You can find the mapping between annotation "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
 import requests
+from redis_om.model import NotFoundError
 
-from pyramid import i18n
-
+from h.security import Permission
 from h.views.api.config import api_config
-
-_ = i18n.TranslationStringFactory(__package__)
+from h.models_redis import Result, Bookmark
 
 
 @api_config(
@@ -30,30 +29,109 @@ _ = i18n.TranslationStringFactory(__package__)
     description="Querying",
 )
 def query(request):
-    query = request.GET.get('q')
+    user_role = request.user_role
+    query = request.GET.get("q")
     url = request.registry.settings.get("query_url")
+
     params = {
         'q': query
     }
-
     response = requests.get(url, params=params)
 
     if response.status_code == 200:
         json_data = response.json()
-        # count = 0
-        # for topic in json_data['context']:
-        #     print('topic id ', count)
-        #     rcount = 0
-        #     for result in topic:
-        #         print('result id ', rcount, result)
-        #         rcount += 1
-        #     count += 1
+
+        count = 0
+        for topic in json_data["context"]:
+            rcount = 0
+            for result_item in topic:
+                meta = result_item["metadata"]
+                if "title" in meta and "url" in meta:
+                    # find out the response result if it was existing
+                    existing_results = Result.find(
+                        Result.title == meta["title"]
+                        # (Result.title == meta["title"]) &
+                        # (Result.url == meta["url"])
+                    ).all()
+                    # find out the result was bookmarked
+                    if len(existing_results):
+                        result_pk = existing_results[0].pk
+                        result_item["id"] = result_pk
+                        if user_role:
+                            bookmarks = Bookmark.find(
+                                (Bookmark.result == result_pk) &
+                                (Bookmark.user == user_role.pk)
+                            ).all()
+                            if len(bookmarks):
+                                if not bookmarks[0].deleted:
+                                    result_item["is_bookmark"] = True
+                    else:
+                        # else insert new response result
+                        result = Result(**meta)
+                        result_item["id"] = result.pk
+                        result.save()
+                else:
+                    if "title" not in meta:
+                        meta["title"] = "missing title"
+                    if "url" not in meta:
+                        meta["title"] = meta["title"] + " and URL"
+                rcount += 1
+            count += 1
 
         return json_data
     else:
-        print('Request failed with status code:', response.status_code)
         return {
             'status' : "proxy reverse can't get the response, status code: " + str(response.status_code),
             'query' : query,
             'context' : []
+        }
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.bookmark",
+    request_method="POST",
+    permission=Permission.Annotation.CREATE,
+    link_name="bookmark",
+    description="Bookmark",
+)
+def bookmark(request):
+    user_role = request.user_role
+
+    data = request.json_body
+    result_id = data["id"]
+
+    try:
+        Result.get(result_id)
+    except NotFoundError:
+        return {"error" : "no corresponding result"}
+
+    query = data["query"]
+
+    data["result"] = result_id
+    data["user"] = user_role.pk
+    data["deleted"] = 1 - int(data["is_bookmark"])
+    data.pop("is_bookmark")
+    data.pop("id")
+    bookmark = None
+
+    try:
+        exist_bookmarks = Bookmark.find(
+            (Bookmark.result == result_id) &
+            (Bookmark.user == user_role.pk) &
+            (Bookmark.query == query)
+        ).all()
+        if len(exist_bookmarks) == 1:
+            bookmark = exist_bookmarks[0]
+            bookmark.deleted = data["deleted"]
+        elif len(exist_bookmarks) > 1:
+            return {"error": "multiple bookmark error"}
+        else:
+            bookmark = Bookmark(**data)
+        bookmark.save()
+
+    except Exception as e:
+        return {"server error": repr(e)}
+    else:
+        return {
+            "succ": "bookmark" + bookmark.pk + "has been saved"
         }
