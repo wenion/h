@@ -1,10 +1,10 @@
 from redis_om import Migrator
-from redis_om import Field, JsonModel
+from redis_om import Field, JsonModel, EmbeddedJsonModel
 from pydantic import NonNegativeInt
 from typing import Optional
 
 
-class UserRole(JsonModel):
+class UserRole(EmbeddedJsonModel):
     class Meta:
         global_key_prefix = 'h'
         model_key_prefix = 'UserRole'
@@ -31,7 +31,7 @@ class Bookmark(JsonModel):
         global_key_prefix = 'h'
         model_key_prefix = 'Bookmark'
     query: str = Field(index=True, full_text_search=True)
-    user: str = Field(index=True)       # UserRole pk
+    user: UserRole                      # UserRole pk
     result: str = Field(index=True)     # Result pk
     deleted: int = Field(index=True, default=0)
 

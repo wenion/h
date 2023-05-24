@@ -19,7 +19,7 @@ from redis_om.model import NotFoundError
 
 from h.security import Permission
 from h.views.api.config import api_config
-from h.models_redis import Result, Bookmark
+from h.models_redis import Result, Bookmark, UserRole
 
 
 @api_config(
@@ -60,7 +60,7 @@ def query(request):
                         if user_role:
                             bookmarks = Bookmark.find(
                                 (Bookmark.result == result_pk) &
-                                (Bookmark.user == user_role.pk)
+                                (Bookmark.user.pk == user_role.pk)
                             ).all()
                             if len(bookmarks):
                                 if not bookmarks[0].deleted:
@@ -86,6 +86,7 @@ def query(request):
             'context' : []
         }
 
+
 @api_config(
     versions=["v1", "v2"],
     route_name="api.bookmark",
@@ -97,6 +98,9 @@ def query(request):
 def bookmark(request):
     user_role = request.user_role
 
+    # id            : str
+    # query         : str
+    # is_bookmark   : boolean
     data = request.json_body
     result_id = data["id"]
 
@@ -108,7 +112,7 @@ def bookmark(request):
     query = data["query"]
 
     data["result"] = result_id
-    data["user"] = user_role.pk
+    data["user"] = user_role
     data["deleted"] = 1 - int(data["is_bookmark"])
     data.pop("is_bookmark")
     data.pop("id")
@@ -117,7 +121,7 @@ def bookmark(request):
     try:
         exist_bookmarks = Bookmark.find(
             (Bookmark.result == result_id) &
-            (Bookmark.user == user_role.pk) &
+            (Bookmark.user.pk == user_role.pk) &
             (Bookmark.query == query)
         ).all()
         if len(exist_bookmarks) == 1:
@@ -135,3 +139,24 @@ def bookmark(request):
         return {
             "succ": "bookmark" + bookmark.pk + "has been saved"
         }
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.typing",
+    request_method="GET",
+    link_name="typing",
+    description="Get the typing word and return suggestion",
+)
+def typing(request):
+    word = request.GET.get('q')
+
+    if not word:
+        return []
+
+    matched_bookmarks = Bookmark.find(Bookmark.query % word).all()
+    result = []
+    for index, bookmark in enumerate(matched_bookmarks):
+        result.append({"id": index, "text": bookmark.query})
+
+    return result
