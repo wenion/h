@@ -14,6 +14,7 @@ class UserRole(EmbeddedJsonModel):
     teaching_unit: str = Field(index=True)
     joined_year: NonNegativeInt = Field(index=True)
     years_of_experience: NonNegativeInt = Field(index=True)
+    expert: NonNegativeInt = Field(index=True)
 
 
 class Result(JsonModel):
