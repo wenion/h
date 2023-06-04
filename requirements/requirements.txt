@@ -45,6 +45,7 @@ data-tasks==0.0.3
     # via -r requirements/requirements.in
 deform==2.0.15
     # via -r requirements/requirements.in
+distance==0.1.3
 elasticsearch==6.8.2
     # via
     #   -r requirements/requirements.in

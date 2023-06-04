@@ -15,6 +15,7 @@ authorization system. You can find the mapping between annotation "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
 import requests
+import distance
 from redis_om.model import NotFoundError
 
 from h.security import Permission
@@ -141,6 +142,33 @@ def bookmark(request):
         }
 
 
+def get_user_profile_similarity(user_role_1, user_role_2):
+    value = 0
+    if user_role_1.faculty == user_role_2.faculty:
+        value += 1
+    if user_role_1.teaching_role == user_role_2.teaching_role:
+        value += 1
+    if user_role_1.teaching_unit == user_role_2.teaching_unit:
+        value += 1
+    if user_role_1.years_of_experience < 3:
+        user_role_1.years_of_experience = 1
+    elif user_role_1.years_of_experience > 10:
+        user_role_1.years_of_experience = 3
+    else:
+        user_role_1.years_of_experience = 2
+    if user_role_2.years_of_experience < 3:
+        user_role_2.years_of_experience = 1
+    elif user_role_2.years_of_experience > 10:
+        user_role_2.years_of_experience = 3
+    else:
+        user_role_2.years_of_experience = 2
+    if user_role_1.years_of_experience == user_role_2.years_of_experience:
+        value += 1
+    print("get_user_profile_similarity", value / 4)
+    return value / 4
+        
+
+
 @api_config(
     versions=["v1", "v2"],
     route_name="api.typing",
@@ -149,14 +177,30 @@ def bookmark(request):
     description="Get the typing word and return suggestion",
 )
 def typing(request):
+    user_role = request.user_role
     word = request.GET.get('q')
 
     if not word:
         return []
 
-    matched_bookmarks = Bookmark.find(Bookmark.query % word).all()
+    matched_bookmarks = Bookmark.find(
+        Bookmark.user.expert == 1
+    ).all()
+    print("matched_bookmarks", matched_bookmarks)
     result = []
+    seen_texts = set()
     for index, bookmark in enumerate(matched_bookmarks):
-        result.append({"id": index, "text": bookmark.query})
+        if user_role:
+            value = get_user_profile_similarity(bookmark.user, user_role)
+        else:
+            value = 0
+        value = value* 0.33 + (1 - distance.nlevenshtein(word, bookmark.query, method=2))*0.5
 
-    return result
+        if bookmark.query not in seen_texts:
+            result.append({"text": bookmark.query, "value": value})
+            seen_texts.add(bookmark.query)
+
+    sorted_dict = sorted(result, key=lambda x: x["value"], reverse=True)
+    print("sorted_dict", sorted_dict)
+
+    return sorted_dict[:5]
