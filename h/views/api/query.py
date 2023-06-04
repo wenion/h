@@ -185,7 +185,6 @@ def typing(request):
     matched_bookmarks = Bookmark.find(
         Bookmark.user.expert == 1
     ).all()
-    print("matched_bookmarks", matched_bookmarks)
     result = []
     seen_texts = set()
     for index, bookmark in enumerate(matched_bookmarks):
@@ -200,6 +199,6 @@ def typing(request):
             seen_texts.add(bookmark.query)
 
     sorted_dict = sorted(result, key=lambda x: x["value"], reverse=True)
-    print("sorted_dict", sorted_dict)
+    print("sorted_dict", sorted_dict, "\n")
 
     return sorted_dict[:5]

@@ -18,6 +18,7 @@ import json
 import os
 import re
 import shutil
+from redis_om import get_redis_connection
 
 from h.exceptions import InvalidUserId
 from h.security import Permission
@@ -175,5 +176,57 @@ def repository(request):
 def client_url(request):
     return {
         'base_url': request.registry.settings.get("homepage_url"),
-        'url_string': '/query',
+        'url_string': '',
+    }
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.recommandation",
+    request_method="POST",
+    permission=Permission.Annotation.CREATE,
+    link_name="push_recommandation",
+    description="Post the Recommandation",
+)
+def push_recommandation(request):
+    username = split_user(request.authenticated_userid)["username"]
+    data = request.json_body
+
+    key = "h:Recommandation:" + username + ":" + data["url"]
+    get_redis_connection().set(key, json.dumps(data))
+
+    expiration_time = 120
+    get_redis_connection().expire(key, expiration_time)
+
+    return {
+        "succ": data + ' has been saved'
+    }
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.recommandation",
+    request_method="GET",
+    permission=Permission.Annotation.CREATE,
+    link_name="pull_recommandation",
+    description="Get the Recommandation",
+)
+def pull_recommandation(request):
+    username = split_user(request.authenticated_userid)["username"]
+    encoded_url = request.GET.get('url')
+
+    key_pattern = "h:Recommandation:" + username + ":" + encoded_url
+    keys = get_redis_connection().keys(key_pattern)
+
+    if len(keys) > 0:
+        ret = get_redis_connection().getdel(keys[0])
+        print("ret", ret)
+        return json.loads(ret)
+
+    return {
+        "id": "",
+        "url": "",
+        "type": "",
+        "title": "",
+        "context": "",
     }
