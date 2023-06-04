@@ -166,7 +166,6 @@ def get_user_profile_similarity(user_role_1, user_role_2):
         value += 1
     print("get_user_profile_similarity", value / 4)
     return value / 4
-        
 
 
 @api_config(
