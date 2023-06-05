@@ -17,6 +17,7 @@ objects and Pyramid ACLs in :mod:`h.traversal`.
 import requests
 import distance
 from redis_om.model import NotFoundError
+from urllib.parse import urljoin
 
 from h.security import Permission
 from h.views.api.config import api_config
@@ -32,7 +33,7 @@ from h.models_redis import Result, Bookmark, UserRole
 def query(request):
     user_role = request.user_role
     query = request.GET.get("q")
-    url = request.registry.settings.get("query_url")
+    url = urljoin(request.registry.settings.get("query_url"), "query")
 
     params = {
         'q': query
