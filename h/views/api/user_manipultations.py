@@ -158,7 +158,7 @@ def iterate_directory(dir, name, url):
 def repository(request):
     username = split_user(request.authenticated_userid)["username"]
     settings = request.registry.settings
-    url = os.path.join(settings.get("user_root_url"), 'static', username)
+    url = os.path.join(settings.get("user_root_url"), "static", username)
 
     dir = os.path.join(settings.get("user_root"), username)
     if not os.path.exists(dir):
@@ -175,47 +175,47 @@ def repository(request):
 )
 def client_url(request):
     return {
-        'base_url': request.registry.settings.get("homepage_url"),
-        'url_string': '',
+        "base_url": request.registry.settings.get("homepage_url"),
+        "url_string": "",
     }
 
 
 @api_config(
     versions=["v1", "v2"],
-    route_name="api.recommandation",
+    route_name="api.recommendation",
     request_method="POST",
     permission=Permission.Annotation.CREATE,
-    link_name="push_recommandation",
-    description="Post the Recommandation",
+    link_name="push_recommendation",
+    description="Post the Recommendation",
 )
-def push_recommandation(request):
+def push_recommendation(request):
     username = split_user(request.authenticated_userid)["username"]
     data = request.json_body
 
-    key = "h:Recommandation:" + username + ":" + data["url"]
+    key = "h:Recommendation:" + username + ":" + data["url"]
     get_redis_connection().set(key, json.dumps(data))
 
     expiration_time = 120
     get_redis_connection().expire(key, expiration_time)
 
     return {
-        "succ": data + ' has been saved'
+        "succ": data["url"] + "has been saved"
     }
 
 
 @api_config(
     versions=["v1", "v2"],
-    route_name="api.recommandation",
+    route_name="api.recommendation",
     request_method="GET",
     permission=Permission.Annotation.CREATE,
-    link_name="pull_recommandation",
-    description="Get the Recommandation",
+    link_name="pull_recommendation",
+    description="Get the Recommendation",
 )
-def pull_recommandation(request):
+def pull_recommendation(request):
     username = split_user(request.authenticated_userid)["username"]
-    encoded_url = request.GET.get('url')
+    encoded_url = request.GET.get("url")
 
-    key_pattern = "h:Recommandation:" + username + ":" + encoded_url
+    key_pattern = "h:Recommendation:" + username + ":" + encoded_url
     keys = get_redis_connection().keys(key_pattern)
 
     if len(keys) > 0:
