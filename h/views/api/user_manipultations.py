@@ -17,8 +17,10 @@ objects and Pyramid ACLs in :mod:`h.traversal`.
 import json
 import os
 import re
+import requests
 import shutil
 from redis_om import get_redis_connection
+from urllib.parse import urljoin
 
 from h.exceptions import InvalidUserId
 from h.security import Permission
@@ -52,30 +54,31 @@ def upload(request):
     username = split_user(request.authenticated_userid)["username"]
     settings = request.registry.settings
 
-    if request.POST['file-upload'] is None:
+    if request.POST["file-upload"] is None:
         return {"error": "no file"}
     
     fullname = None # request.POST['file-upload'].filename
-    input_file = request.POST['file-upload'].file
+    input_file = request.POST["file-upload"].file
 
-    meta = request.POST['meta']
+    meta = request.POST["meta"]
 
     if meta:
-        lnk = json.loads(meta)['link']
+        lnk = json.loads(meta)["link"]
         for item in lnk:
-            url = item['href']
+            url = item["href"]
             domain = re.search(r"(?P<url>https?://[^\s]+)", url)
             if domain:
-                domain = domain.group("url").split('?')[0]
+                domain = domain.group("url").split("?")[0]
                 # pdf
-                if domain.endswith('.pdf'):
-                    fullname = domain.split('/')[-1]
+                if domain.endswith(".pdf"):
+                    fullname = domain.split("/")[-1]
                 else:
-                    fullname = re.search(r"(?P<domain>https?://)(?P<host>[^/:]+)", domain).group("host") + '.html'
+                    fullname = re.search(r"(?P<domain>https?://)(?P<host>[^/:]+)", domain).group("host") + ".html"
 
-        name = json.loads(meta)['title']
-        if name != '' and '/' not in name:
+        name = json.loads(meta)["title"]
+        if name != "" and "/" not in name:
             fullname = name
+    file_type_with_dot = os.path.splitext(fullname)[1]
     try:
         # check the user directory
         dir = os.path.join(settings.get("user_root"), username)
@@ -85,12 +88,16 @@ def upload(request):
         # create the file
         file_path = os.path.join(dir, fullname)
 
-        with open(file_path, 'wb') as output_file:
+        with open(file_path, "wb") as output_file:
             shutil.copyfileobj(input_file, output_file)
     except Exception as e:
-        return {"server error": repr(e)}
+        return {"error": repr(e)}
 
-    return {"succ": fullname + ' has been saved'}
+    # transfer to TA B
+    url = urljoin(request.registry.settings.get("query_url"), "upload")
+    files = {"myFile": (fullname, input_file)}
+    response = requests.post(url, files=files)
+    return response
 
 
 @api_config(
