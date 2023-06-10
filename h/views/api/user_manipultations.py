@@ -127,14 +127,15 @@ def delete(request):
         return {"error": repr(e)}
 
 
-def iterate_directory(dir, name, url):
+def iterate_directory(dir, name, url, depth):
     directory_node = {
         'path': dir,
         'id': dir,
         'name': name,
         'type': 'dir', # dir | file
         'link': os.path.join(url, name),
-        'children': []
+        'children': [],
+        'depth': depth,
     }
     with os.scandir(dir) as it:
         for entry in it:
@@ -145,11 +146,12 @@ def iterate_directory(dir, name, url):
                     'name': entry.name,
                     'type': 'file',
                     'link': os.path.join(url, entry.name),
-                    'children': []
+                    'children': [],
+                    'depth': depth,
                 }
                 directory_node['children'].append(file_node)
             elif entry.is_dir():
-                directory_node['children'].append(iterate_directory(os.path.join(dir, entry.name), entry.name, url))
+                directory_node['children'].append(iterate_directory(os.path.join(dir, entry.name), entry.name, url, depth + 1))
 
     return directory_node
 
@@ -170,7 +172,7 @@ def repository(request):
     dir = os.path.join(settings.get("user_root"), username)
     if not os.path.exists(dir):
             os.mkdir(dir)
-    return iterate_directory(dir, settings.get("user_root"), url)
+    return iterate_directory(dir, settings.get("user_root"), url, 0)
 
 
 @api_config(
