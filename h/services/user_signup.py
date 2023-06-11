@@ -71,6 +71,7 @@ class UserSignupService:
             "teaching_unit": kwargs.pop("teaching_unit"),
             "joined_year": kwargs.pop("joined_year"),
             "years_of_experience": kwargs.pop("years_of_experience"),
+            "expert":0,
         }
 
         user = User(**kwargs)
