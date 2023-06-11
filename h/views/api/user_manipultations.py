@@ -61,15 +61,12 @@ def upload(request):
     input_file = request.POST["file-upload"].file
 
     meta = json.loads(request.POST["meta"])
-    print("meta", meta, type(meta))
 
-    # file_type_with_dot = os.path.splitext(fullname)[1]
     parent_path = meta["id"]
     file_path = meta["path"]
     depth = int(meta["depth"])
     name = meta["name"]
     relavtive_path = os.path.relpath(file_path, settings.get("user_root"))
-    print("relative", relavtive_path)
 
     root_dir = os.path.join(settings.get("user_root"), username)
     if not os.path.exists(root_dir):
@@ -105,10 +102,8 @@ def upload(request):
         # result = response.json()
     except Exception as e:
         os.remove(file_path)
-        print("Exception", repr(e))
         return {"error": repr(e)}
     else:
-        print("response", response, type(response), response.content)
         if response.status_code != 200:
             os.remove(file_path)
             return {"error": "TA B proxy error"}
@@ -202,7 +197,6 @@ def repository(request):
     username = split_user(request.authenticated_userid)["username"]
     settings = request.registry.settings
     url = os.path.join(settings.get("user_root_url"), "static", username)
-    print("url", url)
 
     dir = os.path.join(settings.get("user_root"), username)
     if not os.path.exists(dir):
