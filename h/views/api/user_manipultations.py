@@ -14,6 +14,7 @@ particular, requests to the CRUD API endpoints are protected by the Pyramid
 authorization system. You can find the mapping between annotation "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
+import copy
 import json
 import os
 import re
@@ -56,37 +57,31 @@ def upload(request):
 
     if request.POST["file-upload"] is None:
         return {"error": "no file"}
-    
-    fullname = None # request.POST['file-upload'].filename
+
     input_file = request.POST["file-upload"].file
 
-    meta = request.POST["meta"]
+    meta = json.loads(request.POST["meta"])
+    print("meta", meta, type(meta))
 
-    if meta:
-        lnk = json.loads(meta)["link"]
-        for item in lnk:
-            url = item["href"]
-            domain = re.search(r"(?P<url>https?://[^\s]+)", url)
-            if domain:
-                domain = domain.group("url").split("?")[0]
-                # pdf
-                if domain.endswith(".pdf"):
-                    fullname = domain.split("/")[-1]
-                else:
-                    fullname = re.search(r"(?P<domain>https?://)(?P<host>[^/:]+)", domain).group("host") + ".html"
+    # file_type_with_dot = os.path.splitext(fullname)[1]
+    parent_path = meta["id"]
+    file_path = meta["path"]
+    depth = int(meta["depth"])
+    name = meta["name"]
+    relavtive_path = os.path.relpath(file_path, settings.get("user_root"))
+    print("relative", relavtive_path)
 
-        name = json.loads(meta)["title"]
-        if name != "" and "/" not in name:
-            fullname = name
-    file_type_with_dot = os.path.splitext(fullname)[1]
+    root_dir = os.path.join(settings.get("user_root"), username)
+    if not os.path.exists(root_dir):
+        os.mkdir(root_dir)
+
     try:
         # check the user directory
-        dir = os.path.join(settings.get("user_root"), username)
-        if not os.path.exists(dir):
-            os.mkdir(dir)
+        if not os.path.exists(parent_path):
+            os.mkdir(parent_path)
 
-        # create the file
-        file_path = os.path.join(dir, fullname)
+        if os.path.exists(file_path):
+            return {"error": name + " is existing"}
 
         with open(file_path, "wb") as output_file:
             shutil.copyfileobj(input_file, output_file)
@@ -94,10 +89,47 @@ def upload(request):
         return {"error": repr(e)}
 
     # transfer to TA B
-    url = urljoin(request.registry.settings.get("query_url"), "upload")
-    files = {"myFile": (fullname, input_file)}
-    response = requests.post(url, files=files)
-    return response
+    try:
+        local_file = open(file_path, "rb")
+        files = {"myFile": (name, local_file)}
+    except Exception as e:
+        os.remove(file_path)
+        return {"error": repr(e)}
+    else:
+        url = urljoin(request.registry.settings.get("query_url"), "upload")
+        data = {"url": os.path.join(settings.get("user_root_url"), "static", relavtive_path)}
+        print("start transfer", url, data)
+
+    try:
+        response = requests.post(url, files=files, data=data)
+        # result = response.json()
+    except Exception as e:
+        os.remove(file_path)
+        print("Exception", repr(e))
+        return {"error": repr(e)}
+    else:
+        print("response", response, type(response), response.content)
+        if response.status_code != 200:
+            os.remove(file_path)
+            return {"error": "TA B proxy error"}
+    try:
+        result = response.json()
+    except Exception as e:
+        os.remove(file_path)
+        return {"error": repr(e)}
+    else:
+        if "succ" not in result:
+            return result
+
+    local_file.close()
+    return {"succ": {
+        "depth": depth,
+        "id": parent_path,
+        "link": os.path.join(settings.get("user_root_url"), "static", relavtive_path),
+        "name": name,
+        "path": file_path,
+        "type": "file"
+    }}
 
 
 @api_config(
@@ -115,25 +147,27 @@ def delete(request):
     file_path = request.GET.get('file')
 
     try:
-        # check the user directory
-        # dir = os.path.join(settings.get("user_root"), username, file_name)
 
         if not os.path.exists(file_path):
             return {'error': 'could not find the file in user repository'}
         else:
             os.remove(file_path)
-            return {'succ': file_path + ' has been removed successfully'}
+            return {'succ': {
+                "filepath": file_path,
+                "parent_filepath": os.path.dirname(file_path),
+                }}
     except Exception as e:
         return {"error": repr(e)}
 
 
 def iterate_directory(dir, name, url, depth):
+    current_path = os.path.join(url, name)
     directory_node = {
         'path': dir,
         'id': dir,
         'name': name,
         'type': 'dir', # dir | file
-        'link': os.path.join(url, name),
+        'link': current_path,
         'children': [],
         'depth': depth,
     }
@@ -145,13 +179,13 @@ def iterate_directory(dir, name, url, depth):
                     'id': dir,
                     'name': entry.name,
                     'type': 'file',
-                    'link': os.path.join(url, entry.name),
+                    'link': os.path.join(current_path, entry.name),
                     'children': [],
                     'depth': depth,
                 }
                 directory_node['children'].append(file_node)
             elif entry.is_dir():
-                directory_node['children'].append(iterate_directory(os.path.join(dir, entry.name), entry.name, url, depth + 1))
+                directory_node['children'].append(iterate_directory(os.path.join(dir, entry.name), entry.name, current_path, depth + 1))
 
     return directory_node
 
@@ -168,11 +202,12 @@ def repository(request):
     username = split_user(request.authenticated_userid)["username"]
     settings = request.registry.settings
     url = os.path.join(settings.get("user_root_url"), "static", username)
+    print("url", url)
 
     dir = os.path.join(settings.get("user_root"), username)
     if not os.path.exists(dir):
             os.mkdir(dir)
-    return iterate_directory(dir, settings.get("user_root"), url, 0)
+    return iterate_directory(dir, username, os.path.join(settings.get("user_root_url"), "static"), 0)
 
 
 @api_config(
