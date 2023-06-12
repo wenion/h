@@ -36,10 +36,23 @@ class Bookmark(JsonModel):
     result: str = Field(index=True)     # Result pk
     deleted: int = Field(index=True, default=0)
 
+
+class UserEvent(JsonModel):
+    class Meta:
+        global_key_prefix = 'h'
+        model_key_prefix = 'UserEvent'
+    event_type: str = Field(index=True, full_text_search=True)
+    timestamp: int = Field(index=True)
+    tag_name: str = Field(index=True)     # Result pk
+    text_content: str = Field(index=True)
+    base_url: str = Field(index=True)
+    userid: str = Field(index=True)
+
 __all__ = (
     "UserRole",
     "Result",
     "Bookmark",
+    "UserEvent",
 )
 
 def get_user_role_by_userid(userid):
@@ -66,6 +79,36 @@ def get_user_role(request):
     return user_role
 
 
+def check_redis_keys(username, authority):
+    userid = f"acct:{username}@{authority}"
+    user_role = UserRole.find(
+        UserRole.userid == userid
+    ).all()
+
+    if not len(user_role):
+        user_role_kwargs = {
+            "userid": userid,
+            "faculty": "",
+            "teaching_role": "",
+            "teaching_unit": "",
+            "joined_year": 0,
+            "years_of_experience": 0,
+            "expert": 0,
+        }
+        user_role = UserRole(**user_role_kwargs)
+        user_role.save()
+
+
+def attach_sql(config):
+    engine = config.registry["sqlalchemy.engine"]
+    result = engine.execute('SELECT username, authority FROM public."user";')
+    rows = result.fetchall()
+    for row in rows:
+        check_redis_keys(row[0], row[1])
+    result.close()
+
+
 def includeme(config):
     config.add_request_method(get_user_role, name="user_role", property=True)
     Migrator().run()
+    attach_sql(config)
