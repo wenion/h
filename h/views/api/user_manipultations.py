@@ -26,6 +26,7 @@ from urllib.parse import urljoin
 from h.exceptions import InvalidUserId
 from h.security import Permission
 from h.views.api.config import api_config
+from h.models_redis import UserEvent
 
 def split_user(userid):
     """
@@ -267,4 +268,25 @@ def pull_recommendation(request):
         "type": "",
         "title": "",
         "context": "",
+    }
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.event",
+    request_method="POST",
+    permission=Permission.Annotation.CREATE,
+    link_name="event",
+    description="Create an user interaction",
+)
+def event(request):
+    user = request.user
+    event = json.loads(request.body)
+
+    user_event = UserEvent(**event)
+    user_event.save()
+
+
+    return {
+        "succ": "event has been saved",
     }
