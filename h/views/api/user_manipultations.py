@@ -21,7 +21,7 @@ import re
 import requests
 import shutil
 from redis_om import get_redis_connection
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 from h.exceptions import InvalidUserId
 from h.security import Permission
@@ -59,17 +59,50 @@ def upload(request):
     if request.POST["file-upload"] is None:
         return {"error": "no file"}
 
+    root_dir = os.path.join(settings.get("user_root"), username)
     input_file = request.POST["file-upload"].file
 
     meta = json.loads(request.POST["meta"])
+    filetype = meta["type"]
+
+    if not os.path.exists(root_dir):
+        os.mkdir(root_dir)
+
+    if filetype == "html":
+        print("meta", meta)
+        parsed_url = urlparse(meta["link"])
+        host_name = parsed_url.netloc
+        name = meta["name"]
+        if name == "":
+            name = host_name + parsed_url.path.split("/")[-1]
+        if not name.endswith(".html"):
+            name = name + ".html"
+        try:
+            filepath = os.path.join(root_dir, name)
+            if os.path.exists(filepath):
+                return {"error": name + " already exists"}
+            with open(filepath, "wb") as output_file:
+                shutil.copyfileobj(input_file, output_file)
+        except Exception as e:
+            return {"error": repr(e)}
+
+        relavtive_path = os.path.relpath(filepath, settings.get("user_root"))
+        return {"succ": {
+            "depth": 0,
+            "id": root_dir,
+            "link": os.path.join(settings.get("user_root_url"), "static", relavtive_path),
+            "name": name,
+            "path": filepath,
+            "type": "file"
+        }}
 
     parent_path = meta["id"]
     file_path = meta["path"]
     depth = int(meta["depth"])
     name = meta["name"]
     relavtive_path = os.path.relpath(file_path, settings.get("user_root"))
+    print("filepath", file_path)
 
-    root_dir = os.path.join(settings.get("user_root"), username)
     if not os.path.exists(root_dir):
         os.mkdir(root_dir)
 
@@ -79,7 +112,7 @@ def upload(request):
             os.mkdir(parent_path)
 
         if os.path.exists(file_path):
-            return {"error": name + " is existing"}
+            return {"error": name + " already exists"}
 
         with open(file_path, "wb") as output_file:
             shutil.copyfileobj(input_file, output_file)
@@ -87,38 +120,12 @@ def upload(request):
         return {"error": repr(e)}
 
     # transfer to TA B
-    try:
-        local_file = open(file_path, "rb")
-        files = {"myFile": (name, local_file)}
-    except Exception as e:
-        os.remove(file_path)
-        return {"error": repr(e)}
-    else:
-        url = urljoin(request.registry.settings.get("query_url"), "upload")
-        data = {"url": os.path.join(settings.get("user_root_url"), "static", relavtive_path)}
-        print("start transfer", url, data)
+    local_file = open(file_path, "rb")
+    files = {"myFile": (name, local_file)}
+    url = urljoin(request.registry.settings.get("query_url"), "upload")
+    data = {"url": os.path.join(settings.get("user_root_url"), "static", relavtive_path)}
 
-    try:
-        response = requests.post(url, files=files, data=data)
-        # result = response.json()
-    except Exception as e:
-        os.remove(file_path)
-        return {"error": repr(e)}
-    else:
-        if response.status_code != 200:
-            os.remove(file_path)
-            return {"error": "TA B proxy error"}
-    try:
-        result = response.json()
-    except Exception as e:
-        os.remove(file_path)
-        return {"error": repr(e)}
-    else:
-        if "succ" not in result:
-            return result
-
-    local_file.close()
-    return {"succ": {
+    succ_response = {"succ": {
         "depth": depth,
         "id": parent_path,
         "link": os.path.join(settings.get("user_root_url"), "static", relavtive_path),
@@ -127,6 +134,29 @@ def upload(request):
         "type": "file"
     }}
 
+    try:
+        response = requests.post(url, files=files, data=data)
+        # result = response.json()
+    except Exception as e:
+        return {"error": repr(e)}
+    else:
+        if response.status_code != 200:
+            return {"error": "TA B proxy error"}
+    try:
+        result = response.json()
+    except Exception as e:
+        return {"error": repr(e)}
+    else:
+        # check the ingesting is succ?
+        if "error" in result:
+            if "[the ingestion failed]" in result["error"]:
+                succ_response["tab"] = result["error"]
+            else:
+                return result
+
+    local_file.close()
+    return succ_response
+
 
 @api_config(
     versions=["v1", "v2"],
@@ -134,7 +164,7 @@ def upload(request):
     request_method="DELETE",
     permission=Permission.Annotation.CREATE,
     link_name="delete",
-    description="Delete files to the cloud",
+    description="Delete files from the cloud",
 )
 def delete(request):
     username = split_user(request.authenticated_userid)["username"]
