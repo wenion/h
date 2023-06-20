@@ -362,10 +362,9 @@ def event(request):
     description="Rating",
 )
 def rating(request):
+    userid = request.authenticated_userid
     data = request.json_body # dict
     data["userid"] = userid
-
-    userid = request.authenticated_userid
     rating = None
 
     # userid
