@@ -17,6 +17,7 @@ objects and Pyramid ACLs in :mod:`h.traversal`.
 import copy
 import json
 import os
+import openai
 import re
 import requests
 import shutil
@@ -26,7 +27,7 @@ from urllib.parse import urljoin, urlparse
 from h.exceptions import InvalidUserId
 from h.security import Permission
 from h.views.api.config import api_config
-from h.models_redis import UserEvent
+from h.models_redis import UserEvent, Rating, get_highlights_from_openai
 
 def split_user(userid):
     """
@@ -259,7 +260,14 @@ def client_url(request):
 )
 def push_recommendation(request):
     username = split_user(request.authenticated_userid)["username"]
-    data = request.json_body
+    data = request.json_body # dict
+
+    if data["query"] and data["context"] and data["query"] != "":
+        value = get_highlights_from_openai(data["query"], data["context"])
+        if "succ" in value:
+            data["context"] = value["succ"]
+        else:
+            data["context"] = "error: " + value["error"]
 
     key = "h:Recommendation:" + username + ":" + data["url"]
     get_redis_connection().set(key, json.dumps(data))
@@ -281,24 +289,45 @@ def push_recommendation(request):
     description="Get the Recommendation",
 )
 def pull_recommendation(request):
-    username = split_user(request.authenticated_userid)["username"]
-    encoded_url = request.GET.get("url")
-
-    key_pattern = "h:Recommendation:" + username + ":" + encoded_url
-    keys = get_redis_connection().keys(key_pattern)
-
-    if len(keys) > 0:
-        ret = get_redis_connection().getdel(keys[0])
-        print("ret", ret)
-        return json.loads(ret)
-
-    return {
+    userid = request.authenticated_userid
+    username = split_user(userid)["username"]
+    url = request.GET.get("url")
+    redis_ret = {
         "id": "",
         "url": "",
         "type": "",
         "title": "",
         "context": "",
     }
+    rating = {
+        "timestamp": 0,
+        "relevance": "",
+        "base_url": url,
+        "timeliness": "",
+    }
+
+    # from redis
+    key_pattern = "h:Recommendation:" + username + ":" + url
+    keys = get_redis_connection().keys(key_pattern)
+
+    if len(keys) > 0:
+        value = get_redis_connection().getdel(keys[0]) # type json
+        redis_ret.update(json.loads(value))
+
+    # from rating
+    exist_rating = Rating.find(
+        (Rating.userid == userid) &
+        (Rating.base_url == url)
+    ).all()
+
+    if len(exist_rating):
+        rating["timestamp"] = exist_rating[0].updated_timestamp
+        rating["relevance"] = exist_rating[0].relevance
+        rating["timeliness"] = exist_rating[0].timeliness
+
+    # check value
+    redis_ret.update(rating)
+    return redis_ret
 
 
 @api_config(
@@ -313,6 +342,8 @@ def event(request):
     user = request.user
     event = json.loads(request.body)
 
+    # TODO validate request.body
+
     user_event = UserEvent(**event)
     user_event.save()
 
@@ -320,3 +351,51 @@ def event(request):
     return {
         "succ": "event has been saved",
     }
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.rating",
+    request_method="POST",
+    permission=Permission.Annotation.CREATE,
+    link_name="rating",
+    description="Rating",
+)
+def rating(request):
+    data = request.json_body # dict
+    data["userid"] = userid
+
+    userid = request.authenticated_userid
+    rating = None
+
+    # userid
+    # timestamp
+    # base_url
+    # releavace
+    # timeliness
+    if "timestamp" not in data or "relevance" not in data or "timeliness" not in data:
+        return {"error": "miss args(timestamp/relevance/timeliness)"}
+
+    try:
+        exist_rating = Rating.find(
+            (Rating.userid == userid) &
+            (Rating.base_url == data["base_url"])
+        ).all()
+        if len(exist_rating) == 1:
+            rating = exist_rating[0]
+            rating.relevance = data["relevance"]
+            rating.timeliness = data["timeliness"]
+            rating.updated_timestamp = data["timestamp"]
+        elif len(exist_rating) > 1:
+            return {"error": "multiple exist_rating error"}
+        else:
+            data["created_timestamp"] = data["timestamp"]
+            data["updated_timestamp"] = data["timestamp"]
+            rating = Rating(**data)
+        rating.save()
+    except Exception as e:
+        return {"error" : repr(e)}
+    else:
+        return {
+            "succ": "rating" + rating.pk + "has been saved"
+        }
