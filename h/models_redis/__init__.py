@@ -1,3 +1,5 @@
+import openai
+
 from redis_om import Migrator
 from redis_om import Field, JsonModel, EmbeddedJsonModel
 from pydantic import NonNegativeInt
@@ -48,11 +50,24 @@ class UserEvent(JsonModel):
     base_url: str = Field(index=True)
     userid: str = Field(index=True)
 
+
+class Rating(JsonModel):
+    class Meta:
+        global_key_prefix = 'h'
+        model_key_prefix = 'Rating'
+    created_timestamp: int = Field(index=True)
+    updated_timestamp: int = Field(index=True)
+    relevance: str = Field(index=True)
+    timeliness: str = Field(index=True)
+    base_url: str = Field(index=True)
+    userid: str = Field(index=True)
+
 __all__ = (
     "UserRole",
     "Result",
     "Bookmark",
     "UserEvent",
+    "Rating",
 )
 
 def get_user_role_by_userid(userid):
@@ -108,7 +123,24 @@ def attach_sql(config):
     result.close()
 
 
+def get_highlights_from_openai(query, page_content):
+    response = openai.ChatCompletion.create(  # openai.openai_object.OpenAIObject
+        model="gpt-3.5-turbo-0613",
+        messages=[
+            {"role": "user", "content": 'for this page content "{}", can you please generate a list of highlight (max 5) about this user query "{}", each highlight item can be a max of 10 words'.format(page_content, query)},
+        ],
+        temperature=0,
+    )
+    try:
+        response_message = response["choices"][0]["message"]["content"]
+    except Exception as e:
+        return {"error" : repr(e)}
+    return {"succ": response_message}
+
+
 def includeme(config):
     config.add_request_method(get_user_role, name="user_role", property=True)
     Migrator().run()
     attach_sql(config)
+    openai.api_key = config.registry.settings.get("openai_key")
+    print("openai", openai.api_key)
