@@ -14,6 +14,7 @@ particular, requests to the CRUD API endpoints are protected by the Pyramid
 authorization system. You can find the mapping between annotation "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
+import os
 import requests
 import distance
 from redis_om.model import NotFoundError
@@ -49,6 +50,18 @@ def query(request):
             for result_item in topic:
                 meta = result_item["metadata"]
                 if "title" in meta and "url" in meta:
+                    prefix = "/home/ubuntu/KMASS-monash/DSI/Neural-Corpus-Indexer-NCI-main/Data_KMASS/all_data"
+                    postfix = ""
+                    origin_url = meta["url"]
+                    if "http://" not in origin_url or "https://" not in origin_url:
+                        if prefix in origin_url:
+                            # user upload pdf
+                            postfix = os.path.relpath(origin_url, prefix)
+                        else:
+                            # pdf file
+                            postfix = origin_url
+                        meta["url"] = urljoin("https://colam.kmass.cloud.edu.au/static/", postfix)
+
                     # find out the response result if it was existing
                     existing_results = Result.find(
                         Result.title == meta["title"]

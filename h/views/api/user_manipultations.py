@@ -61,6 +61,7 @@ def upload(request):
         return {"error": "no file"}
 
     root_dir = os.path.join(settings.get("user_root"), username)
+    public_pdf_dir = os.path.join(settings.get("user_root"), "new-pdf")
     input_file = request.POST["file-upload"].file
 
     meta = json.loads(request.POST["meta"])
@@ -107,6 +108,10 @@ def upload(request):
     if not os.path.exists(root_dir):
         os.mkdir(root_dir)
 
+    if not os.path.exists(public_pdf_dir):
+        os.mkdir(public_pdf_dir)
+
+    public_file_path = os.path.join(public_pdf_dir, name)
     try:
         # check the user directory
         if not os.path.exists(parent_path):
@@ -116,6 +121,8 @@ def upload(request):
             return {"error": name + " already exists"}
 
         with open(file_path, "wb") as output_file:
+            shutil.copyfileobj(input_file, output_file)
+        with open(public_file_path, "wb") as output_file:
             shutil.copyfileobj(input_file, output_file)
     except Exception as e:
         return {"error": repr(e)}
@@ -172,19 +179,44 @@ def delete(request):
     settings = request.registry.settings
 
     file_path = request.GET.get('file')
+    filename = os.path.basename(file_path)
+    base_name, extension = os.path.splitext(filename)
+    public_pdf_dir = os.path.join(settings.get("user_root"), "new-pdf")
+    public_file_path = os.path.join(public_pdf_dir, filename)
 
     try:
-
-        if not os.path.exists(file_path):
-            return {'error': 'could not find the file in user repository'}
-        else:
+        print("file_path", file_path)
+        if os.path.exists(file_path):
             os.remove(file_path)
-            return {'succ': {
-                "filepath": file_path,
-                "parent_filepath": os.path.dirname(file_path),
-                }}
+        print("public_file_path", public_file_path)
+        if os.path.exists(public_file_path):
+            os.remove(public_file_path)
     except Exception as e:
         return {"error": repr(e)}
+
+    try:
+        url = urljoin(request.registry.settings.get("query_url"), "delete")
+        data = {"filename": filename, "filetype": extension}
+        response = requests.post(url, data=data)
+    except Exception as e:
+        return {"error": repr(e)}
+    else:
+        if response.status_code != 200:
+            return {"error": "TA B proxy error"}
+
+    try:
+        result = response.json()
+    except Exception as e:
+        return {"error": repr(e)}
+    else:
+        # check the ingesting is succ?
+        if "error" in result:
+            return result
+
+    return {'succ': {
+        "filepath": file_path,
+        "parent_filepath": os.path.dirname(file_path),
+        }}
 
 
 def iterate_directory(dir, name, url, depth):
@@ -263,6 +295,7 @@ def push_recommendation(request):
     data = request.json_body # dict
 
     if data["query"] and data["context"] and data["query"] != "":
+        data["context"].replace("\n", " ")
         value = get_highlights_from_openai(data["query"], data["context"])
         if "succ" in value:
             data["context"] = value["succ"]

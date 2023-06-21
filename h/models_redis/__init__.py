@@ -124,14 +124,14 @@ def attach_sql(config):
 
 
 def get_highlights_from_openai(query, page_content):
-    response = openai.ChatCompletion.create(  # openai.openai_object.OpenAIObject
-        model="gpt-3.5-turbo-0613",
-        messages=[
-            {"role": "user", "content": 'for this page content "{}", can you please generate a list of highlight (max 5) about this user query "{}", each highlight item can be a max of 10 words'.format(page_content, query)},
-        ],
-        temperature=0,
-    )
     try:
+        response = openai.ChatCompletion.create(  # openai.openai_object.OpenAIObject
+            model="gpt-3.5-turbo-0613",
+            messages=[
+                {"role": "user", "content": 'for this page content "{}", can you please generate a list of highlight (max 5) about this user query "{}", each highlight item can be a max of 10 words'.format(page_content, query)},
+            ],
+            temperature=0,
+        )
         response_message = response["choices"][0]["message"]["content"]
     except Exception as e:
         return {"error" : repr(e)}
