@@ -54,6 +54,9 @@ def split_user(userid):
     description="Upload files to the cloud",
 )
 def upload(request):
+    # is public file or not?
+    # need to be ingested or not?
+    # source: google? repository? html?
     username = split_user(request.authenticated_userid)["username"]
     settings = request.registry.settings
 
@@ -122,8 +125,9 @@ def upload(request):
 
         with open(file_path, "wb") as output_file:
             shutil.copyfileobj(input_file, output_file)
-        with open(public_file_path, "wb") as output_file:
-            shutil.copyfileobj(input_file, output_file)
+        with open(file_path, "rb") as source_file:
+            with open(public_file_path, "wb") as output_file:
+                shutil.copyfileobj(source_file, output_file)
     except Exception as e:
         return {"error": repr(e)}
 
