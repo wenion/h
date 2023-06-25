@@ -22,7 +22,7 @@ import re
 import requests
 import shutil
 from redis_om import get_redis_connection
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, unquote
 
 from h.exceptions import InvalidUserId
 from h.security import Permission
@@ -295,7 +295,7 @@ def push_recommendation(request):
     data = request.json_body # dict
 
     if data["query"] and data["context"] and data["query"] != "":
-        data["context"].replace("\n", " ")
+        # data["context"].replace("\n", " ")
         value = get_highlights_from_openai(data["query"], data["context"])
         if "succ" in value:
             data["context"] = value["succ"]
@@ -324,7 +324,10 @@ def push_recommendation(request):
 def pull_recommendation(request):
     userid = request.authenticated_userid
     username = split_user(userid)["username"]
-    url = request.GET.get("url")
+    encoded_url = request.GET.get("url")
+    url = ""
+    if encoded_url:
+        url = unquote(encoded_url)
     redis_ret = {
         "id": "",
         "url": "",
