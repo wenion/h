@@ -375,18 +375,21 @@ def pull_recommendation(request):
     description="Create an user interaction",
 )
 def event(request):
-    user = request.user
-    event = json.loads(request.body)
+    event = request.json_body
 
     # TODO validate request.body
+    is_valid =UserEvent.validate(event)
 
-    user_event = UserEvent(**event)
-    user_event.save()
-
-
-    return {
-        "succ": "event has been saved",
-    }
+    if is_valid:
+        user_event = UserEvent(**event)
+        user_event.save()
+        return {
+            "succ": "event has been saved",
+        }
+    else:
+        return {
+            "error": str(event)
+        }
 
 
 @api_config(
