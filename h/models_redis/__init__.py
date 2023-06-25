@@ -62,12 +62,31 @@ class Rating(JsonModel):
     base_url: str = Field(index=True)
     userid: str = Field(index=True)
 
+
+class UserFile(JsonModel):  # repository file's attribute
+    class Meta:
+        global_key_prefix = 'h'
+        model_key_prefix = 'UserFile'
+    userid: str = Field(index=True)
+    name: str = Field(index=True)
+    path: str = Field(index=True)
+    directory_path: str = Field(index=True)
+    filetype: str = Field(index=True)
+    link: str = Field(index=True)
+    depth: NonNegativeInt = Field(index=True)
+    accessibility: str = Field(index=True)
+    ingested: int = Field(index=True, default=0)
+    source: str = Field(index=True)
+    deleted: int = Field(index=True, default=0)
+
+
 __all__ = (
     "UserRole",
     "Result",
     "Bookmark",
     "UserEvent",
     "Rating",
+    "UserFile",
 )
 
 def get_user_role_by_userid(userid):
