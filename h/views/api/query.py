@@ -51,22 +51,23 @@ def query(request):
                 meta = result_item["metadata"]
                 if "title" in meta and "url" in meta:
                     prefix = "/home/ubuntu/KMASS-monash/DSI/Neural-Corpus-Indexer-NCI-main/Data_KMASS/all_data"
-                    postfix = ""
-                    origin_url = meta["url"]
-                    if "http://" not in origin_url or "https://" not in origin_url:
-                        if prefix in origin_url:
+                    url = meta["url"]
+                    # special address
+                    # uploaded pdf files and system pdf files will not provide url
+                    # we need to complete for them
+                    if "http://" not in url or "https://" not in url:
+                        if prefix in url:
                             # user upload pdf
-                            postfix = os.path.relpath(origin_url, prefix)
+                            relpath = os.path.join("static", os.path.relpath(url, prefix))
+                            meta["url"] = urljoin(request.registry.settings.get("user_root_url"), relpath)
                         else:
-                            # pdf file
-                            postfix = origin_url
-                        meta["url"] = urljoin("https://colam.kmass.cloud.edu.au/static/", postfix)
+                            # system pdf file
+                            relpath = os.path.join("static", url)
+                            meta["url"] = urljoin("https://colam.kmass.cloud.edu.au", relpath)
 
                     # find out the response result if it was existing
                     existing_results = Result.find(
                         Result.title == meta["title"]
-                        # (Result.title == meta["title"]) &
-                        # (Result.url == meta["url"])
                     ).all()
                     # find out the result was bookmarked
                     if len(existing_results):
@@ -85,11 +86,12 @@ def query(request):
                         result = Result(**meta)
                         result_item["id"] = result.pk
                         result.save()
-                else:
-                    if "title" not in meta:
-                        meta["title"] = "missing title"
-                    if "url" not in meta:
-                        meta["title"] = meta["title"] + " and URL"
+                elif "title" not in meta and "url" not in meta:
+                    meta["title"] = "The title and URL are missing."
+                elif "title" not in meta and "url" in meta:
+                    meta["title"] = "The title is missing."
+                elif "title" in meta and "url" not in meta:
+                    meta["title"] = "The URL is missing."
                 rcount += 1
             count += 1
 
@@ -178,7 +180,7 @@ def get_user_profile_similarity(user_role_1, user_role_2):
         user_role_2.years_of_experience = 2
     if user_role_1.years_of_experience == user_role_2.years_of_experience:
         value += 1
-    print("get_user_profile_similarity", value / 4)
+    # print("get_user_profile_similarity", value / 4)
     return value / 4
 
 
@@ -213,6 +215,6 @@ def typing(request):
             seen_texts.add(bookmark.query)
 
     sorted_dict = sorted(result, key=lambda x: x["value"], reverse=True)
-    print("sorted_dict", sorted_dict, "\n")
+    # print("sorted_dict", sorted_dict, "\n")
 
     return sorted_dict[:5]
