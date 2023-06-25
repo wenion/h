@@ -51,18 +51,18 @@ def query(request):
                 meta = result_item["metadata"]
                 if "title" in meta and "url" in meta:
                     prefix = "/home/ubuntu/KMASS-monash/DSI/Neural-Corpus-Indexer-NCI-main/Data_KMASS/all_data"
-                    url = meta["url"]
+                    origin_url = meta["url"]
                     # special address
                     # uploaded pdf files and system pdf files will not provide url
                     # we need to complete for them
-                    if "http://" not in url or "https://" not in url:
-                        if prefix in url:
+                    if "http://" not in origin_url and "https://" not in origin_url:
+                        if prefix in origin_url:
                             # user upload pdf
-                            relpath = os.path.join("static", os.path.relpath(url, prefix))
+                            relpath = os.path.join("static", os.path.relpath(origin_url, prefix))
                             meta["url"] = urljoin(request.registry.settings.get("user_root_url"), relpath)
                         else:
                             # system pdf file
-                            relpath = os.path.join("static", url)
+                            relpath = os.path.join("static", origin_url)
                             meta["url"] = urljoin("https://colam.kmass.cloud.edu.au", relpath)
 
                     # find out the response result if it was existing
