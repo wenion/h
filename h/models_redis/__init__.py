@@ -1,3 +1,4 @@
+import datetime
 import openai
 
 from redis_om import Migrator
@@ -155,6 +156,31 @@ def get_highlights_from_openai(query, page_content):
     except Exception as e:
         return {"error" : repr(e)}
     return {"succ": response_message}
+
+
+def create_user_event(event_type, tag_name, text_content, base_url, userid):
+    return {
+        "event_type": event_type,
+        "timestamp": int(datetime.datetime.now().timestamp() * 1000),
+        "tag_name": tag_name,
+        "text_content": text_content,
+        "base_url": base_url,
+        "userid": userid
+    }
+
+
+def save_in_redis(event):
+    is_valid = UserEvent.validate(event)
+    if is_valid:
+        try:
+            user_event = UserEvent(**event)
+            user_event.save()
+        except Exception as e:
+            return {"error": repr(e)}
+        else:
+            return {"succ": str(event) + "has been saved"}
+    else:
+        return {"error": str(event)}
 
 
 def includeme(config):

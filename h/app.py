@@ -31,6 +31,7 @@ def create_app(_global_config, **settings):
 
 def includeme(config):
     config.scan("h.subscribers")
+    config.scan("h.accounts_subscribers")
 
     config.add_tween("h.tweens.conditional_http_tween_factory", under=EXCVIEW)
     config.add_tween("h.tweens.rollback_db_session_on_exception_factory", under=EXCVIEW)

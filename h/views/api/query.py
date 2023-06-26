@@ -14,6 +14,7 @@ particular, requests to the CRUD API endpoints are protected by the Pyramid
 authorization system. You can find the mapping between annotation "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
+import datetime
 import os
 import requests
 import distance
@@ -22,7 +23,18 @@ from urllib.parse import urljoin
 
 from h.security import Permission
 from h.views.api.config import api_config
-from h.models_redis import Result, Bookmark, UserRole
+from h.models_redis import Result, Bookmark, UserRole, UserEvent, create_user_event, save_in_redis
+
+
+def create_user_event(event_type, tag_name, text_content, base_url, userid):
+    return {
+        "event_type": event_type,
+        "timestamp": int(datetime.datetime.now().timestamp() * 1000),
+        "tag_name": tag_name,
+        "text_content": text_content,
+        "base_url": base_url,
+        "userid": userid
+    }
 
 
 @api_config(
@@ -33,13 +45,21 @@ from h.models_redis import Result, Bookmark, UserRole
 )
 def query(request):
     user_role = request.user_role
+    userid = "unknown user"
+    if user_role:
+        userid = user_role.userid
+
     query = request.GET.get("q")
     url = urljoin(request.registry.settings.get("query_url"), "query")
 
     params = {
         'q': query
     }
+    query_request = create_user_event("server-record", "QUERY REQUEST", params, request.url, userid)
+    save_in_redis(query_request)
     response = requests.get(url, params=params)
+    query_response = create_user_event("server-record", "QUERY RESPONSE", params, request.url, userid)
+    save_in_redis(query_response)
 
     if response.status_code == 200:
         json_data = response.json()
