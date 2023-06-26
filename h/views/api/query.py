@@ -55,10 +55,10 @@ def query(request):
     params = {
         'q': query
     }
-    query_request = create_user_event("server-record", "QUERY REQUEST", params, request.url, userid)
+    query_request = create_user_event("server-record", "QUERY REQUEST", query, request.url, userid)
     save_in_redis(query_request)
     response = requests.get(url, params=params)
-    query_response = create_user_event("server-record", "QUERY RESPONSE", params, request.url, userid)
+    query_response = create_user_event("server-record", "QUERY RESPONSE", query, request.url, userid)
     save_in_redis(query_response)
 
     if response.status_code == 200:
