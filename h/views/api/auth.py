@@ -12,6 +12,7 @@ from h.services.oauth import DEFAULT_SCOPES
 from h.util.datetime import utc_iso8601
 from h.views.api.config import api_config
 from h.views.api.exceptions import OAuthAuthorizeError, OAuthTokenError
+from h.accounts.events import AuthLoginEvent
 
 log = logging.getLogger(__name__)
 
@@ -116,6 +117,7 @@ class OAuthAuthorizeController:
         .. _draft-sakimura-oauth: https://tools.ietf.org/html/draft-sakimura-oauth-wmrm-00
         """
         found = self._authorized_response()
+        self.request.registry.notify(AuthLoginEvent(self.request))
         return self._render_web_message_response(found.location)
 
     def _authorize(self):
