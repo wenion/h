@@ -85,15 +85,23 @@ def upload(request):
         if not name.endswith(".html"):
             name = name + ".html"
         try:
+            upload_request = create_user_event("server-record", "UPLOAD REQUEST", name, url, userid)
+            save_in_redis(upload_request)
             filepath = os.path.join(root_dir, name)
             if os.path.exists(filepath):
+                upload_response = create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + " already exists", url, userid)
+                save_in_redis(upload_response)
                 return {"error": name + " already exists"}
             with open(filepath, "wb") as output_file:
                 shutil.copyfileobj(input_file, output_file)
         except Exception as e:
+            upload_response = create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + "error:" + repr(e), url, userid)
+            save_in_redis(upload_response)
             return {"error": repr(e)}
 
         relavtive_path = os.path.relpath(filepath, settings.get("user_root"))
+        upload_response = create_user_event("server-record", "UPLOAD RESPONSE SUCC", name, url, userid)
+        save_in_redis(upload_response)
         return {"succ": {
             "depth": 0,
             "id": root_dir,
@@ -118,11 +126,15 @@ def upload(request):
 
     public_file_path = os.path.join(public_pdf_dir, name)
     try:
+        upload_request = create_user_event("server-record", "UPLOAD REQUEST", name, url, userid)
+        save_in_redis(upload_request)
         # check the user directory
         if not os.path.exists(parent_path):
             os.mkdir(parent_path)
 
         if os.path.exists(file_path):
+            upload_response = create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + " already exists", url, userid)
+            save_in_redis(upload_response)
             return {"error": name + " already exists"}
 
         with open(file_path, "wb") as output_file:
@@ -131,6 +143,8 @@ def upload(request):
             with open(public_file_path, "wb") as output_file:
                 shutil.copyfileobj(source_file, output_file)
     except Exception as e:
+        upload_response = create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + "error:"+ repr(e), url, userid)
+        save_in_redis(upload_response)
         return {"error": repr(e)}
 
     # transfer to TA B
@@ -138,6 +152,9 @@ def upload(request):
     files = {"myFile": (name, local_file)}
     url = urljoin(request.registry.settings.get("query_url"), "upload")
     data = {"url": os.path.join(settings.get("user_root_url"), "static", relavtive_path)}
+
+    upload_response = create_user_event("server-record", "UPLOAD RESPONSE SUCC", name, url, userid)
+    save_in_redis(upload_response)
 
     succ_response = {"succ": {
         "depth": depth,
@@ -205,7 +222,7 @@ def upload(request):
     description="Delete files from the cloud",
 )
 def delete(request):
-    username = split_user(request.authenticated_userid)["username"]
+    userid = request.authenticated_userid
     settings = request.registry.settings
 
     file_path = request.GET.get('file')
@@ -215,6 +232,8 @@ def delete(request):
     public_file_path = os.path.join(public_pdf_dir, filename)
 
     try:
+        delete_request = create_user_event("server-record", "DELETE", filename, request.url, userid)
+        save_in_redis(delete_request)
         print("file_path", file_path)
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -224,24 +243,24 @@ def delete(request):
     except Exception as e:
         return {"error": repr(e)}
 
-    try:
-        url = urljoin(request.registry.settings.get("query_url"), "delete")
-        data = {"filename": filename, "filetype": extension}
-        response = requests.post(url, data=data)
-    except Exception as e:
-        return {"error": repr(e)}
-    else:
-        if response.status_code != 200:
-            return {"error": "TA B proxy error"}
+    # try:
+    #     url = urljoin(request.registry.settings.get("query_url"), "delete")
+    #     data = {"filename": filename, "filetype": extension}
+    #     response = requests.post(url, data=data)
+    # except Exception as e:
+    #     return {"error": repr(e)}
+    # else:
+    #     if response.status_code != 200:
+    #         return {"error": "TA B proxy error"}
 
-    try:
-        result = response.json()
-    except Exception as e:
-        return {"error": repr(e)}
-    else:
-        # check the ingesting is succ?
-        if "error" in result:
-            return result
+    # try:
+    #     result = response.json()
+    # except Exception as e:
+    #     return {"error": repr(e)}
+    # else:
+    #     # check the ingesting is succ?
+    #     if "error" in result:
+    #         return result
 
     return {'succ': {
         "filepath": file_path,
