@@ -112,6 +112,9 @@ def query(request):
                     meta["title"] = "The title is missing."
                 elif "title" in meta and "url" not in meta:
                     meta["title"] = "The URL is missing."
+
+                if "repository" in meta:
+                    meta["repository"] = meta["repository"].split("-")[0]
                 rcount += 1
             count += 1
 
