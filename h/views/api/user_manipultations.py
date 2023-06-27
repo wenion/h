@@ -386,6 +386,7 @@ def event(request):
 
     if is_valid:
         user_event = UserEvent(**event)
+        print("api event", event)
         user_event.save()
         return {
             "succ": "event has been saved",

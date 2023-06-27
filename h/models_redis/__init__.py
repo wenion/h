@@ -174,6 +174,7 @@ def save_in_redis(event):
     if is_valid:
         try:
             user_event = UserEvent(**event)
+            print("event", event)
             user_event.save()
         except Exception as e:
             return {"error": repr(e)}
