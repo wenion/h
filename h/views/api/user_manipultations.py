@@ -27,7 +27,8 @@ from urllib.parse import urljoin, urlparse, unquote
 from h.exceptions import InvalidUserId
 from h.security import Permission
 from h.views.api.config import api_config
-from h.models_redis import UserEvent, Rating, get_highlights_from_openai
+from h.models_redis import UserEvent, Rating
+from h.models_redis import get_highlights_from_openai, create_user_event, save_in_redis
 
 def split_user(userid):
     """
@@ -57,7 +58,8 @@ def upload(request):
     # is public file or not?
     # need to be ingested or not?
     # source: google? repository? html?
-    username = split_user(request.authenticated_userid)["username"]
+    userid = request.authenticated_userid
+    username = split_user(userid)["username"]
     settings = request.registry.settings
 
     if request.POST["file-upload"] is None:
@@ -147,24 +149,48 @@ def upload(request):
     }}
 
     try:
+        # start ingest
+        ingest_request = create_user_event("server-record", "INGEST REQUEST", name, url, userid)
+        save_in_redis(ingest_request)
         response = requests.post(url, files=files, data=data)
         # result = response.json()
     except Exception as e:
+        ingest_response = create_user_event("server-record", "INGEST RESPONSE FAILED", name +" error:"+ repr(e), url, userid)
+        save_in_redis(ingest_response)
         return {"error": repr(e)}
     else:
         if response.status_code != 200:
+            ingest_response = create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:TA B proxy error", url, userid)
+            save_in_redis(ingest_response)
             return {"error": "TA B proxy error"}
     try:
         result = response.json()
     except Exception as e:
+        ingest_response = create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + repr(e), url, userid)
+        save_in_redis(ingest_response)
         return {"error": repr(e)}
     else:
         # check the ingesting is succ?
-        if "error" in result:
-            if "[the ingestion failed]" in result["error"]:
-                succ_response["tab"] = result["error"]
-            else:
-                return result
+        # if "error" in result:
+        #     if "[the ingestion failed]" in result["error"]:
+        #         succ_response["tab"] = result["error"]
+        #     else:
+        #         return result
+        if result["status"] == 404:
+            ingest_response = create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + result["message"], url, userid)
+            save_in_redis(ingest_response)
+            return {"error": result["message"]}
+        elif result["status"] == 303:
+            ingest_response = create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:303 " + result["message"], url, userid)
+            save_in_redis(ingest_response)
+            pass
+        elif result["status"] == 304:
+            ingest_response = create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:304 " + result["message"], url, userid)
+            save_in_redis(ingest_response)
+        elif result["status"] == 200:
+            ingest_response = create_user_event("server-record", "INGEST RESPONSE SUCC", name, url, userid)
+            save_in_redis(ingest_response)
+
 
     local_file.close()
     return succ_response
