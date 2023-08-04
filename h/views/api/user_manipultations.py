@@ -421,7 +421,8 @@ def pull_recommendation(request):
     }
 
     # from redis
-    key_pattern = "h:Recommendation:" + username + ":" + url
+    # key_pattern = "h:Recommendation:" + username + ":" + url
+    key_pattern = "h:Recommendation:" + username + ":*"
     keys = get_redis_connection().keys(key_pattern)
 
     if len(keys) > 0:
