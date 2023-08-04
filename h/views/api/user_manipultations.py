@@ -111,10 +111,39 @@ def upload(request):
             "type": "file"
         }}
 
+    if filetype == "google":
+        name = meta["name"]
+        filepath = os.path.join(root_dir, name)
+        relavtive_path = os.path.relpath(filepath, settings.get("user_root"))
+        print("google filepath", filepath)
+        if os.path.exists(filepath):
+            return {"error": name + " already exists"}
+        try:
+            with open(filepath, "wb") as output_file:
+                shutil.copyfileobj(input_file, output_file)
+        except Exception as e:
+            return {"error": repr(e)}
+        else:
+            return {"succ": {
+                "depth": 0,
+                "id": root_dir,
+                "link": os.path.join(settings.get("user_root_url"), "static", relavtive_path),
+                "name": name,
+                "path": filepath,
+                "type": "file"
+            }}
+
     parent_path = meta["id"]
     file_path = meta["path"]
     depth = int(meta["depth"])
     name = meta["name"]
+    if file_path == "" or name == "":
+        upload_request = create_user_event("server-record", "UPLOAD FAILED", name, request.url, userid)
+        save_in_redis(upload_request)
+        return {
+            "error": str(meta)
+        }
+
     relavtive_path = os.path.relpath(file_path, settings.get("user_root"))
     print("filepath", file_path)
 
