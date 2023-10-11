@@ -77,6 +77,9 @@ def includeme(config):
 
     _configure_csp(config)
 
+    # Third-party
+    config.include("h.slack")
+
     # Core site modules
     config.include("h.assets")
     config.include("h.db")
