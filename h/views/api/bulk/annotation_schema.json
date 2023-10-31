@@ -11,43 +11,32 @@
                 "audience": {
                     "username": ["3a022b6c146dfd9df4ea8662178eac"]
                 },
-                "updated": {
+                "created": {
                     "gt": "2018-11-13T20:20:39+00:00",
                     "lte": "2018-11-13T20:20:39+00:00"
                 }
-            },
-            "fields": ["author.username", "group.authority_provided_id"]
+            }
         }
     ],
 
     "properties": {
-        "fields": {"$ref": "#/$defs/fields"},
         "filter": {"$ref": "#/$defs/filter"}
     },
-    "required": ["filter", "fields"],
-    "additionalProperties": false,
+    "required": ["filter"],
+    "additionalProperties": true,
 
     "$defs": {
-        "fields": {
-            "title": "Fields",
-            "description": "A list of fields to include in the output",
-
-            "type": "array",
-            "items": {"type": "string"},
-            "enum": [["author.username", "group.authority_provided_id"]]
-        },
-
         "filter": {
             "title": "Filter query",
-            "description": "The fields to search for the annotations by",
+            "description": "The filters to search for the annotations by",
 
             "type": "object",
             "properties": {
                 "limit": {"type": "integer", "minimum": 0, "maximum": 1000000},
                 "audience": {"$ref": "#/$defs/userFilter"},
-                "updated": {"$ref": "#/$defs/dateFilter"}
+                "created": {"$ref": "#/$defs/dateFilter"}
             },
-            "required": ["limit", "audience"],
+            "required": ["limit", "audience", "created"],
             "additionalProperties": false
         },
 

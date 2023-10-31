@@ -6,6 +6,7 @@ import click.testing
 import deform
 import pytest
 import sqlalchemy
+from filelock import FileLock
 from pyramid import testing
 from pyramid.request import apply_request_extensions
 from sqlalchemy.orm import sessionmaker
@@ -46,19 +47,6 @@ class DummyFeature:
         return self.flags
 
 
-class DummySession:
-    def __init__(self):
-        self.added = []
-        self.deleted = []
-        self.flushed = False
-
-    def add(self, obj):
-        self.added.append(obj)
-
-    def flush(self):
-        self.flushed = True
-
-
 # A fake version of colander.Invalid
 class FakeInvalid:
     def __init__(self, errors):
@@ -83,10 +71,23 @@ def cli():
 
 
 @pytest.fixture(scope="session")
-def db_engine():
+def db_engine(tmp_path_factory):
     """Set up the database connection and create tables."""
     engine = sqlalchemy.create_engine(TEST_DATABASE_URL)
-    db.init(engine, should_create=True, should_drop=True, authority=TEST_AUTHORITY)
+
+    shared_tmpdir = tmp_path_factory.getbasetemp().parent
+    done_file = shared_tmpdir / "db_initialized.done"
+    lock_file = shared_tmpdir / "db_initialized.lock"
+
+    with FileLock(str(lock_file)):
+        if done_file.is_file():
+            pass
+        else:
+            db.init(
+                engine, should_create=True, should_drop=True, authority=TEST_AUTHORITY
+            )
+            done_file.touch()
+
     return engine
 
 
@@ -143,11 +144,6 @@ def factories(db_session):
 @pytest.fixture
 def fake_feature():
     return DummyFeature()
-
-
-@pytest.fixture
-def fake_db_session():
-    return DummySession()
 
 
 @pytest.fixture

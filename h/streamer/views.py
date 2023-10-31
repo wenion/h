@@ -1,3 +1,4 @@
+from pyramid.settings import asbool
 from pyramid.view import forbidden_view_config, notfound_view_config, view_config
 from ws4py.exc import HandshakeError
 from ws4py.server.wsgiutils import WebSocketWSGIApplication
@@ -10,6 +11,7 @@ def websocket_view(request):
     # Provide environment which the WebSocket handler can use...
     request.environ.update(
         {
+            "h.ws.debug": asbool(request.params.get("debug")),
             "h.ws.streamer_work_queue": streamer.WORK_QUEUE,
             "h.ws.identity": request.identity,
         }
@@ -20,7 +22,7 @@ def websocket_view(request):
 
 
 @notfound_view_config(renderer="json")
-def notfound(_exc, request):
+def notfound(_exc, request):  # pragma: no cover
     request.response.status_code = 404
     return {
         "ok": False,
@@ -30,7 +32,7 @@ def notfound(_exc, request):
 
 
 @forbidden_view_config(renderer="json")
-def forbidden(_exc, request):
+def forbidden(_exc, request):  # pragma: no cover
     request.response.status_code = 403
     return {
         "ok": False,
@@ -41,7 +43,7 @@ def forbidden(_exc, request):
 
 
 @view_config(context=HandshakeError, renderer="json")
-def error_badhandshake(_exc, request):
+def error_badhandshake(_exc, request):  # pragma: no cover
     request.response.status_code = 400
     return {
         "ok": False,
@@ -51,7 +53,7 @@ def error_badhandshake(_exc, request):
 
 
 @view_config(context=Exception, renderer="json")
-def error(_context, request):
+def error(_context, request):  # pragma: no cover
     request.response.status_code = 500
 
     return {

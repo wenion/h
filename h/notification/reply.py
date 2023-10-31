@@ -1,9 +1,9 @@
 import logging
 from collections import namedtuple
 
-from h import storage
 from h.models import Subscriptions
 from h.services import SubscriptionService
+from h.services.annotation_read import AnnotationReadService
 
 log = logging.getLogger(__name__)
 
@@ -55,14 +55,15 @@ def get_notification(
 
     # If the annotation doesn't have a parent, or we can't find its parent,
     # then we can't send a notification email.
-    parent_id = annotation.parent_id
-    if parent_id is None:
+    if annotation.parent_id is None:
         return None
 
     # Now we know we're dealing with a reply
     reply = annotation
 
-    parent = storage.fetch_annotation(request.db, parent_id)
+    parent = request.find_service(AnnotationReadService).get_annotation_by_id(
+        annotation.parent_id
+    )
     if parent is None:
         return None
 
@@ -97,7 +98,7 @@ def get_notification(
     # the reply, and dealing with the possibility that we have no document
     # metadata.
     if reply.document is None:
-        return None
+        return None  # pragma: no cover
 
     # Bail if there is no active 'reply' subscription for the user being
     # replied to.
@@ -111,5 +112,5 @@ def get_notification(
     return Notification(reply, reply_user, parent, parent_user, reply.document)
 
 
-def includeme(config):
+def includeme(config):  # pragma: no cover
     config.scan(__name__)

@@ -15,11 +15,10 @@ from h.models.user import (
 )
 from h.schemas import validators
 from h.schemas.base import CSRFSchema
+from h.schemas.forms.accounts.util import PASSWORD_MIN_LENGTH
 
 _ = i18n.TranslationString
 log = logging.getLogger(__name__)
-
-PASSWORD_MIN_LENGTH = 2  # FIXME: this is ridiculous
 
 
 @lru_cache(maxsize=None)
@@ -30,7 +29,7 @@ def get_blacklist():
     try:  # pylint: disable=too-many-try-statements
         with codecs.open("h/accounts/blacklist", encoding="utf-8") as handle:
             blacklist = handle.readlines()
-    except (IOError, ValueError):
+    except (IOError, ValueError):  # pragma: no cover
         log.exception("unable to load blacklist")
         blacklist = []
     return set(line.strip().lower() for line in blacklist)
@@ -49,7 +48,7 @@ def unique_username(node, value):
     """Colander validator that ensures the username does not exist."""
     request = node.bindings["request"]
     user = models.User.get_by_username(request.db, value, request.default_authority)
-    if user:
+    if user:  # pragma: no cover
         msg = _("This username is already taken.")
         raise colander.Invalid(node, msg)
 
@@ -210,7 +209,7 @@ class PasswordChangeSchema(CSRFSchema):
         hide_until_form_active=True,
     )
 
-    def validator(self, node, value):
+    def validator(self, node, value):  # pragma: no cover
         super().validator(node, value)
         exc = colander.Invalid(node)
         request = node.bindings["request"]
@@ -236,5 +235,5 @@ class NotificationsSchema(CSRFSchema):
     )
 
 
-def includeme(_config):
+def includeme(_config):  # pragma: no cover
     pass

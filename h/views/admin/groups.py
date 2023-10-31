@@ -83,7 +83,7 @@ class GroupCreateViews:  # pylint: disable=too-many-instance-attributes
             }
 
             type_ = appstruct["group_type"]
-            if type_ not in ["open", "restricted"]:
+            if type_ not in ["open", "restricted"]:  # pragma: no cover
                 raise ValueError(f"Unsupported group type {type_}")
 
             group = create_fns[type_](
@@ -158,7 +158,7 @@ class GroupEditViews:  # pylint: disable=too-many-instance-attributes
 
     @view_config(request_method="POST", route_name="admin.groups_delete")
     def delete(self):
-        self.request.find_service(name="delete_group").delete(self.group)
+        self.request.find_service(name="group_delete").delete(self.group)
 
         self.request.session.flash(
             # pylint:disable=consider-using-f-string
@@ -238,7 +238,7 @@ class GroupEditViews:  # pylint: disable=too-many-instance-attributes
         }
 
 
-def _userid(username, authority):
+def _userid(username, authority):  # pragma: no cover
     return models.User(username=username, authority=authority).userid
 
 

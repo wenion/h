@@ -1,12 +1,13 @@
 # Stage 1: Build static frontend assets.
-FROM node:19-alpine as build
+FROM node:21.1-alpine as build
 
 ENV NODE_ENV production
 
 # Install dependencies.
 WORKDIR /tmp/frontend-build
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
+COPY package.json .yarnrc.yml yarn.lock ./
+COPY .yarn ./.yarn
+RUN yarn install --immutable
 
 # Build h js/css.
 COPY .babelrc gulpfile.mjs rollup.config.mjs ./

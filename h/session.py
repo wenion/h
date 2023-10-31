@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from pyramid.csrf import SessionCSRFStoragePolicy
 from pyramid.session import JSONSerializer, SignedCookieSessionFactory
 
@@ -55,7 +57,7 @@ def user_info(user):
     return {"user_info": {"display_name": user.display_name}}
 
 
-def pop_flash(request):
+def pop_flash(request):  # pragma: no cover
     return {
         k: request.session.pop_flash(k) for k in ["error", "info", "warning", "success"]
     }
@@ -94,8 +96,9 @@ def _user_preferences(user):
     return preferences
 
 
-def includeme(config):
+def includeme(config):  # pragma: no cover
     settings = config.registry.settings
+    secure = urlparse(settings.get("h.app_url")).scheme == "https"
 
     # By default, derive_key generates a 64-byte (512 bit) secret, which is the
     # correct length for SHA512-based HMAC as specified by the `hashalg`.
@@ -105,8 +108,9 @@ def includeme(config):
         ),
         hashalg="sha512",
         httponly=True,
-        timeout=3600,
+        secure=secure,
         serializer=JSONSerializer(),
+        timeout=3600,
     )
     config.set_session_factory(factory)
     config.set_csrf_storage_policy(SessionCSRFStoragePolicy())

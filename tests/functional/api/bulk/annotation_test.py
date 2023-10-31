@@ -25,12 +25,15 @@ class TestBulkAnnotation:
             authority_provided_id="1234567890",
             members=[user],
         )
-        factories.Annotation(
-            userid=user.userid,
+        annotation_slim = factories.AnnotationSlim(
+            user=user,
             group=group,
             shared=True,
             deleted=False,
-            updated="2018-11-13T20:20:39",
+            created="2018-11-13T20:20:39",
+        )
+        factories.AnnotationMetadata(
+            annotation_slim=annotation_slim, data={"some": "value"}
         )
 
         response = make_request(
@@ -38,7 +41,7 @@ class TestBulkAnnotation:
                 "filter": {
                     "limit": 20,
                     "audience": {"username": [user.username]},
-                    "updated": {
+                    "created": {
                         "gt": "2018-11-12T20:20:39+00:00",
                         "lte": "2018-11-13T20:20:39+00:00",
                     },
@@ -60,6 +63,7 @@ class TestBulkAnnotation:
             {
                 "group": {"authority_provided_id": group.authority_provided_id},
                 "author": {"username": user.username},
+                "metadata": {"some": "value"},
             }
         ]
 

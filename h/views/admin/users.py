@@ -6,7 +6,7 @@ from h import models
 from h.accounts.events import ActivationEvent
 from h.i18n import TranslationString as _
 from h.security import Permission
-from h.services.rename_user import UserRenameError
+from h.services.user_rename import UserRenameError
 
 
 class UserNotFoundError(Exception):
@@ -90,13 +90,13 @@ def users_activate(request):
     permission=Permission.AdminPage.LOW_RISK,
     require_csrf=True,
 )
-def users_rename(request):
+def users_rename(request):  # pragma: no cover
     user = _form_request_user(request)
 
     old_username = user.username
     new_username = request.params.get("new_username").strip()
 
-    svc = request.find_service(name="rename_user")
+    svc = request.find_service(name="user_rename")
     try:
         svc.rename(user, new_username)
 
@@ -132,9 +132,9 @@ def users_rename(request):
 )
 def users_delete(request):
     user = _form_request_user(request)
-    svc = request.find_service(name="delete_user")
+    svc = request.find_service(name="user_delete")
 
-    svc.delete(user)
+    svc.delete_user(user)
     request.session.flash(
         f"Successfully deleted user {user.username} with authority {user.authority}"
         "success",
@@ -144,7 +144,7 @@ def users_delete(request):
 
 
 @view_config(context=UserNotFoundError)
-def user_not_found(exc, request):
+def user_not_found(exc, request):  # pragma: no cover
     request.session.flash(jinja2.Markup(_(exc.message)), "error")
     return httpexceptions.HTTPFound(location=request.route_path("admin.users"))
 

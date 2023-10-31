@@ -17,8 +17,8 @@ INSERT INTO report.annotations (
     uuid,
     user_id, group_id, document_id, authority_id,
     created, updated,
-    deleted, shared, size,
-    parent_uuids, tags
+    deleted, shared, anchored, size,
+    parent_uuids, tags, imported
 )
 SELECT
     annotation.id as uuid,
@@ -30,9 +30,11 @@ SELECT
     annotation.updated::date,
     deleted,
     shared,
+    JSONB_ARRAY_LENGTH(target_selectors) <> 0 AS anchored,
     LENGTH(text) AS size,
     "references",
-    tags
+    tags,
+    coalesce(extra ->'extra'->>'source' = 'import', false)
 FROM annotation
 JOIN "user" users ON
     users.authority = SPLIT_PART(annotation.userid, '@', 2)
@@ -51,9 +53,14 @@ ON CONFLICT (uuid) DO UPDATE SET
     group_id=EXCLUDED.group_id,
     deleted=EXCLUDED.deleted,
     shared=EXCLUDED.shared,
+    anchored=EXCLUDED.anchored,
     size=EXCLUDED.size,
     parent_uuids=EXCLUDED.parent_uuids,
-    tags=EXCLUDED.tags;
+    tags=EXCLUDED.tags,
+    imported=EXCLUDED.imported;
 
 -- Do we want to analyze every time we insert? This could take a while?
 ANALYSE report.annotations;
+
+-- Create the last added index here in `refresh` to avoid a full recreate
+CREATE INDEX IF NOT EXISTS annotations_imported_idx ON report.annotations (imported);

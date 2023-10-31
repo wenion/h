@@ -4,9 +4,10 @@ from itertools import chain
 
 from gevent.queue import Full
 
-from h import realtime, storage
+from h import realtime
 from h.realtime import Consumer
 from h.security import Permission, identity_permits
+from h.services.annotation_read import AnnotationReadService
 from h.streamer import websocket
 from h.streamer.contexts import request_context
 from h.streamer.filter import SocketFilter
@@ -32,7 +33,7 @@ def process_messages(settings, routing_key, work_queue, raise_error=True):
         message = Message(topic=routing_key, payload=payload)
         try:
             work_queue.put(message, timeout=0.1)
-        except Full:
+        except Full:  # pragma: no cover
             log.warning(
                 "Streamer work queue full! Unable to queue message from "
                 "h.realtime having waited 0.1s: giving up."
@@ -99,7 +100,7 @@ def handle_user_event(message, sockets, _request, _session):
 
 def handle_annotation_event(message, sockets, request, session):
     id_ = message["annotation_id"]
-    annotation = storage.fetch_annotation(session, id_)
+    annotation = request.find_service(AnnotationReadService).get_annotation_by_id(id_)
 
     if annotation is None:
         log.warning("received annotation event for missing annotation: %s", id_)

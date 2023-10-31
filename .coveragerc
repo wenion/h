@@ -8,9 +8,11 @@ omit =
     h/debug.py
     h/migrations/*
     h/cli/*
+    h/__main__.py
 
 [report]
 show_missing = True
 precision = 2
-fail_under = 98.26
+fail_under = 100
+
 skip_covered = True

@@ -1,24 +1,24 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, sentinel
 
 import pytest
 from h_matchers import Any
 
-from h.services.url_migration import URLMigrationService
+from h.services.url_migration import URLMigrationService, service_factory
 
 
 class TestURLMigrationService:
     def test_move_annotations_does_nothing_if_annotation_was_deleted(
-        self, update_annotation, svc
+        self, svc, annotation_write_service
     ):
         svc.move_annotations(
             ["id-that-does-not-exist"],
             "https://somesite.com",
             {"url": "https://example.org"},
         )
-        update_annotation.assert_not_called()
+        annotation_write_service.update_annotation.assert_not_called()
 
     def test_move_annotations_does_nothing_if_url_no_longer_matches(
-        self, db_session, factories, update_annotation, svc
+        self, svc, db_session, factories, annotation_write_service
     ):
         ann = factories.Annotation(target_uri="https://example.com")
         db_session.flush()
@@ -33,10 +33,10 @@ class TestURLMigrationService:
         )
 
         assert ann.target_uri == "https://example.com"
-        update_annotation.assert_not_called()
+        annotation_write_service.update_annotation.assert_not_called()
 
     def test_move_annotations_updates_urls(
-        self, db_session, factories, pyramid_request, update_annotation, svc
+        self, svc, db_session, factories, annotation_write_service
     ):
         anns = [
             factories.Annotation(target_uri="https://example.com"),
@@ -50,18 +50,18 @@ class TestURLMigrationService:
             {"url": "https://example.org"},
         )
 
-        assert update_annotation.call_count == 2
+        assert annotation_write_service.update_annotation.call_count == 2
         for ann in anns[0:2]:
-            update_annotation.assert_any_call(
-                pyramid_request,
-                ann.id,
-                {"target_uri": "https://example.org"},
+            annotation_write_service.update_annotation.assert_any_call(
+                annotation=ann,
+                data={"target_uri": "https://example.org"},
                 update_timestamp=False,
                 reindex_tag="URLMigrationService.move_annotations",
+                enforce_write_permission=False,
             )
 
     def test_move_annotations_updates_selectors(
-        self, db_session, factories, pyramid_request, update_annotation, svc
+        self, svc, db_session, factories, annotation_write_service
     ):
         ann = factories.Annotation(target_uri="https://example.com")
         ann.target_selectors = [
@@ -84,10 +84,9 @@ class TestURLMigrationService:
             },
         )
 
-        update_annotation.assert_called_once_with(
-            pyramid_request,
-            ann.id,
-            {
+        annotation_write_service.update_annotation.assert_called_once_with(
+            annotation=ann,
+            data={
                 "target_uri": "https://example.org",
                 "target_selectors": [
                     {"type": "TextQuoteSelector", "exact": "foobar"},
@@ -97,16 +96,11 @@ class TestURLMigrationService:
             },
             update_timestamp=False,
             reindex_tag="URLMigrationService.move_annotations",
+            enforce_write_permission=False,
         )
 
     def test_move_annotations_updates_documents(
-        self,
-        db_session,
-        factories,
-        pyramid_request,
-        update_annotation,
-        transform_document,
-        svc,
+        self, svc, db_session, factories, annotation_write_service, transform_document
     ):
         ann = factories.Annotation(target_uri="https://example.com")
         db_session.flush()
@@ -123,25 +117,25 @@ class TestURLMigrationService:
         transform_document.assert_called_with(
             {"title": "The new example.com"}, "https://example.org"
         )
-        update_annotation.assert_called_once_with(
-            pyramid_request,
-            ann.id,
-            {
+        annotation_write_service.update_annotation.assert_called_once_with(
+            annotation=ann,
+            data={
                 "target_uri": "https://example.org",
                 "document": transform_document.return_value,
             },
             update_timestamp=False,
             reindex_tag="URLMigrationService.move_annotations",
+            enforce_write_permission=False,
         )
 
     def test_move_annotations_by_url_moves_matching_annotations(
         self,
+        svc,
         db_session,
         factories,
         pyramid_request,
-        update_annotation,
+        annotation_write_service,
         move_annotations_task,
-        svc,
     ):
         anns = [
             factories.Annotation(target_uri="https://example.com"),
@@ -157,25 +151,27 @@ class TestURLMigrationService:
         )
 
         # First annotation should be moved synchronously.
-        assert update_annotation.call_count == 1
-        update_annotation.assert_called_with(
-            pyramid_request,
-            Any.of([a.id for a in anns]),
-            {"target_uri": "https://example.org"},
+        annotation_write_service.update_annotation.assert_called_once_with(
+            annotation=Any(),
+            data={"target_uri": "https://example.org"},
             update_timestamp=False,
             reindex_tag="URLMigrationService.move_annotations",
+            enforce_write_permission=False,
         )
+        # The first annotation (the one that was moved synchronously).
+        first_annotation = annotation_write_service.update_annotation.call_args[1][
+            "annotation"
+        ]
+        assert first_annotation in anns
         pyramid_request.tm.commit.assert_called_once()
 
-        moved_ann_id = update_annotation.call_args[0][1]
+        # The remaining annotations that match the given URL should be moved in
+        # separate tasks.
         remaining_ann_ids = [
-            a.id
-            for a in anns
-            if a.target_uri == "https://example.com" and a.id != moved_ann_id
+            ann.id
+            for ann in anns
+            if ann != first_annotation and ann.target_uri == "https://example.com"
         ]
-
-        # Remaining matching annotations should be moved in separate tasks.
-        assert move_annotations_task.delay.call_count == 1
         move_annotations_task.delay.assert_called_once_with(
             Any.list.containing(remaining_ann_ids).only(),
             "https://example.com",
@@ -183,7 +179,12 @@ class TestURLMigrationService:
         )
 
     def test_move_annotations_by_url_handles_no_matches(
-        self, db_session, factories, update_annotation, move_annotations_task, svc
+        self,
+        svc,
+        db_session,
+        factories,
+        annotation_write_service,
+        move_annotations_task,
     ):
         # Make sure there are some non-matching annotations in the DB.
         factories.Annotation(target_uri="https://foo.com")
@@ -196,16 +197,12 @@ class TestURLMigrationService:
             {"url": "https://example.org"},
         )
 
-        update_annotation.assert_not_called()
+        annotation_write_service.update_annotation.assert_not_called()
         move_annotations_task.delay.assert_not_called()
 
     @pytest.fixture(autouse=True)
     def transform_document(self, patch):
         return patch("h.services.url_migration.transform_document")
-
-    @pytest.fixture(autouse=True)
-    def update_annotation(self, patch):
-        return patch("h.storage.update_annotation")
 
     @pytest.fixture(autouse=True)
     def move_annotations_task(self, patch):
@@ -217,5 +214,21 @@ class TestURLMigrationService:
         return pyramid_request
 
     @pytest.fixture
-    def svc(self, pyramid_request):
-        return URLMigrationService(pyramid_request)
+    def svc(self, pyramid_request, annotation_write_service):
+        return URLMigrationService(
+            request=pyramid_request, annotation_write_service=annotation_write_service
+        )
+
+
+class TestServiceFactory:
+    def test_it(self, pyramid_request, URLMigrationService, annotation_write_service):
+        svc = service_factory(sentinel.context, pyramid_request)
+
+        URLMigrationService.assert_called_once_with(
+            request=pyramid_request, annotation_write_service=annotation_write_service
+        )
+        assert svc == URLMigrationService.return_value
+
+    @pytest.fixture
+    def URLMigrationService(self, patch):
+        return patch("h.services.url_migration.URLMigrationService")

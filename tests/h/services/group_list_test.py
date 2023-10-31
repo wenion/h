@@ -1,4 +1,5 @@
 from unittest import mock
+from unittest.mock import sentinel
 
 import pytest
 from h_matchers import Any
@@ -214,6 +215,11 @@ class TestScopedGroups:
 
         group_scope_service.fetch_by_scope.assert_called_once_with(document_uri)
 
+    def test_it_returns_empty_list_if_no_document_url(self, svc):
+        results = svc.scoped_groups(sentinel.authority, document_uri=None)
+
+        assert results == []
+
     def test_it_returns_empty_list_if_no_matching_scopes(
         self, svc, default_authority, document_uri, group_scope_service
     ):
@@ -314,11 +320,6 @@ def user(factories):
 @pytest.fixture
 def other_authority_user(factories, other_authority):
     return factories.User(authority=other_authority)
-
-
-@pytest.fixture
-def origin():
-    return "http://foo.com"
 
 
 @pytest.fixture

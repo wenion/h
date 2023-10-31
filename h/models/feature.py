@@ -16,6 +16,8 @@ FEATURES = {
     "pdf_custom_text_layer": "Use custom text layer in PDFs for improved text selection",
     "styled_highlight_clusters": "Style different clusters of highlights in the client",
     "client_user_profile": "Enable client-side user profile and preferences management",
+    "export_annotations": "Allow users to export annotations",
+    "import_annotations": "Allow users to import previously exported annotations",
 }
 
 # Once a feature has been fully deployed, we remove the flag from the codebase.
@@ -49,6 +51,14 @@ class Feature(Base):
 
     # Is the feature enabled for everyone?
     everyone = sa.Column(
+        sa.Boolean,
+        nullable=False,
+        default=False,
+        server_default=sa.sql.expression.false(),
+    )
+
+    # Is the feature enabled for first-party users?
+    first_party = sa.Column(
         sa.Boolean,
         nullable=False,
         default=False,
@@ -103,8 +113,8 @@ class Feature(Base):
         known = set(FEATURES) | set(FEATURES_PENDING_REMOVAL)
         unknown_flags = session.query(cls).filter(sa.not_(cls.name.in_(known)))
         count = unknown_flags.delete(synchronize_session=False)
-        if count > 0:
+        if count > 0:  # pragma: no cover
             log.info("removed %d old/unknown feature flags from database", count)
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return "<Feature {f.name} everyone={f.everyone}>".format(f=self)

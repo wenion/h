@@ -46,6 +46,9 @@ class WebSocket(_WebSocket):
     query = None
     identity = None
 
+    debug = False
+    """Enable debug logging for this connection."""
+
     def __init__(self, sock, protocols=None, extensions=None, environ=None):
         super().__init__(
             sock,
@@ -55,6 +58,7 @@ class WebSocket(_WebSocket):
             heartbeat_freq=30.0,
         )
 
+        self.debug = environ["h.ws.debug"]
         self.identity = environ["h.ws.identity"]
 
         self._work_queue = environ["h.ws.streamer_work_queue"]
@@ -65,26 +69,36 @@ class WebSocket(_WebSocket):
         return instance
 
     def received_message(self, message):
+        if self.debug:
+            log.info("Received message %s", message)
+
         try:
             payload = json.loads(message.data)
         except ValueError:
+            if self.debug:
+                log.warning("Failed to parse message %s", message)
             self.close(reason="invalid message format")
             return
+
         try:
             self._work_queue.put(Message(socket=self, payload=payload), timeout=0.1)
-        except Full:
+        except Full:  # pragma: no cover
             log.warning(
                 "Streamer work queue full! Unable to queue message from "
                 "WebSocket client having waited 0.1s: giving up."
             )
 
     def closed(self, code, reason=None):
+        if self.debug:
+            log.info("Closed connection code=%s reason=%s", code, reason)
         try:
             self.instances.remove(self)
         except KeyError:
             pass
 
     def send_json(self, payload):
+        if self.debug:
+            log.info("Sending message %s (terminated: %s)", payload, self.terminated)
         if not self.terminated:
             self.send(json.dumps(payload))
 
@@ -103,11 +117,14 @@ def handle_message(message, session=None):
     It may also passed a database session which *must* be used for any
     communication with the database.
     """
+    if message.socket.debug:  # pragma: no cover
+        log.info("Handling message %s", message.payload)
+
     payload = message.payload
     type_ = payload.get("type")
 
     # FIXME: This code is here to tolerate old and deprecated message formats.
-    if type_ is None:
+    if type_ is None:  # pragma: no cover
         if "messageType" in payload and payload["messageType"] == "client_id":
             type_ = "client_id"
         if "filter" in payload:

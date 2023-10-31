@@ -16,6 +16,8 @@ Annotation:
     - hidden
     - flagged
   properties:
+    consumer:
+      type: string
     id:
       type: string
     created:
@@ -55,17 +57,125 @@ Annotation:
             description: The target URI for the annotation
           selector:
             type: array
-            description: An array of selectors that refine this annotation's target
+            description: An array of selectors that refine this annotation's target. See [the Web Annotation Data Model W3C Recommendation](https://www.w3.org/TR/annotation-model/#selectors) for details about different selector types and properties.
             items:
-              type: object
-              description: >
-                A selector for refining the annotation target. See
-                [the Web Annotation Data Model W3C Recommendation](https://www.w3.org/TR/annotation-model/#selectors)
-                for details about different selector types and properties.
-              properties:
-                "type":
-                  type: string
-
+              oneOf:
+                - type: object
+                  description: Fragment Selector
+                  required:
+                    - type
+                    - value
+                    - conformsTo
+                  properties:
+                    "type":
+                      type: string
+                    value: string
+                    conformsTo: string
+                - type: object
+                  description: CSS Selector
+                  required:
+                    - type
+                    - value
+                  properties:
+                    "type":
+                      type: string
+                    value: string
+                - type: object
+                  description: XPath Selector
+                  required:
+                    - type
+                    - value
+                  properties:
+                    "type":
+                      type: string
+                    value: string
+                - type: object
+                  description: Text Quote Selector
+                  required:
+                    - type
+                    - exact
+                  properties:
+                    "type":
+                      type: string
+                    exact: string
+                    prefix: string
+                    suffix: string
+                - type: object
+                  description: Text Position Selector
+                  required:
+                    - type
+                    - start
+                    - end
+                  properties:
+                    "type":
+                      type: string
+                    start: number
+                    end: number
+                - type: object
+                  description: Data Position Selector
+                  required:
+                    - type
+                    - start
+                    - end
+                  properties:
+                    "type":
+                      type: string
+                    start: number
+                    end: number
+                - type: object
+                  description: SVG Selector
+                  required:
+                    - type
+                    - value
+                  properties:
+                    "type":
+                      type: string
+                    value: string
+                - type: object
+                  description: Range Selector
+                  required:
+                    - type
+                    - startContainer
+                    - endContainer
+                    - startOffset
+                    - endOffset
+                  properties:
+                    "type":
+                      type: string
+                    startContainer: string
+                    endContainer: string
+                    startOffset: number
+                    endOffset: number
+                - type: object
+                  description: EPUB Content Selector
+                  required:
+                    - type
+                    - url
+                  properties:
+                    "type":
+                      type: string
+                    url: string
+                    cfi: string
+                    title: string
+                - type: object
+                  description: Page Selector
+                  required:
+                    - type
+                    - index
+                  properties:
+                    "type":
+                      type: string
+                    index: number
+                    label: string
+    document:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: array
+          items:
+            type: string
     links:
       type: object
       description: An object containing hypermedia links for this annotation
@@ -84,6 +194,8 @@ Annotation:
       type: object
       properties:
         display_name:
-          type: string
-          description: The annotation creator's display name
-          example: "Felicity Nunsun"
+          oneOf:
+            - type: string
+              description: The annotation creator's display name
+              example: "Felicity Nunsun"
+            - type: null
