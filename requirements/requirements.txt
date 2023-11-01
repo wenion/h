@@ -238,6 +238,7 @@ six==1.16.0
     #   elasticsearch-dsl
     #   python-dateutil
     #   rfc3339-validator
+slack_bolt==1.18.0
 sqlalchemy==1.4.50
     # via
     #   -r requirements/requirements.in
