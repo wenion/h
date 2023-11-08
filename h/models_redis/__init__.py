@@ -1,11 +1,13 @@
 import datetime
 import openai
+import logging
 
 from redis_om import Migrator
 from redis_om import Field, JsonModel, EmbeddedJsonModel
 from pydantic import NonNegativeInt
 from typing import Optional
 
+log = logging.getLogger(__name__)
 
 class UserRole(EmbeddedJsonModel):
     class Meta:
@@ -136,11 +138,15 @@ def check_redis_keys(username, authority):
 
 def attach_sql(config):
     engine = config.registry["sqlalchemy.engine"]
-    result = engine.execute('SELECT username, authority FROM public."user";')
-    rows = result.fetchall()
-    for row in rows:
-        check_redis_keys(row[0], row[1])
-    result.close()
+    try:
+        result = engine.execute('SELECT username, authority FROM public."user";')
+    except Exception as e:
+        log.exception("unable to attach sql")
+    else:
+        rows = result.fetchall()
+        for row in rows:
+            check_redis_keys(row[0], row[1])
+        result.close()
 
 
 def get_highlights_from_openai(query, page_content):
