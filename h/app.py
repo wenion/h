@@ -78,7 +78,7 @@ def includeme(config):  # pragma: no cover
     _configure_csp(config)
 
     # Third-party
-    config.include("h.slack")
+    # config.include("h.slack")
 
     # Core site modules
     config.include("h.assets")
