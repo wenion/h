@@ -23,8 +23,8 @@ from urllib.parse import urljoin
 
 from h.security import Permission
 from h.views.api.config import api_config
-from h.models_redis import Result, Bookmark, UserRole, UserEvent, create_user_event, save_in_redis
-
+from h.models_redis import Result, Bookmark, UserEvent, create_user_event, save_in_redis
+from h.models_redis import get_user_role_by_userid
 
 def create_user_event(event_type, tag_name, text_content, base_url, userid):
     return {
@@ -40,14 +40,14 @@ def create_user_event(event_type, tag_name, text_content, base_url, userid):
 @api_config(
     versions=["v1", "v2"],
     route_name="api.query",
+    request_method="POST",
+    # permission=Permission.Annotation.CREATE,
     link_name="query",
-    description="Querying",
+    description="Query",
 )
 def query(request):
-    user_role = request.user_role
-    userid = "unknown user"
-    if user_role:
-        userid = user_role.userid
+    userid = request.authenticated_userid if request.authenticated_userid else "anonymous"
+    user_role = get_user_role_by_userid(userid)
 
     query = request.GET.get("q")
     url = urljoin(request.registry.settings.get("query_url"), "query")
@@ -136,7 +136,7 @@ def query(request):
     description="Bookmark",
 )
 def bookmark(request):
-    user_role = request.user_role
+    user_role = get_user_role_by_userid(request.authenticated_userid)
 
     # id            : str
     # query         : str
@@ -215,7 +215,8 @@ def get_user_profile_similarity(user_role_1, user_role_2):
     description="Get the typing word and return suggestion",
 )
 def typing(request):
-    user_role = request.user_role
+    userid = request.authenticated_userid if request.authenticated_userid else "anonymous"
+    user_role = get_user_role_by_userid(userid)
     word = request.GET.get('q')
 
     if not word:

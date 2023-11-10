@@ -92,14 +92,48 @@ __all__ = (
     "UserFile",
 )
 
-def get_user_role_by_userid(userid):
+
+def add_user_role(userid, faculty, role, unit, year, experience, expert):
     user_role = UserRole.find(
         UserRole.userid == userid
         ).all()
-    if len(user_role) == 1:
+    if len(user_role):
         return user_role[0]
     else:
-        return None
+        user_role = UserRole(
+            userid=userid,
+            faculty=faculty,
+            teaching_role=role,
+            teaching_unit=unit,
+            joined_year=year,
+            years_of_experience=experience,
+            expert=expert
+        )
+        user_role.save()
+        return user_role
+
+
+def update_user_role(userid, faculty, role, unit, year, experience, expert):
+    user_roles = UserRole.find(
+        UserRole.userid == userid
+        ).all()
+    if len(user_roles):
+        user_role = user_roles[0]
+        user_role.faculty = faculty
+        user_role.teaching_role = role
+        user_role.teaching_unit = unit
+        user_role.joined_year = year
+        user_role.years_of_experience = experience
+        if expert:
+            user_role.expert = expert
+        user_role.save()
+        return True
+    else:
+        return False
+
+
+def get_user_role_by_userid(userid):
+    return add_user_role(userid, "", "", "", 0, 0, 0)
 
 
 def get_user_role(request):
@@ -133,7 +167,7 @@ def check_redis_keys(username, authority):
             "expert": 0,
         }
         user_role = UserRole(**user_role_kwargs)
-        user_role.save()
+        # user_role.save()
 
 
 def attach_sql(config):
@@ -191,8 +225,8 @@ def save_in_redis(event):
 
 
 def includeme(config):
-    config.add_request_method(get_user_role, name="user_role", property=True)
+    # config.add_request_method(get_user_role, name="user_role", property=True)
     Migrator().run()
-    attach_sql(config)
+    # attach_sql(config)
     openai.api_key = config.registry.settings.get("openai_key")
     print("openai", openai.api_key)

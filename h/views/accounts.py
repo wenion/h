@@ -29,7 +29,7 @@ from h.schemas.forms.accounts import (
 from h.services import SubscriptionService
 from h.tasks import mailer
 from h.util.view import json_view
-from h.models_redis import UserRole
+from h.models_redis import get_user_role_by_userid, update_user_role
 
 _ = i18n.TranslationString
 
@@ -534,25 +534,12 @@ class KmassEditProfileController:
     @view_config(request_method="GET")
     def get(self):
         """Render the 'Edit Profile' form."""
-        if not self.request.user_role:
-            user = self.request.user
-            user_role_kwargs = {
-                "userid": user.userid,
-                "faculty": "",
-                "teaching_role": "",
-                "teaching_unit": "",
-                "joined_year": 0,
-                "years_of_experience": 0,
-            }
-            user_role = UserRole(**user_role_kwargs)
-            user_role.save()
-
-        user_role = self.request.user_role
+        user_role = get_user_role_by_userid(self.request.authenticated_userid)
         self.form.set_appstruct(
             {
-                "faculty": user_role.faculty or "",
-                "teaching_role": user_role.teaching_role or "",
-                "teaching_unit": user_role.teaching_unit or "",
+                "faculty": user_role.faculty,
+                "teaching_role": user_role.teaching_role,
+                "teaching_unit": user_role.teaching_unit,
                 "joined_year": user_role.joined_year if user_role.joined_year != 0 else "",
                 "years_of_experience": user_role.years_of_experience if user_role.years_of_experience != 0 else "",
             }
@@ -572,14 +559,14 @@ class KmassEditProfileController:
         return {"form": self.form.render()}
 
     def _update_user(self, appstruct):
-        user_role = self.request.user_role
-        print("user role", user_role)
-        user_role.faculty = appstruct["faculty"]
-        user_role.teaching_role = appstruct["teaching_role"]
-        user_role.teaching_unit = appstruct["teaching_unit"]
-        user_role.joined_year = int(appstruct["joined_year"])
-        user_role.years_of_experience = int(appstruct["years_of_experience"])
-        user_role.save()
+        update_user_role(
+            self.request.authenticated_userid,
+            appstruct["faculty"],
+            appstruct["teaching_role"],
+            appstruct["teaching_unit"],
+            int(appstruct["joined_year"]),
+            int(appstruct["years_of_experience"]),
+        )
 
 
 @view_defaults(
