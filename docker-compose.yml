@@ -19,6 +19,8 @@ services:
         start_period: 1m
     environment:
       - discovery.type=single-node
+    networks:
+      - dbs
   rabbit:
     image: rabbitmq:3.6-management-alpine
     ports:
