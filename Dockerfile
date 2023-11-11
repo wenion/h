@@ -64,6 +64,10 @@ ENV PATH /var/lib/hypothesis/bin:$PATH
 ENV PYTHONIOENCODING utf_8
 ENV PYTHONPATH /var/lib/hypothesis:$PYTHONPATH
 
+# Set bind-mounted volume
+RUN mkdir -p /var/lib/hypothesis/data
+RUN chown -R hypothesis:hypothesis /var/lib/hypothesis/data
+
 # Start the web server by default
 USER hypothesis
 CMD ["supervisord", "-c" , "conf/supervisord.conf"]
