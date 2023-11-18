@@ -1,4 +1,5 @@
-import datetime
+from datetime import datetime, timezone
+import pytz
 import openai
 import logging
 
@@ -52,6 +53,13 @@ class UserEvent(JsonModel):
     text_content: str = Field(index=True)
     base_url: str = Field(index=True)
     userid: str = Field(index=True)
+    ip_address: Optional[str]
+    interaction_context: Optional[str]
+    event_source: Optional[str]
+    system_time: Optional[datetime]
+    x_path: Optional[str]
+    doc_id: Optional[str]
+    region: Optional[str]
 
 
 class Rating(JsonModel):
@@ -201,7 +209,7 @@ def get_highlights_from_openai(query, page_content):
 def create_user_event(event_type, tag_name, text_content, base_url, userid):
     return {
         "event_type": event_type,
-        "timestamp": int(datetime.datetime.now().timestamp() * 1000),
+        "timestamp": int(datetime.now().timestamp() * 1000),
         "tag_name": tag_name,
         "text_content": text_content,
         "base_url": base_url,
