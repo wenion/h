@@ -532,3 +532,30 @@ def slack(request):
     # result = app.client.conversations_list()
     # print("result", result)
     pass
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.user_event",
+    request_method="GET",
+    # permission=Permission.Annotation.CREATE,
+    link_name="user_event",
+    description="Get User Event",
+)
+def user_event(request):
+
+    print("type of ", type(request.params))
+    print()
+    kwargs = request.params.dict_of_lists()
+
+    if 'userid' in kwargs and 'index' in kwargs:
+        pagesize = request.params['pagesize'] if 'pagesize' in kwargs else 25
+        sortby = request.params['sortby'] if 'sortby' in kwargs else 'decs'
+
+        userid = request.params['userid']
+        index = request.params['index']
+
+        return {"succ": "user event", "user_id": userid, "index": index, "pagesize": pagesize, "sortby": sortby}
+
+    else:
+        return {'failed': "miss params"}

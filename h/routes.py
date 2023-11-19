@@ -27,6 +27,7 @@ def includeme(config):  # pylint: disable=too-many-statements
         factory="h.traversal.UserByNameRoot",
         traverse="/{username}",
     )
+    config.add_route("activity.user_event", "/user-event")
 
     # Admin
     config.add_route("admin.index", "/admin/")
@@ -178,6 +179,7 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route("api.client_url", "/api/client-url")
     config.add_route("api.typing", "/api/typing")
     config.add_route("api.slack", "/api/slack")
+    config.add_route("api.user_event", "/api/user-event")
     config.add_route("api.users", "/api/users", factory="h.traversal.UserRoot")
     config.add_route(
         "api.user_read",
