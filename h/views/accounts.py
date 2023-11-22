@@ -572,7 +572,7 @@ class KmassEditProfileController:
 
 @view_defaults(
     route_name="account_notifications",
-    renderer="h:templates/accounts/notifications.html.jinja2",
+    renderer="h:templates/accounts/kmass-notifications.html.jinja2",
     is_authenticated=True,
 )
 class NotificationsController:
@@ -629,7 +629,7 @@ class NotificationsController:
 
 @view_defaults(
     route_name="account_developer",
-    renderer="h:templates/accounts/developer.html.jinja2",
+    renderer="h:templates/accounts/kmass-developer.html.jinja2",
     is_authenticated=True,
 )
 class DeveloperController:

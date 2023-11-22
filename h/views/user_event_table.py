@@ -18,12 +18,15 @@ from h.security import Permission
 from h.util.datetime import utc_us_style_date
 from h.util.user import split_user
 from h.views.groups import check_slug
+from h.models_redis import UserEvent, fetch_user_event
 
 PAGE_SIZE = 25
 
 
 @view_defaults(
-    route_name="activity.user_event", renderer="h:templates/activity/kmass-user-event.html.jinja2"
+    route_name="account_user_event",
+    renderer="h:templates/accounts/kmass-user-event.html.jinja2",
+    is_authenticated=True,
 )
 class UserEventSearchController:
     """View callables for the "activity.search" route."""
@@ -47,7 +50,23 @@ class UserEventSearchController:
         except ValueError:
             page_size = PAGE_SIZE
 
+        # page
+        page = self.request.params.get("page", 1)
+
+        try:
+            page = int(page)
+        except ValueError:
+            page = 1
+
+        # Don't allow negative page numbers.
+        page = max(page, 1)
+
         # Fetch results.
+        limit = page_size
+        offset = (page - 1) * page_size
+        total = len(UserEvent.find().all())
+        table_results = fetch_user_event(offset=offset, limit=limit, sortby="-timestamp")
+        table_head = list(table_results[0].keys())
         results = query.execute(self.request, query_params, page_size=page_size)
 
         groups_suggestions = []
@@ -71,7 +90,10 @@ class UserEventSearchController:
         return {
             "search_results": results,
             "groups_suggestions": groups_suggestions,
-            "page": paginate(self.request, results.total, page_size=page_size),
+            # "page": paginate(self.request, results.total, page_size=page_size),
+            "table_head": table_head,
+            "table_results": table_results,
+            "page": paginate(self.request, total, page_size=page_size),
             "pretty_link": pretty_link,
             "q": self.request.params.get("q", ""),
             "tag_link": tag_link,

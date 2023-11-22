@@ -55,11 +55,64 @@ class UserEvent(JsonModel):
     userid: str = Field(index=True)
     ip_address: Optional[str]
     interaction_context: Optional[str]
-    event_source: Optional[str]
+    event_source: Optional[str] # Navigate Mouse Page Keyboard
     system_time: Optional[datetime]
     x_path: Optional[str]
     doc_id: Optional[str]
-    region: Optional[str]
+    region: Optional[str] = Field(index=True, default="Australia/Sydney")
+
+
+def add_user_event(
+        userid,
+        event_type,
+        timestamp,
+        tag_name,
+        text_content,
+        base_url,
+        ip_address,
+        interaction_context,
+        event_source,
+        x_path,
+        doc_id,
+        region
+        ):
+    user_event = UserEvent(
+        userid=userid,
+        event_type=event_type,
+        timestamp=timestamp,
+        tag_name=tag_name,
+        text_content=text_content,
+        base_url=base_url,
+        ip_address=ip_address,
+        interaction_context=interaction_context,
+        event_source=event_source,
+        x_path=x_path,
+        doc_id=doc_id,
+        system_time=datetime.now().replace(tzinfo=timezone.utc).astimezone(tz=None),
+        region=region,
+    )
+    user_event.save()
+    return user_event
+
+
+def get_user_event(pk):
+    user_event = UserEvent.get(pk)
+    return {
+        'pk': user_event.pk,
+        'userid': user_event.userid,
+        'event_type': user_event.event_type,
+        'timestamp': user_event.timestamp,
+        'tag_name': user_event.tag_name,
+        'text_content': user_event.text_content,
+        'base_url': user_event.base_url,
+        'ip_address': user_event.ip_address,
+        'interaction_context': user_event.interaction_context,
+        'event_source': user_event.event_source,
+        'x_path': user_event.x_path,
+        'doc_id': user_event.doc_id,
+        'system_time': user_event.system_time.astimezone(pytz.timezone("Australia/Sydney")).isoformat() if user_event.system_time else None,
+        'region': user_event.region,
+    }
 
 
 class Rating(JsonModel):
@@ -72,6 +125,15 @@ class Rating(JsonModel):
     timeliness: str = Field(index=True)
     base_url: str = Field(index=True)
     userid: str = Field(index=True)
+
+
+def fetch_user_event(offset, limit, sortby):
+    results = UserEvent.find().copy(offset=offset, limit=limit).sort_by(sortby).execute(exhaust_results=False)
+    table_results=[]
+    for item in results:
+        json_item = get_user_event(item.pk)
+        table_results.append(json_item)
+    return table_results
 
 
 class UserFile(JsonModel):  # repository file's attribute

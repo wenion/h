@@ -16,6 +16,7 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route("account_profile", "/account/profile")
     config.add_route("account_notifications", "/account/settings/notifications")
     config.add_route("account_developer", "/account/developer")
+    config.add_route("account_user_event", "/account/user-event")
     config.add_route("claim_account_legacy", "/claim_account/{token}")
     config.add_route("dismiss_sidebar_tutorial", "/app/dismiss_sidebar_tutorial")
 
@@ -27,7 +28,7 @@ def includeme(config):  # pylint: disable=too-many-statements
         factory="h.traversal.UserByNameRoot",
         traverse="/{username}",
     )
-    config.add_route("activity.user_event", "/user-event")
+    # config.add_route("activity.user_event", "/user-event")
 
     # Admin
     config.add_route("admin.index", "/admin/")
