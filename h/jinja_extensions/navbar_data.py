@@ -56,6 +56,7 @@ def navbar_data(request):
                 "link": request.route_url("account_notifications"),
             },
             {"title": _("Developer"), "link": request.route_url("account_developer")},
+            {"title": _("Events"), "link": request.route_url("account_user_event")},
         ],
         "signout_item": {"title": _("Sign out"), "link": request.route_url("logout")},
         "username": username,
