@@ -528,7 +528,7 @@ class KmassEditProfileController:
         self.request = request
         self.schema = KmassEditProfileSchema().bind(request=self.request)
         self.form = request.create_form(
-            self.schema, buttons=(_("Save"),), use_inline_editing=True
+            self.schema, buttons=(_("Save"),), css_class="js-disable-on-submit",
         )
 
     @view_config(request_method="GET")
