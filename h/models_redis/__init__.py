@@ -128,13 +128,15 @@ class Rating(JsonModel):
     userid: str = Field(index=True)
 
 
-def fetch_user_event(offset, limit, sortby):
-    query = UserEvent.find()
+def fetch_user_event(userid, offset, limit, sortby):
+    query = UserEvent.find(
+        UserEvent.userid == userid
+        )
     total = len(query.all())
     # if offset > math.ceil(total / limit):
     #     offset = math.ceil(total / limit)
 
-    results = UserEvent.find().copy(offset=offset, limit=limit).sort_by(sortby).execute(exhaust_results=False)
+    results = query.copy(offset=offset, limit=limit).sort_by(sortby).execute(exhaust_results=False)
 
     table_result=[]
     for item in results:

@@ -125,11 +125,10 @@ class UserEventSearchController:
         # Fetch results.
         limit = page_size
         offset = (page - 1) * page_size
-        total = len(UserEvent.find().all())
-        fetch_result = fetch_user_event(offset=offset, limit=limit, sortby="-"+sortby if order =="desc" else sortby)
+        fetch_result = fetch_user_event(userid=self.request.authenticated_userid, offset=offset, limit=limit, sortby="-"+sortby if order =="desc" else sortby)
         table_results = fetch_result["table_result"]
         total = fetch_result["total"]
-        table_head = list(table_results[0].keys())
+        table_head = list(table_results[0].keys()) if table_results else []
 
         properties = get_user_event_fields()
         values=[]
