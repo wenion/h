@@ -7,6 +7,7 @@ import { CreateGroupFormController } from './controllers/create-group-form-contr
 import { SearchBarController } from './controllers/search-bar-controller';
 import { SearchBucketController } from './controllers/search-bucket-controller';
 import { ShareWidgetController } from './controllers/share-widget-controller';
+import { KmassController } from './controllers/kmass-controller';
 
 const appSettings = settings(document);
 if (appSettings.raven) {
@@ -20,6 +21,7 @@ const controllers = Object.assign(
     '.js-search-bar': SearchBarController,
     '.js-search-bucket': SearchBucketController,
     '.js-share-widget': ShareWidgetController,
+    '.js-kmass': KmassController,
   },
   sharedControllers,
 );

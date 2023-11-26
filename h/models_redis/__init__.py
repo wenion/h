@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import math
 import pytz
 import openai
 import logging
@@ -128,12 +129,27 @@ class Rating(JsonModel):
 
 
 def fetch_user_event(offset, limit, sortby):
+    query = UserEvent.find()
+    total = len(query.all())
+    # if offset > math.ceil(total / limit):
+    #     offset = math.ceil(total / limit)
+
     results = UserEvent.find().copy(offset=offset, limit=limit).sort_by(sortby).execute(exhaust_results=False)
-    table_results=[]
+
+    table_result=[]
     for item in results:
         json_item = get_user_event(item.pk)
-        table_results.append(json_item)
-    return table_results
+        table_result.append(json_item)
+    return {
+        "table_result": table_result,
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        }
+
+
+def get_user_event_fields():
+    return UserEvent.schema()["properties"]
 
 
 class UserFile(JsonModel):  # repository file's attribute

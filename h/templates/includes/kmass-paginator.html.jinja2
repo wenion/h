@@ -1,0 +1,61 @@
+<nav data-ref="paginator">
+  <ul class="pager">
+    {% if page.prev is none %}
+      <li>
+        <span class="pager__item pager__item--begin is-disabled" aria-hidden="true">
+          {{ svg_icon('pagination-left') }}
+        </span>
+      </li>
+    {% else %}
+      <li value="{{ page.prev }}">
+        <a class="pager__item pager__item--begin pager__item--link"
+          href="{{ page.url_for(page.prev) }}"
+          aria-label="{% trans %}Go to previous page{% endtrans %}"
+          value="{{ page.prev }}">
+          {{ svg_icon('pagination-left') }}
+        </a>
+      </li>
+    {% endif %}
+    {% for n in page.numbers %}
+      {% if n == page.cur %}
+        <li>
+          <span class="pager__item is-highlighted"
+            aria-label="Page {{ n }}">
+            {{ n }}
+          </span>
+        </li>
+      {% elif n == '...' %}
+        <li>
+          <span class="pager__item pager__item--more is-disabled">
+            &#133;
+          </span>
+        </li>
+      {% else %}
+        <li value="{{ n }}">
+          <a class="pager__item pager__item--link"
+            href="{{ page.url_for(n) }}"
+            aria-label="Go to page {{ n }}"
+            value="{{ n }}">
+            {{ n }}
+          </a>
+        </li>
+      {% endif %}
+    {% endfor %}
+    {% if page.next is none %}
+      <li>
+        <span class="pager__item pager__item--end is-disabled" aria-hidden="true">
+          {{ svg_icon('pagination-right') }}
+        </span>
+      </li>
+    {% else %}
+      <li value="{{ page.next }}">
+        <a class="pager__item pager__item--end pager__item--link"
+          href="{{ page.url_for(page.next) }}"
+          aria-label="{% trans %}Go to next page{% endtrans %}"
+          value="{{ page.next }}">
+          {{ svg_icon('pagination-right') }}
+        </a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>

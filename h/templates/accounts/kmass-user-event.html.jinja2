@@ -4,59 +4,96 @@
 {% set page_title = 'User Event' %}
 
 {% block page_content %}
-  <div class="search-results" style="margin-top: 25px">
+  <div class="js-kmass">
+    <div class="header">
+      <label> page size
+        <select class="pageSize" name="pageSize" data-ref="pageSizeSelect">
+          {% if query and query.page_size == 10 %}
+            <option value="10" selected>10</option>
+          {% else %}
+            <option value="10">10</option>
+          {% endif %}
+          {% if query.page_size == 25 %}
+            <option value="25" selected>25</option>
+          {% else %}
+            <option value="25">25</option>
+          {% endif %}
+          {% if query.page_size == 50 %}
+            <option value="50" selected>50</option>
+          {% else %}
+            <option value="50">50</option>
+          {% endif %}
+          {% if query.page_size == 100 %}
+            <option value="100" selected>100</option>
+          {% else %}
+            <option value="100">100</option>
+          {% endif %}
+        </select>
+      </label>
 
-    <div class="search-results__total">
-      <label for="pet-select">Page size:</label>
-      <select name="pets" id="pet-select">
-        <option value="10">10</option>
-        <option value="25">25</option>
-        <option value="50">50</option>
-      </select>
-    </div>
-
-    <div class="search-results__total">
-    <label for="pet-select">Sort by Timestamp:</label>
-
-    <select name="pets" id="pet-select">
-      <option value="desc">Desc</option>
-      <option value="asc">Asc</option>
-    </select>
-    </div>
-
-    <table class="search-results__list" style="border: 1px solid #333;">
-      <thead style="color: #fff;background-color: #333;">
-        <tr>
-          {% for field in table_head %}
-          <th>
-            {{ field }}
-          </th>
+      <label> sortby
+        <select class="sortby" name="sortby" data-ref="sortbySelect">
+          {% for field in values %}
+            {% if query and query.sortby == field[0] %}
+              <option value={{ field[0] }} selected>{{ field[1] }}</option>
+            {% else %}
+              <option value={{ field[0] }}>{{ field[1] }}</option>
+            {% endif %}
           {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for table_row in table_results %}
+        </select>
+      </label>
+
+      <label> order
+        <select class="order" name="order" data-ref="orderSelect">
+          {% if query and query.order == "desc" %}
+            <option value="desc" selected>DESC</option>
+          {% else %}
+            <option value="desc">DESC</option>
+          {% endif %}
+          {% if query and query.order == "asc" %}
+            <option value="asc" selected>ASC</option>
+          {% else %}
+            <option value="asc">ASC</option>
+          {% endif %}
+        </select>
+      </label>
+    </div>
+    <div class="search-results" style="margin-top: 25px">
+
+      <table class="search-results__list" style="border: 1px solid #333;">
+        <thead style="color: #fff;background-color: #333;">
           <tr>
-            <td style="border: 1px solid #333;">{{ table_row.pk }}</td>
-            <td style="border: 1px solid #333;">{{ table_row.userid }}</td>
-            <td style="border: 1px solid #333;">{{ table_row.event_type }}</td>
-            <td style="border: 1px solid #333;">{{ table_row.timestamp }}</td>
-            <td style="border: 1px solid #333;">{{ table_row.tag_name }}</td>
-            <td style="border: 1px solid #333;">{{ table_row.text_content }}</td>
-            <td style="border: 1px solid #333;">{{ table_row.base_url }}</td>
-            <td style="border: 1px solid #333;">{{ table_row.ip_address }}</td>
-            <td style="border: 1px solid #333;">{{ table_row.interaction_context }}</td>
-            <td style="border: 1px solid #333;">{{ table_row.event_source }}</td>
-            <td style="border: 1px solid #333;">{{ table_row.x_path }}</td>
-            <td style="border: 1px solid #333;">{{ table_row.doc_id }}</td>
-            <td style="border: 1px solid #333;">{{ table_row.system_time }}</td>
-            <td style="border: 1px solid #333;">{{ table_row.region }}</td>
+            {% for field in table_head %}
+            <th>
+              {{ field }}
+            </th>
+            {% endfor %}
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% if page.max > 1 %}
-      {% include "h:templates/includes/paginator.html.jinja2" %}
-    {% endif %}
+        </thead>
+        <tbody>
+          {% for table_row in table_results %}
+            <tr>
+              <td style="border: 1px solid #333;">{{ table_row.pk }}</td>
+              <td style="border: 1px solid #333;">{{ table_row.userid }}</td>
+              <td style="border: 1px solid #333;">{{ table_row.event_type }}</td>
+              <td style="border: 1px solid #333;">{{ table_row.timestamp }}</td>
+              <td style="border: 1px solid #333;">{{ table_row.tag_name }}</td>
+              <td style="border: 1px solid #333;">{{ table_row.text_content }}</td>
+              <td style="border: 1px solid #333;">{{ table_row.base_url }}</td>
+              <td style="border: 1px solid #333;">{{ table_row.ip_address }}</td>
+              <td style="border: 1px solid #333;">{{ table_row.interaction_context }}</td>
+              <td style="border: 1px solid #333;">{{ table_row.event_source }}</td>
+              <td style="border: 1px solid #333;">{{ table_row.x_path }}</td>
+              <td style="border: 1px solid #333;">{{ table_row.doc_id }}</td>
+              <td style="border: 1px solid #333;">{{ table_row.system_time }}</td>
+              <td style="border: 1px solid #333;">{{ table_row.region }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if page.max > 1 %}
+        {% include "h:templates/includes/kmass-paginator.html.jinja2" %}
+      {% endif %}
+    </div>
   </div>
 {% endblock page_content %}
