@@ -28,7 +28,7 @@ from h.exceptions import InvalidUserId
 from h.security import Permission
 from h.views.api.config import api_config
 from h.models_redis import UserEvent, Rating
-from h.models_redis import get_highlights_from_openai, create_user_event, save_in_redis
+from h.models_redis import get_highlights_from_openai, create_user_event, save_in_redis, add_user_event
 
 def split_user(userid):
     """
@@ -456,20 +456,25 @@ def pull_recommendation(request):
 def event(request):
     event = request.json_body
 
-    # TODO validate request.body
-    is_valid =UserEvent.validate(event)
-
-    if is_valid:
-        user_event = UserEvent(**event)
-        print("api event", event)
-        user_event.save()
-        return {
-            "succ": "event has been saved",
-        }
-    else:
-        return {
-            "error": str(event)
-        }
+    add_user_event(
+        userid=request.authenticated_userid,
+        event_type=event["event_type"],
+        timestamp=event["timestamp"],
+        tag_name=event["tag_name"],
+        text_content=event["text_content"],
+        base_url=event["base_url"],
+        ip_address=request.client_addr,
+        interaction_context="",
+        event_source="",
+        x_path="",
+        offset_x=0.0,
+        offset_y=0.0,
+        doc_id="",
+        region="",
+        )
+    return {
+        "succ": "event has been saved"
+    }
 
 
 @api_config(
