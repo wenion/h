@@ -59,6 +59,8 @@ class UserEvent(JsonModel):
     event_source: Optional[str] # Navigate Mouse Page Keyboard
     system_time: Optional[datetime]
     x_path: Optional[str]
+    offset_x: Optional[float]
+    offset_y: Optional[float]
     doc_id: Optional[str]
     region: Optional[str] = Field(index=True, default="Australia/Sydney")
 
@@ -74,6 +76,8 @@ def add_user_event(
         interaction_context,
         event_source,
         x_path,
+        offset_x,
+        offset_y,
         doc_id,
         region
         ):
@@ -88,6 +92,8 @@ def add_user_event(
         interaction_context=interaction_context,
         event_source=event_source,
         x_path=x_path,
+        offset_x=offset_x,
+        offset_y=offset_y,
         doc_id=doc_id,
         system_time=datetime.now().replace(tzinfo=timezone.utc).astimezone(tz=None),
         region=region,
@@ -110,6 +116,8 @@ def get_user_event(pk):
         'interaction_context': user_event.interaction_context,
         'event_source': user_event.event_source,
         'x_path': user_event.x_path,
+        'offset_x': user_event.offset_x,
+        'offset_y': user_event.offset_y,
         'doc_id': user_event.doc_id,
         'system_time': user_event.system_time.astimezone(pytz.timezone("Australia/Sydney")).isoformat() if user_event.system_time else None,
         'region': user_event.region,
