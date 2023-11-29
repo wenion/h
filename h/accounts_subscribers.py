@@ -1,20 +1,50 @@
+from datetime import datetime
+
 from pyramid.events import subscriber
 from urllib.parse import unquote, urlparse, parse_qs
 
 from h.accounts.events import LoginEvent, LogoutEvent, AuthLoginEvent
-from h.models_redis import UserEvent, create_user_event, save_in_redis
+from h.models_redis import UserEvent, create_user_event, save_in_redis, add_user_event
 
 
 @subscriber(LoginEvent)
 def save_login_event(event):
-    login_event = create_user_event("sever-record", "LOGIN", "landing login", event.request.url, event.user.userid)
-    save_in_redis(login_event)
+    # login_event = create_user_event("sever-record", "LOGIN", "landing login", event.request.url, event.user.userid)
+    # save_in_redis(login_event)
+    add_user_event(
+        event.user.userid,
+        "sever-record",
+        int(datetime.now().timestamp() * 1000),
+        'LOGIN',
+        "landing page login",
+        event.request.url,
+        event.request.client_addr,
+        "Login",
+        "LOGIN",
+        "",
+        0,
+        0,
+        "")
 
 
 @subscriber(LogoutEvent)
 def save_logout_event(event):
-    logout_event = create_user_event("sever-record", "LOGOUT", "landing logout", event.request.url, event.request.authenticated_userid)
-    save_in_redis(logout_event)
+    # logout_event = create_user_event("sever-record", "LOGOUT", "landing logout", event.request.url, event.request.authenticated_userid)
+    # save_in_redis(logout_event)
+    add_user_event(
+        event.user.userid,
+        "sever-record",
+        int(datetime.now().timestamp() * 1000),
+        'LOGOUT',
+        "landing page logout",
+        event.request.url,
+        event.request.client_addr,
+        "logout",
+        "LOGOUT",
+        "",
+        0,
+        0,
+        "")
 
 
 @subscriber(AuthLoginEvent)
