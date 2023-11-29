@@ -24,6 +24,7 @@ def save_login_event(event):
         "",
         0,
         0,
+        "",
         "")
 
 
@@ -44,6 +45,7 @@ def save_logout_event(event):
         "",
         0,
         0,
+        "",
         "")
 
 
