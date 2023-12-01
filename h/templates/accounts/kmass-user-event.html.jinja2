@@ -74,7 +74,8 @@
           {% for table_row in table_results %}
             <tr>
               {% for key in table_row %}
-              <td style="border: 1px solid #333;">{{ table_row[key] }}</td>
+              <td style="border: 1px solid #333;" class="kmass-tooltip">{{ max_display(table_row[key], 50) }}
+              <span class="kmass-tooltiptext">{{ table_row[key] }}</span></td>
               {% endfor %}
             </tr>
           {% endfor %}

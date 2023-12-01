@@ -135,6 +135,12 @@ class UserEventSearchController:
         for key in properties:
             values.append((key, properties[key]["title"]))
 
+        def max_display(word, length):
+            if type(word) is str and len(word) > length:
+                return word[:length] + "..."
+            else:
+                return word
+
         return {
             "table_head": table_head,
             "table_results": table_results,
@@ -146,4 +152,5 @@ class UserEventSearchController:
                 "sortby": sortby,
                 "order": order,
             },
+            "max_display": max_display,
         }

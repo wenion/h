@@ -69,3 +69,36 @@
   // tooltip's arrow, which partially overlaps the content of the tooltip.
   position: relative;
 }
+
+.kmass-tooltip {
+  position: relative;
+  cursor: default;
+}
+
+.kmass-tooltip .kmass-tooltiptext {
+  visibility: hidden;
+  padding: 0.25em 0.5em;
+  background-color: #bae6fd;
+  color: #082f49;
+  text-align: center;
+  border: 1px solid #333;
+  // border-radius: 0.25em;
+  // white-space: nowrap;
+
+  /* Position the tooltip */
+  position: absolute;
+  display: inline-block;
+  z-index: 1;
+  top: 5%;
+  left: 20%;
+  transition-property: visibility;
+  transition-delay: 0s;
+  inline-size: 150px;
+  overflow-wrap: break-word;
+}
+
+.kmass-tooltip:hover .kmass-tooltiptext {
+  visibility: visible;
+  display: inline-block;
+  transition-delay: 0.3s;
+}
