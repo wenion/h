@@ -73,22 +73,9 @@
         <tbody>
           {% for table_row in table_results %}
             <tr>
-              <td style="border: 1px solid #333;">{{ table_row.pk }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.userid }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.event_type }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.timestamp }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.tag_name }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.text_content }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.base_url }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.ip_address }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.interaction_context }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.event_source }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.x_path }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.offset_x }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.offset_y }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.doc_id }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.system_time }}</td>
-              <td style="border: 1px solid #333;">{{ table_row.region }}</td>
+              {% for key in table_row %}
+              <td style="border: 1px solid #333;">{{ table_row[key] }}</td>
+              {% endfor %}
             </tr>
           {% endfor %}
         </tbody>
