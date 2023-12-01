@@ -136,6 +136,17 @@ class Rating(JsonModel):
     userid: str = Field(index=True)
 
 
+def fetch_all_user_event(userid, sortby):
+    result = UserEvent.find(
+        UserEvent.userid == userid
+    ).sort_by(sortby).all()
+    table_result=[]
+    for item in result:
+        json_item = get_user_event(item.pk)
+        table_result.append(json_item)
+    return table_result
+
+
 def fetch_user_event(userid, offset, limit, sortby):
     query = UserEvent.find(
         UserEvent.userid == userid

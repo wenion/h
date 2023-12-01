@@ -1,11 +1,16 @@
 """Activity pages views."""
 
+import csv
 import math
+from io import StringIO
 
+from pyramid import response
 from pyramid.view import view_config, view_defaults
 
+from h import util
+from h.exceptions import InvalidUserId
 from h.i18n import TranslationString as _
-from h.models_redis import UserEvent, fetch_user_event, get_user_event_fields
+from h.models_redis import fetch_user_event, get_user_event_fields, fetch_all_user_event
 
 PAGE_SIZE = 25
 SORT_BY = "timestamp"
@@ -154,3 +159,27 @@ class UserEventSearchController:
             },
             "max_display": max_display,
         }
+
+    @view_config(request_method="POST")
+    def post(self):
+        userid = self.request.authenticated_userid
+        try:
+            name = util.user.split_user(userid)["username"]
+        except InvalidUserId:
+            name = userid
+
+        sortby = self.request.params.get("sortby", SORT_BY)
+        order = self.request.params.get("order", ORDER)
+
+        bunch_data = fetch_all_user_event(userid=userid, sortby="-"+sortby if order =="desc" else sortby)
+
+        csv_data = StringIO()
+        csv_writer = csv.writer(csv_data)
+        csv_writer.writerow(bunch_data[0].keys())
+        for item in bunch_data:
+            csv_writer.writerow(item.values())
+
+        res = response.Response(content_type='text/csv')
+        res.content_disposition = f'attachment; filename="{name}_result.csv"'
+        res.body = csv_data.getvalue().encode('utf-8')
+        return res
