@@ -28,6 +28,11 @@
           {% else %}
             <option value="100">100</option>
           {% endif %}
+          {% if query.page_size == "all" %}
+            <option value="all" selected>all</option>
+          {% else %}
+            <option value="all">all</option>
+          {% endif %}
         </select>
       </label>
 

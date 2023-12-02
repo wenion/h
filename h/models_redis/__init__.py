@@ -144,7 +144,10 @@ def fetch_all_user_event(userid, sortby):
     for item in result:
         json_item = get_user_event(item.pk)
         table_result.append(json_item)
-    return table_result
+    return {
+        "table_result": table_result,
+        "total": len(result),
+        }
 
 
 def fetch_user_event(userid, offset, limit, sortby):

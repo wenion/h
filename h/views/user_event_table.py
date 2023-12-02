@@ -119,18 +119,25 @@ class UserEventSearchController:
         page = max(page, 1)
 
         page_size = self.request.params.get("pageSize", PAGE_SIZE)
-        try:
-            page_size = int(page_size)
-        except ValueError:
-            page_size = PAGE_SIZE
+        if page_size == "all":
+            pass
+        else:
+            try:
+                page_size = int(page_size)
+            except ValueError:
+                page_size = PAGE_SIZE
 
         sortby = self.request.params.get("sortby", SORT_BY)
         order = self.request.params.get("order", ORDER)
 
         # Fetch results.
-        limit = page_size
-        offset = (page - 1) * page_size
-        fetch_result = fetch_user_event(userid=self.request.authenticated_userid, offset=offset, limit=limit, sortby="-"+sortby if order =="desc" else sortby)
+        if type(page_size) == int:
+            limit = page_size
+            offset = (page - 1) * page_size
+            fetch_result = fetch_user_event(userid=self.request.authenticated_userid, offset=offset, limit=limit, sortby="-"+sortby if order =="desc" else sortby)
+        else:
+            fetch_result = fetch_all_user_event(userid=self.request.authenticated_userid, sortby="-"+sortby if order =="desc" else sortby)
+
         table_results = fetch_result["table_result"]
         total = fetch_result["total"]
         table_head = list(table_results[0].keys()) if table_results else []
@@ -149,7 +156,7 @@ class UserEventSearchController:
         return {
             "table_head": table_head,
             "table_results": table_results,
-            "page": paginate(self.request, total, page_size=page_size),
+            "page": paginate(self.request, total, page_size=page_size) if type(page_size) == int else paginate(self.request, total, page_size=total),
             "values": values,
             "query": {
                 "page": page,
@@ -171,7 +178,7 @@ class UserEventSearchController:
         sortby = self.request.params.get("sortby", SORT_BY)
         order = self.request.params.get("order", ORDER)
 
-        bunch_data = fetch_all_user_event(userid=userid, sortby="-"+sortby if order =="desc" else sortby)
+        bunch_data = fetch_all_user_event(userid=userid, sortby="-"+sortby if order =="desc" else sortby)['table_result']
 
         csv_data = StringIO()
         csv_writer = csv.writer(csv_data)
