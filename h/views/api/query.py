@@ -14,7 +14,10 @@ particular, requests to the CRUD API endpoints are protected by the Pyramid
 authorization system. You can find the mapping between annotation "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
+import codecs
 import datetime
+from functools import lru_cache
+import logging
 import os
 import requests
 import distance
@@ -26,6 +29,8 @@ from h.views.api.config import api_config
 from h.models_redis import Result, Bookmark, UserEvent, create_user_event, save_in_redis
 from h.models_redis import get_user_role_by_userid
 
+log = logging.getLogger(__name__)
+
 def create_user_event(event_type, tag_name, text_content, base_url, userid):
     return {
         "event_type": event_type,
@@ -35,6 +40,17 @@ def create_user_event(event_type, tag_name, text_content, base_url, userid):
         "base_url": base_url,
         "userid": userid
     }
+
+
+@lru_cache(maxsize=None)
+def get_authorised_list():
+    try:  # pylint: disable=too-many-try-statements
+        with codecs.open("h/accounts/authorised_list", encoding="utf-8") as handle:
+            authorisedlist = handle.readlines()
+    except (IOError, ValueError):
+        log.exception("unable to load blacklist")
+        authorisedlist = []
+    return set(line.strip().lower() for line in authorisedlist)
 
 
 @api_config(
@@ -60,6 +76,9 @@ def query(request):
     response = requests.get(url, params=params)
     query_response = create_user_event("server-record", "QUERY RESPONSE", query, request.url, userid)
     save_in_redis(query_response)
+
+    authorised_list = get_authorised_list()
+    print("auth", authorised_list)
 
     if response.status_code == 200:
         json_data = response.json()
@@ -114,8 +133,13 @@ def query(request):
                     meta["title"] = "The URL is missing."
 
                 if "repository" in meta:
-                    meta["repository"] = meta["repository"].split("-")[0]
+                    source = meta["repository"].split("-")[0]
                 rcount += 1
+                if userid == "anonymous" and source.lower() not in authorised_list:
+                    topic.remove(result_item)
+                else:
+                    meta["repository"] = source
+
             count += 1
 
         return json_data
