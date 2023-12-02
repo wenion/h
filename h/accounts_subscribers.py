@@ -33,7 +33,7 @@ def save_logout_event(event):
     # logout_event = create_user_event("sever-record", "LOGOUT", "landing logout", event.request.url, event.request.authenticated_userid)
     # save_in_redis(logout_event)
     add_user_event(
-        event.user.userid,
+        event.request.authenticated_userid,
         "sever-record",
         int(datetime.now().timestamp() * 1000),
         'LOGOUT',
