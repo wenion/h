@@ -143,8 +143,8 @@ def fetch_all_user_event(userid, sortby):
         UserEvent.userid == userid
     ).sort_by(sortby).all()
     table_result=[]
-    for item in result:
-        json_item = get_user_event(item.pk)
+    for index, item in enumerate(result):
+        json_item = {'id': index, **get_user_event(item.pk)}
         table_result.append(json_item)
     return {
         "table_result": table_result,
@@ -163,8 +163,8 @@ def fetch_user_event(userid, offset, limit, sortby):
     results = query.copy(offset=offset, limit=limit).sort_by(sortby).execute(exhaust_results=False)
 
     table_result=[]
-    for item in results:
-        json_item = get_user_event(item.pk)
+    for index, item in enumerate(results):
+        json_item = {'id': index, **get_user_event(item.pk)}
         table_result.append(json_item)
     return {
         "table_result": table_result,

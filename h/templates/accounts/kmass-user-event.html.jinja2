@@ -69,7 +69,7 @@
     </div>
     <div class="search-results" style="margin-top: 25px">
 
-      <table class="search-results__list" style="border: 1px solid #333;">
+      <table class="search-results__list">
         <thead style="color: #fff;background-color: #333;">
           <tr>
             {% for field in table_head %}
@@ -83,8 +83,13 @@
           {% for table_row in table_results %}
             <tr>
               {% for key in table_row %}
-              <td style="border: 1px solid #333;" class="kmass-tooltip">{{ max_display(table_row[key], 50) }}
-              <span class="kmass-tooltiptext">{{ table_row[key] }}</span></td>
+                {% if table_row['id'] % 2 == 0 %}
+                  <td style="background: #e5e7eb" class="kmass-tooltip">{{ max_display(table_row[key], 50) }}
+                  <span class="kmass-tooltiptext">{{ table_row[key] }}</span></td>
+                {% else %}
+                  <td class="kmass-tooltip">{{ max_display(table_row[key], 50) }}
+                  <span class="kmass-tooltiptext">{{ table_row[key] }}</span></td>
+                {% endif %}
               {% endfor %}
             </tr>
           {% endfor %}
