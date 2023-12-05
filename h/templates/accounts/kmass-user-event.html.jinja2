@@ -84,10 +84,10 @@
             <tr>
               {% for key in table_row %}
                 {% if table_row['id'] % 2 == 0 %}
-                  <td style="background: #e5e7eb" class="kmass-tooltip">{{ max_display(table_row[key], 50) }}
+                  <td class="kmass-tooltip">{{ max_display(table_row[key], 50) }}
                   <span class="kmass-tooltiptext">{{ table_row[key] }}</span></td>
                 {% else %}
-                  <td class="kmass-tooltip">{{ max_display(table_row[key], 50) }}
+                  <td style="background: #e5e7eb" class="kmass-tooltip">{{ max_display(table_row[key], 50) }}
                   <span class="kmass-tooltiptext">{{ table_row[key] }}</span></td>
                 {% endif %}
               {% endfor %}

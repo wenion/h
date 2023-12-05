@@ -10,7 +10,7 @@ from pyramid.view import view_config, view_defaults
 from h import util
 from h.exceptions import InvalidUserId
 from h.i18n import TranslationString as _
-from h.models_redis import fetch_user_event, get_user_event_fields, fetch_all_user_event
+from h.models_redis import fetch_user_event, get_user_event_sortable_fields, fetch_all_user_event
 
 PAGE_SIZE = 25
 SORT_BY = "timestamp"
@@ -142,7 +142,7 @@ class UserEventSearchController:
         total = fetch_result["total"]
         table_head = list(table_results[0].keys()) if table_results else []
 
-        properties = get_user_event_fields()
+        properties = get_user_event_sortable_fields()
         values=[]
         for key in properties:
             values.append((key, properties[key]["title"]))

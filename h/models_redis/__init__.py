@@ -54,14 +54,14 @@ class UserEvent(JsonModel):
     text_content: str = Field(index=True)
     base_url: str = Field(index=True)
     userid: str = Field(index=True)
-    ip_address: Optional[str]
-    interaction_context: Optional[str]
-    event_source: Optional[str] # Navigate Mouse Page Keyboard
+    ip_address: Optional[str] = Field(full_text_search=True, sortable=True)
+    interaction_context: Optional[str] = Field(full_text_search=True, sortable=True)
+    event_source: Optional[str] = Field(full_text_search=True, sortable=True)
     system_time: Optional[datetime]
-    x_path: Optional[str]
-    offset_x: Optional[float]
-    offset_y: Optional[float]
-    doc_id: Optional[str]
+    x_path: Optional[str] = Field(full_text_search=True, sortable=True)
+    offset_x: Optional[float] = Field(full_text_search=True, sortable=True)
+    offset_y: Optional[float] = Field(full_text_search=True, sortable=True)
+    doc_id: Optional[str] = Field(full_text_search=True, sortable=True)
     region: Optional[str] = Field(index=True, default="Australia/Sydney")
 
 
@@ -174,8 +174,10 @@ def fetch_user_event(userid, offset, limit, sortby):
         }
 
 
-def get_user_event_fields():
-    return UserEvent.schema()["properties"]
+def get_user_event_sortable_fields():
+    properties = UserEvent.schema()["properties"]
+    sortable_fields = {key: value for key, value in properties.items() if 'format' not in value}
+    return sortable_fields
 
 
 class UserFile(JsonModel):  # repository file's attribute
