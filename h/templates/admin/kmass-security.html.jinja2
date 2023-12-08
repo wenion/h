@@ -1,0 +1,106 @@
+{% extends "h:templates/layouts/admin.html.jinja2" %}
+
+{% set page_id = 'security' %}
+{% set page_title = 'Security' %}
+
+{% block content %}
+  <p>
+    On this page you add or delete the item of the whitelist and blacklist.
+  </p>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">Add new whitelist</h3>
+    </div>
+    <div class="panel-body">
+      <form method="POST" class="form-inline">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input type="text" class="form-control" name="name">
+        </div>
+        <div class="form-group">
+          <label for="add">URL</label>
+          <input type="text" class="form-control" name="add">
+        </div>
+        <div class="form-group">
+          <label for="methodology">Authority</label>
+          <input type="text" class="form-control" name="methodology" value="whitelist">
+          <input type="submit" class="btn btn-default" value="Add">
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">Current whitelist</h3>
+    </div>
+    <div class="panel-body">
+      <form
+        method="POST"
+        action="{{ request.route_url('admin.security') }}">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
+        <ul>
+          {% for user in whitelist %}
+            <li>
+              {{ user }}
+              <button type="submit" class="btn btn-link btn-sm"
+                      name="remove" value="{{ user }}">
+                Remove
+              </button>
+            </li>
+          {% endfor %}
+        </ul>
+      </form>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">Add new blacklist</h3>
+    </div>
+    <div class="panel-body">
+      <form method="POST" class="form-inline">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input type="text" class="form-control" name="name">
+        </div>
+        <div class="form-group">
+          <label for="add">Category</label>
+          <input type="text" class="form-control" name="add">
+        </div>
+        <div class="form-group">
+          <label for="methodology">Authority</label>
+          <input type="text" class="form-control" name="methodology" value="blacklist">
+          <input type="submit" class="btn btn-default" value="Add">
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">Current blacklist</h3>
+    </div>
+    <div class="panel-body">
+      <form
+        method="POST"
+        action="{{ request.route_url('admin.security') }}">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
+        <ul>
+          {% for user in blacklist %}
+            <li>
+              {{ user }}
+              <button type="submit" class="btn btn-link btn-sm"
+                      name="remove" value="{{ user }}">
+                Remove
+              </button>
+            </li>
+          {% endfor %}
+        </ul>
+      </form>
+    </div>
+  </div>
+{% endblock %}

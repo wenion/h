@@ -180,6 +180,54 @@ def get_user_event_sortable_fields():
     return sortable_fields
 
 
+class SecurityList(JsonModel):
+    class Meta:
+        global_key_prefix = 'h'
+        model_key_prefix = 'SecurityList'
+    methodology : str = Field(index=True) # black white
+    name: str = Field(index=True)
+    type: str = Field(index=True) # url
+    domain: str = Field(full_text_search=True,)
+
+
+def get_whitelist():
+    return SecurityList.find(
+        SecurityList.methodology == 'whitelist'
+    ).all()
+
+
+def get_blacklist():
+    return SecurityList.find(
+        SecurityList.methodology == 'blacklist'
+    ).all()
+
+
+def add_security_list(methodology, name, type, domain):
+    exist = SecurityList.find(
+        (SecurityList.methodology == methodology) &
+        (SecurityList.domain == domain)
+    ).all()
+    if len(exist) > 0:
+        return exist[0]
+    user_event = SecurityList(
+        methodology=methodology,
+        name=name,
+        type=type,
+        domain=domain,
+    )
+    user_event.save()
+    return user_event
+
+
+def delete_security_list(methodology, domain):
+    exist = SecurityList.find(
+        (SecurityList.methodology == methodology) &
+        (SecurityList.domain == domain)
+    ).all()
+    if len(exist) > 0:
+        SecurityList.delete(exist[0].pk)
+
+
 class UserFile(JsonModel):  # repository file's attribute
     class Meta:
         global_key_prefix = 'h'

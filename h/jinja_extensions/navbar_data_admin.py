@@ -112,4 +112,10 @@ _ADMIN_MENU = [
         "title": "Search",
         "route": "admin.search",
     },
+    {
+        "id": "security",
+        "permission": Permission.AdminPage.HIGH_RISK,
+        "title": "Security",
+        "route": "admin.security",
+    },
 ]

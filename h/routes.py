@@ -78,6 +78,7 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route("admin.users_delete", "/admin/users/delete")
     config.add_route("admin.users_rename", "/admin/users/rename")
     config.add_route("admin.search", "/admin/search")
+    config.add_route("admin.security", "/admin/security")
 
     # Annotations & stream
     config.add_route(
