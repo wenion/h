@@ -27,7 +27,7 @@ from urllib.parse import urljoin
 from h.security import Permission
 from h.views.api.config import api_config
 from h.models_redis import Result, Bookmark, UserEvent, create_user_event, save_in_redis
-from h.models_redis import get_user_role_by_userid
+from h.models_redis import get_user_role_by_userid, get_blacklist
 
 log = logging.getLogger(__name__)
 
@@ -42,14 +42,9 @@ def create_user_event(event_type, tag_name, text_content, base_url, userid):
     }
 
 
-@lru_cache(maxsize=None)
 def get_authorised_list():
-    try:  # pylint: disable=too-many-try-statements
-        with codecs.open("h/accounts/authorised_list", encoding="utf-8") as handle:
-            authorisedlist = handle.readlines()
-    except (IOError, ValueError):
-        log.exception("unable to load blacklist")
-        authorisedlist = []
+    blacklist = get_blacklist()
+    return [w.domain for w in blacklist]
     return set(line.strip().lower() for line in authorisedlist)
 
 
@@ -84,8 +79,10 @@ def query(request):
         json_data = response.json()
 
         count = 0
+        topics = []
         for topic in json_data["context"]:
             rcount = 0
+            new_topic = []
             for result_item in topic:
                 meta = result_item["metadata"]
                 if "title" in meta and "url" in meta:
@@ -134,13 +131,14 @@ def query(request):
 
                 if "repository" in meta:
                     source = meta["repository"].split("-")[0]
-                rcount += 1
-                if userid == "anonymous" and source.lower() not in authorised_list:
-                    topic.remove(result_item)
-                else:
                     meta["repository"] = source
+                    if source.lower() not in authorised_list:
+                        new_topic.append(result_item)
 
+                rcount += 1
+            topics.append(new_topic)
             count += 1
+        json_data["context"] = topics
 
         return json_data
     else:
