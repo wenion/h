@@ -45,7 +45,6 @@ def create_user_event(event_type, tag_name, text_content, base_url, userid):
 def get_authorised_list():
     blacklist = get_blacklist()
     return [w.domain for w in blacklist]
-    return set(line.strip().lower() for line in authorisedlist)
 
 
 @api_config(
@@ -73,7 +72,6 @@ def query(request):
     save_in_redis(query_response)
 
     authorised_list = get_authorised_list()
-    print("auth", authorised_list)
 
     if response.status_code == 200:
         json_data = response.json()
