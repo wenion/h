@@ -130,7 +130,7 @@ def query(request):
                 if "repository" in meta:
                     source = meta["repository"].split("-")[0]
                     meta["repository"] = source
-                    if source.lower() not in authorised_list:
+                    if userid != "anonymous" or source.lower() not in authorised_list:
                         new_topic.append(result_item)
 
                 rcount += 1
