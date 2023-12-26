@@ -31,6 +31,7 @@ def add(ctx, username, email, password, authority):
         "faculty": "",
         "teaching_role": "",
         "teaching_unit": "",
+        "campus": "",
         "joined_year": 0,
         "years_of_experience":0,
 

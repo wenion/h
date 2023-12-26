@@ -190,6 +190,27 @@ class RegisterSchema(CSRFSchema):
         title=_("Teaching unit"),
     )
 
+    campus = colander.SchemaNode(
+        colander.String(),
+        title=_("Campus"),
+        widget=deform.widget.SelectWidget(
+            values = (
+                ("", "- Select -"),
+                ('Clayton', 'Clayton campus'),
+                ('Caulfield', 'Caulfield campus'),
+                ('Peninsula', 'Peninsula campus'),
+                ('Parkville', 'Parkville campus'),
+                ('Law Chambers', 'Law Chambers'),
+                ('750 Collins Street', '750 Collins Street'),
+                ('Malaysia campus', 'Malaysia campus'),
+                ('Indonesia campus', 'Indonesia campus'),
+                ('Monash Suzhou, China', 'Monash Suzhou, China'),
+                ('IITB Monash Academy, India', 'IITB Monash Academy, India'),
+                ('Prato Centre, Italy', 'Prato Centre, Italy'),
+            )
+        ),
+    )
+
     joined_year = colander.SchemaNode(
         colander.String(),
         validator=colander.All(

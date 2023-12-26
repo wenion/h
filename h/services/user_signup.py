@@ -69,6 +69,7 @@ class UserSignupService:
             kwargs.pop("faculty"),
             kwargs.pop("teaching_role"),
             kwargs.pop("teaching_unit"),
+            kwargs.pop("campus"),
             kwargs.pop("joined_year"),
             kwargs.pop("years_of_experience"),
             0

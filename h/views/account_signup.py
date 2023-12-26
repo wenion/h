@@ -61,6 +61,7 @@ class SignupController:
                 faculty=appstruct["faculty"],
                 teaching_role=appstruct["teaching_role"],
                 teaching_unit=appstruct["teaching_unit"],
+                campus=appstruct["campus"],
                 joined_year=int(appstruct["joined_year"]),
                 years_of_experience=int(appstruct["years_of_experience"]),
             )

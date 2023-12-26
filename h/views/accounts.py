@@ -540,6 +540,7 @@ class KmassEditProfileController:
                 "faculty": user_role.faculty,
                 "teaching_role": user_role.teaching_role,
                 "teaching_unit": user_role.teaching_unit,
+                "campus": user_role.campus,
                 "joined_year": user_role.joined_year if user_role.joined_year != 0 else "",
                 "years_of_experience": user_role.years_of_experience if user_role.years_of_experience != 0 else "",
             }
@@ -564,6 +565,7 @@ class KmassEditProfileController:
             appstruct["faculty"],
             appstruct["teaching_role"],
             appstruct["teaching_unit"],
+            appstruct["campus"],
             int(appstruct["joined_year"]),
             int(appstruct["years_of_experience"]),
             None,

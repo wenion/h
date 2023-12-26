@@ -19,6 +19,7 @@ class UserRole(EmbeddedJsonModel):
     faculty: str = Field(index=True)
     teaching_role: str = Field(index=True)
     teaching_unit: str = Field(index=True)
+    campus: Optional[str] = Field(full_text_search=True, sortable=True)
     joined_year: NonNegativeInt = Field(index=True)
     years_of_experience: NonNegativeInt = Field(index=True)
     expert: NonNegativeInt = Field(index=True)
@@ -255,7 +256,7 @@ __all__ = (
 )
 
 
-def add_user_role(userid, faculty, role, unit, year, experience, expert):
+def add_user_role(userid, faculty, role, unit, campus, year, experience, expert):
     user_role = UserRole.find(
         UserRole.userid == userid
         ).all()
@@ -267,6 +268,7 @@ def add_user_role(userid, faculty, role, unit, year, experience, expert):
             faculty=faculty,
             teaching_role=role,
             teaching_unit=unit,
+            campus=campus,
             joined_year=year,
             years_of_experience=experience,
             expert=expert
@@ -275,7 +277,7 @@ def add_user_role(userid, faculty, role, unit, year, experience, expert):
         return user_role
 
 
-def update_user_role(userid, faculty, role, unit, year, experience, expert):
+def update_user_role(userid, faculty, role, unit, campus, year, experience, expert):
     user_roles = UserRole.find(
         UserRole.userid == userid
         ).all()
@@ -284,6 +286,7 @@ def update_user_role(userid, faculty, role, unit, year, experience, expert):
         user_role.faculty = faculty
         user_role.teaching_role = role
         user_role.teaching_unit = unit
+        user_role.campus = campus
         user_role.joined_year = year
         user_role.years_of_experience = experience
         if expert:
@@ -295,7 +298,7 @@ def update_user_role(userid, faculty, role, unit, year, experience, expert):
 
 
 def get_user_role_by_userid(userid):
-    return add_user_role(userid, "", "", "", 0, 0, 0)
+    return add_user_role(userid, "", "", "", "", 0, 0, 0)
 
 
 def get_user_role(request):
@@ -312,37 +315,38 @@ def get_user_role(request):
     return user_role
 
 
-def check_redis_keys(username, authority):
-    userid = f"acct:{username}@{authority}"
-    user_role = UserRole.find(
-        UserRole.userid == userid
-    ).all()
+# def check_redis_keys(username, authority):
+#     userid = f"acct:{username}@{authority}"
+#     user_role = UserRole.find(
+#         UserRole.userid == userid
+#     ).all()
 
-    if not len(user_role):
-        user_role_kwargs = {
-            "userid": userid,
-            "faculty": "",
-            "teaching_role": "",
-            "teaching_unit": "",
-            "joined_year": 0,
-            "years_of_experience": 0,
-            "expert": 0,
-        }
-        user_role = UserRole(**user_role_kwargs)
-        # user_role.save()
+#     if not len(user_role):
+#         user_role_kwargs = {
+#             "userid": userid,
+#             "faculty": "",
+#             "teaching_role": "",
+#             "teaching_unit": "",
+#             "campus": "",
+#             "joined_year": 0,
+#             "years_of_experience": 0,
+#             "expert": 0,
+#         }
+#         user_role = UserRole(**user_role_kwargs)
+#         # user_role.save()
 
 
-def attach_sql(config):
-    engine = config.registry["sqlalchemy.engine"]
-    try:
-        result = engine.execute('SELECT username, authority FROM public."user";')
-    except Exception as e:
-        log.exception("unable to attach sql")
-    else:
-        rows = result.fetchall()
-        for row in rows:
-            check_redis_keys(row[0], row[1])
-        result.close()
+# def attach_sql(config):
+#     engine = config.registry["sqlalchemy.engine"]
+#     try:
+#         result = engine.execute('SELECT username, authority FROM public."user";')
+#     except Exception as e:
+#         log.exception("unable to attach sql")
+#     else:
+#         rows = result.fetchall()
+#         for row in rows:
+#             check_redis_keys(row[0], row[1])
+#         result.close()
 
 
 def get_highlights_from_openai(query, page_content):
