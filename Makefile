@@ -38,8 +38,8 @@ services: python
 .PHONY: db
 db: args?=upgrade head
 db: python
-	@tox -qqe dev --run-command 'sh bin/hypothesis --dev init'
-	@tox -qe dev --run-command 'sh bin/hypothesis --dev migrate $(args)'
+	@tox -qe dev --run-command 'python bin/make_db'
+	@tox -qe dev --run-command 'alembic $(args)'
 
 .PHONY: dev
 dev: build/manifest.json python
@@ -59,7 +59,7 @@ devdata: python
 
 .PHONY: shell
 shell: python
-	@tox -qe dev -- sh bin/hypothesis --dev shell
+	@pyenv exec tox -qe dev --run-command 'pshell conf/development-app.ini'
 
 .PHONY: sql
 sql: python
@@ -130,23 +130,23 @@ checkdocs: python
 # `touch` is used to pre-create an empty requirements/%.txt file if none
 # exists, otherwise tox crashes.
 #
-# $(subst) is used because in the special case of making requirements.txt we
-# actually need to touch dev.txt not requirements.txt and we need to run
-# `tox -e dev ...` not `tox -e requirements ...`
+# $(subst) is used because in the special case of making prod.txt we
+# actually need to touch dev.txt not prod.txt and we need to run
+# `tox -e dev ...` not `tox -e prod ...`
 #
 # $(basename $(notdir $@))) gets just the environment name from the
 # requirements/%.txt filename, for example requirements/foo.txt -> foo.
 requirements/%.txt: requirements/%.in
-	@touch -a $(subst requirements.txt,dev.txt,$@)
-	@tox -qe $(subst requirements,dev,$(basename $(notdir $@))) --run-command 'pip --quiet --disable-pip-version-check install pip-tools'
-	@tox -qe $(subst requirements,dev,$(basename $(notdir $@))) --run-command 'pip-compile --no-allow-unsafe --quiet $(args) $<'
+	@touch -a $(subst prod.txt,dev.txt,$@)
+	@tox -qe $(subst prod,dev,$(basename $(notdir $@))) --run-command 'pip --quiet --disable-pip-version-check install pip-tools'
+	@tox -qe $(subst prod,dev,$(basename $(notdir $@))) --run-command 'pip-compile --no-allow-unsafe --quiet $(args) $<'
 
 # Inform make of the dependencies between our requirements files so that it
 # knows what order to re-compile them in and knows to re-compile a file if a
 # file that it depends on has been changed.
-requirements/dev.txt: requirements/requirements.txt
-requirements/tests.txt: requirements/requirements.txt
-requirements/functests.txt: requirements/requirements.txt
+requirements/dev.txt: requirements/prod.txt
+requirements/tests.txt: requirements/prod.txt
+requirements/functests.txt: requirements/prod.txt
 requirements/lint.txt: requirements/tests.txt requirements/functests.txt
 
 # Add a requirements target so you can just run `make requirements` to

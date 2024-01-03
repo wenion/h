@@ -14,13 +14,9 @@ SUBCOMMANDS = (
     "h.cli.commands.authclient.authclient",
     "h.cli.commands.celery.celery",
     "h.cli.commands.devdata.devdata",
-    "h.cli.commands.init.init",
-    "h.cli.commands.initdb.initdb",
-    "h.cli.commands.migrate.migrate",
     "h.cli.commands.move_uri.move_uri",
     "h.cli.commands.normalize_uris.normalize_uris",
     "h.cli.commands.search.search",
-    "h.cli.commands.shell.shell",
     "h.cli.commands.user.user",
     "h.cli.commands.create_annotations.create_annotations",
 )
@@ -69,7 +65,7 @@ def main():
     resolver = path.DottedNameResolver()
     for cmd in SUBCOMMANDS:
         cli.add_command(resolver.resolve(cmd))
-    cli(prog_name="hypothesis", obj={})  # pylint: disable-all
+    cli(prog_name="hypothesis", obj={})  # pylint: skip-file
 
 
 if __name__ == "__main__":

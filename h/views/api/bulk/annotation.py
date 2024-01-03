@@ -6,7 +6,7 @@ from h.schemas import ValidationError
 from h.schemas.base import JSONSchema
 from h.security import Permission
 from h.services import BulkAnnotationService
-from h.services.bulk_annotation import BadDateFilter, BulkAnnotation
+from h.services.bulk_api import BadDateFilter, BulkAnnotation
 from h.views.api.bulk._ndjson import get_ndjson_response
 from h.views.api.config import api_config
 
@@ -40,7 +40,7 @@ def bulk_annotation(request):
             # Use the authority from the authenticated client to ensure the user
             # is limited to items they have permission to request
             authority=request.identity.auth_client.authority,
-            audience=query_filter["audience"],
+            username=query_filter["username"],
             created=query_filter["created"],
             limit=query_filter["limit"],
         )
