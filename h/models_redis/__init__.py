@@ -188,6 +188,7 @@ class SecurityList(JsonModel):
     methodology : str = Field(index=True) # black white
     name: str = Field(index=True)
     type: str = Field(index=True) # url
+    category: Optional[str] = Field(full_text_search=True, sortable=True)
     domain: str = Field(full_text_search=True,)
 
 
