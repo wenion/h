@@ -16,7 +16,7 @@ backports-zoneinfo[tzdata]==0.2.1
     # via
     #   celery
     #   kombu
-bcrypt==4.1.2
+bcrypt==4.0.1
     # via -r requirements/prod.in
 billiard==4.2.0
     # via celery
