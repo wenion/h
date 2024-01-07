@@ -29,6 +29,12 @@ from h.views.api.config import api_config
 from h.models_redis import Result, Bookmark, UserEvent, create_user_event, save_in_redis
 from h.models_redis import get_user_role_by_userid, get_blacklist
 
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+import pickle
+
 log = logging.getLogger(__name__)
 
 def create_user_event(event_type, tag_name, text_content, base_url, userid):
@@ -262,3 +268,54 @@ def typing(request):
     # print("sorted_dict", sorted_dict, "\n")
 
     return sorted_dict[:5]
+
+def predict_task_from_trace(trace, time_delta_in_minute=1):
+    target_events = [] # this should be replaced with the list of all events
+    stop_words = set(stopwords.words('english'))
+    # converting timestamp
+    trace["timestamp"] = pd.to_datetime(trace["timestamp"], unit="ms")
+    # get current time
+    current_time = datetime.now()
+    # Convert current time to a timestamp
+    current_timestamp = int(current_time.timestamp())
+    # get [time_delta_in_minute] ago
+    ago = current_timestamp - pd.Timedelta(minutes=time_delta_in_minute)
+    records = trace[(trace["timestamp"] >= ago) & (trace["timestamp"] <= current_timestamp)]
+    # get the attributes
+    no_events = len(records)
+    no_unique_events = len(records["event_type"].unique())
+    no_unique_tags = len(records["tag_name"].unique())
+    avg_time_between_operations = records["timestamp"].diff().dt.total_seconds().dropna()
+    counts = records["event_type"].value_counts()
+    dt = [no_events, no_unique_events, no_unique_tags, avg_time_between_operations.mean(), avg_time_between_operations.std()] + [counts[val] if val in counts else 0 for val in target_events]
+    if np.isnan(dt).any():
+        return None
+    data = [dt]
+    # contextual features
+    context_info = records[(records["tag_name"].isin(["INPUT", "BUTTON"])) & (records["text_content"].str.isdigit() == False) & (records["text_content"] != "")]
+    context_data = []
+    if context_info.empty:
+        context_data.append("Unavailable")
+    else:
+        context_data.append(context_info["text_content"].str.cat(sep=".").replace("\n", "").strip())
+    
+    updated_context_data = []
+    for val in context_data:
+        tokens = word_tokenize(val)
+        tokens = [t for t in tokens if t not in stop_words]
+        updated_context_data.append(" ".join(tokens))
+
+    # load vectorizer
+    with open("context_vectorizer.pkl", "rb") as f:
+        vectorizer = pickle.load(f)
+    transformed_context_data = vectorizer.transform(updated_context_data)
+
+    combined_data = [data[0] + list(transformed_context_data[0].toarray()[0])]   
+
+    # load task model
+    with open("task_model.pkl", "rb") as f:
+        task_model = pickle.load(f)
+
+    pred = task_model.predict(combined_data)[0]
+    prob = task_model.predict_proba(combined_data)[0]
+    return {"type": str, "task_name": pred}, prob
