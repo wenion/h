@@ -55,6 +55,7 @@ data-tasks==0.0.3
     # via -r requirements/prod.in
 deform==2.0.15
     # via -r requirements/prod.in
+distance==0.1.3
 ecdsa==0.18.0
     # via python-jose
 elasticsearch==6.8.2

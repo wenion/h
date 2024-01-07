@@ -18,6 +18,7 @@ certifi  # Required to connect to Elasticsearch over SSL.
 cffi
 click
 deform
+distance
 elasticsearch==6.8.2
 elasticsearch-dsl==6.4.0
 gevent >= 1.4.0
