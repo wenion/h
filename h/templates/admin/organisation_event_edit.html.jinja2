@@ -5,6 +5,12 @@
 
 {% block content %}
   {{ form }}
+  <div>
+    <h3> Message Preview </h3>
+    <hr/>
+    {{ markdown | safe }}
+    <hr/>
+  </div>
   {% if delete_url %}
     <form method="POST" action="{{ delete_url }}">
       <button class="btn btn--danger js-confirm-submit"

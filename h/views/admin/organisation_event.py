@@ -71,7 +71,7 @@ class OrganisationEventCreateController:
             self.request.db.add(organization)
             self.request.session.flash(
                 # pylint:disable=consider-using-f-string
-                Markup(_("Created new organization {}".format(event_name))),
+                Markup(_("Created new organisation event {}".format(event_name))),
                 "success",
             )
 
@@ -178,4 +178,4 @@ class OrganizationEditController:
             delete_url = self.request.route_url(
                 "admin.organisation_event_delete", pubid=self.organization.pubid
             )
-        return {"form": self.form.render(), "delete_url": delete_url}
+        return {"form": self.form.render(), "delete_url": delete_url, "markdown": self.organization.text_rendered}
