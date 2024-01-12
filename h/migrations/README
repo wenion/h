@@ -1,0 +1,98 @@
+1. go to the h/migrations to run alembic or
+run alembic with -c conf/alembic.ini in root directory
+'''
+h/migrations$ alembic current
+h$ alembic -c conf/alembic.ini current
+'''
+
+
+2. alembic current
+'''
+$ alembic current
+2024-01-09 22:39:30 31694 alembic.runtime.migration [INFO] Context impl PostgresqlImpl.
+2024-01-09 22:39:30 31694 alembic.runtime.migration [INFO] Will assume transactional DDL.
+8b4b4fdef955 (head)
+'''
+
+3. Create a Migration Script
+'''
+$ alembic revision -m "create account table"
+Generating versions/91a12ea.._create_account_table.py
+... done
+$ cd versions
+$ vi 91a12ea.._create_account_table.py
+import ...
+
+revision = '91a12ea..'
+down_revision = None
+branch_labels = None
+depends_on = None
+
+def upgrader() -> None:
+    pass
+
+def downgrade() -> None:
+    pass
+
+# edit 91a12ea.._create_account_table.py
+def upgrade() -> None:
+    op.create_table(
+        account_table_name,
+        sa.Column("id", sa.Integer, primary_key=True)
+        sa.Column("code", sa.String(2), unique=True nullable=False)
+        sa.Column("name", sa.String(2), unique=True nullable=False)
+    )
+    op.create_foreign_key()
+
+def downgrade() -> None:
+    op.drop_table(account_table_name)
+
+'''
+
+4. alembic upgrade head
+
+
+5. alembic downgrade -1
+
+
+6. alembic history
+
+
+7. alembic merge -m "merge 2f4ecfb and 6a33d10" 2f4ecfb 6a33d10
+'''
+$ git switch develop
+$ git merge branch1
+$ git merge branch2
+$ alembic history
+8b1234 -> 2f4ecfb (head), create user groups
+8b1234 -> 6a33d10 (head), create user profile
+<base> -> 8b1234, create account table
+$ alembic upgrade head
+ERROR
+$ alembic merge -m "merge 2f4ecfb and 6a33d10" 2f4ecfb 6a33d10
+$ alembic history
+2f4ecfb, 6a33d10 -> 4d9e55a (head) (mergepoint), merge 2f4ecfb and 6a33d10
+8b1234 -> 2f4ecfb, create user groups
+8b1234 -> 6a33d10, create user profile
+<base> -> 8b1234, create account table
+
+$ alembic downgrade -1
+$ alembic current
+8b1234
+
+$ alembic upgrade head
+$ alembic current
+4d9e55a
+
+'''
+
+
+4. Command
+alembic init alembic
+
+alembic revision
+alembic upgrade
+alembic downgrade
+alembic current
+alembic history
+alembic merge

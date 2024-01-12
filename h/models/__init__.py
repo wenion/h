@@ -38,6 +38,7 @@ from h.models.subscriptions import Subscriptions
 from h.models.token import Token
 from h.models.user import User
 from h.models.user_identity import UserIdentity
+from h.models.organisation_event import OrganisationEvent
 
 __all__ = (
     "Activation",
@@ -64,4 +65,5 @@ __all__ = (
     "Token",
     "User",
     "UserIdentity",
+    "OrganisationEvent",
 )

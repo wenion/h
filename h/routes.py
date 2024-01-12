@@ -79,6 +79,20 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route("admin.users_rename", "/admin/users/rename")
     config.add_route("admin.search", "/admin/search")
     config.add_route("admin.security", "/admin/security")
+    config.add_route("admin.organisation_event", "/admin/organisation/event")
+    config.add_route("admin.organisation_event_create", "/admin/organisation/event/new")
+    config.add_route(
+        "admin.organisation_event_delete",
+        "/admin/organisation/event/delete/{pubid}",
+        factory="h.traversal.OrganisationEventRoot",
+        traverse="/{pubid}",
+    )
+    config.add_route(
+        "admin.organisation_event_edit",
+        "/admin/organisation/event/{pubid}",
+        factory="h.traversal.OrganisationEventRoot",
+        traverse="/{pubid}",
+    )
 
     # Annotations & stream
     config.add_route(
@@ -173,6 +187,7 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route("api.bookmark", "/api/bookmark")
     config.add_route("api.rating", "/api/rating")
     config.add_route("api.recommendation", "/api/recommendation")
+    config.add_route("api.message", "/api/message")
     config.add_route(
         "api.upload", "/api/upload"# , factory="h.traversal:FileRoot" TODO implement when finish database
     )

@@ -447,6 +447,35 @@ def pull_recommendation(request):
 
 @api_config(
     versions=["v1", "v2"],
+    route_name="api.message",
+    request_method="GET",
+    permission=Permission.Annotation.CREATE,
+    link_name="message",
+    description="Get the Message",
+)
+def message(request):
+    userid = request.authenticated_userid
+    type = request.GET.get("q")
+    # print("message type", )
+    # username = split_user(userid)["username"]
+    # encoded_url = request.GET.get("url")
+
+    results = request.find_service(name="organisation_event").get_by_date()
+
+    response = []
+    for item in results:
+        response.append({
+            "type": type,
+            "pubid": item.pubid,
+            "event_name": item.event_name,
+            "text": item.text,
+        })
+
+
+    return response
+
+@api_config(
+    versions=["v1", "v2"],
     route_name="api.event",
     request_method="POST",
     permission=Permission.Annotation.CREATE,
@@ -455,6 +484,8 @@ def pull_recommendation(request):
 )
 def event(request):
     event = request.json_body
+
+    print("event api", event)
 
     add_user_event(
         userid=request.authenticated_userid,
@@ -548,9 +579,6 @@ def slack(request):
     description="Get User Event",
 )
 def user_event(request):
-
-    print("type of ", type(request.params))
-    print()
     kwargs = request.params.dict_of_lists()
 
     if 'userid' in kwargs and 'index' in kwargs:

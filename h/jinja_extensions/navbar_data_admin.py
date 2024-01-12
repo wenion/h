@@ -118,4 +118,13 @@ _ADMIN_MENU = [
         "title": "Security",
         "route": "admin.security",
     },
+    {
+        "id": "organisation_event",
+        "permission": Permission.AdminPage.LOW_RISK,
+        "title": "Organisation Event",
+        "children": [
+            {"route": "admin.organisation_event", "title": "List Organisation Events"},
+            {"route": "admin.organisation_event_create", "title": "Create a Organisation Event"},
+        ],
+    },
 ]

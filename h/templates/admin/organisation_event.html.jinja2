@@ -1,0 +1,47 @@
+{% extends "h:templates/layouts/admin.html.jinja2" %}
+
+{% from '../includes/search_form.html.jinja2' import search_form %}
+
+{% set page_id = 'organisation_event' %}
+{% set page_title = 'Organisation Event' %}
+
+{% block content %}
+
+  {{ search_form('Search by name…', request.params.get('q')) }}
+
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Event Name</th>
+          <th>Pubid</th>
+          <th>Groupid</th>
+          <th>Campus</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for org in results %}
+          <tr>
+            <td>
+              {% set edit_url = request.route_url('admin.organisation_event_edit', pubid=org.pubid) %}
+              <a href="{{ edit_url }}">{{ org.date.strftime("%d/%m/%Y") }}</a>
+            </td>
+            <td>
+              {% set edit_url = request.route_url('admin.organisation_event_edit', pubid=org.pubid) %}
+              <a href="{{ edit_url }}">{{ org.event_name }}</a>
+            </td>
+            <td>
+              {% set edit_url = request.route_url('admin.organisation_event_edit', pubid=org.pubid) %}
+              <a href="{{ edit_url }}">{{ org.pubid }}</a>
+            </td>
+            <td>{{ org.groupid }}</td>
+            <td>{{ org.campus }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "h:templates/includes/paginator.html.jinja2" %}
+{% endblock %}
