@@ -2,14 +2,23 @@ from datetime import datetime, timezone
 import math
 import pytz
 import openai
-import logging
 
 from redis_om import Migrator
 from redis_om import Field, JsonModel, EmbeddedJsonModel
 from pydantic import NonNegativeInt
 from typing import Optional
 
-log = logging.getLogger(__name__)
+from h.models_redis.rating import Rating
+
+__all__ = (
+    "UserRole",
+    "Result",
+    "Bookmark",
+    "UserEvent",
+    "Rating",
+    "UserFile",
+)
+
 
 class UserRole(EmbeddedJsonModel):
     class Meta:
@@ -127,16 +136,16 @@ def get_user_event(pk):
     }
 
 
-class Rating(JsonModel):
-    class Meta:
-        global_key_prefix = 'h'
-        model_key_prefix = 'Rating'
-    created_timestamp: int = Field(index=True)
-    updated_timestamp: int = Field(index=True)
-    relevance: str = Field(index=True)
-    timeliness: str = Field(index=True)
-    base_url: str = Field(index=True)
-    userid: str = Field(index=True)
+# class Rating(JsonModel):
+#     class Meta:
+#         global_key_prefix = 'h'
+#         model_key_prefix = 'Rating'
+#     created_timestamp: int = Field(index=True)
+#     updated_timestamp: int = Field(index=True)
+#     relevance: str = Field(index=True)
+#     timeliness: str = Field(index=True)
+#     base_url: str = Field(index=True)
+#     userid: str = Field(index=True)
 
 
 def fetch_all_user_event(userid, sortby):
@@ -245,16 +254,6 @@ class UserFile(JsonModel):  # repository file's attribute
     ingested: int = Field(index=True, default=0)
     source: str = Field(index=True)
     deleted: int = Field(index=True, default=0)
-
-
-__all__ = (
-    "UserRole",
-    "Result",
-    "Bookmark",
-    "UserEvent",
-    "Rating",
-    "UserFile",
-)
 
 
 def add_user_role(userid, faculty, role, unit, campus, year, experience, expert):

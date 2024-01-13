@@ -15,6 +15,7 @@ authorization system. You can find the mapping between annotation "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
 import copy
+from datetime import datetime
 import json
 import os
 import openai
@@ -380,11 +381,12 @@ def push_recommendation(request):
         else:
             data["context"] = "error: " + value["error"]
 
-    key = "h:Recommendation:" + username + ":" + data["url"]
-    get_redis_connection().set(key, json.dumps(data))
+    # key = "h:Recommendation:" + username + ":" + data["url"]
+    # get_redis_connection().set(key, json.dumps(data))
 
-    expiration_time = 120
-    get_redis_connection().expire(key, expiration_time)
+    # expiration_time = 120
+    # get_redis_connection().expire(key, expiration_time)
+    request.find_service(name="highlight_event").create(username, data['url'], json.dumps(data))
 
     return {
         "succ": data["url"] + "has been saved"
@@ -422,11 +424,15 @@ def pull_recommendation(request):
 
     # from redis
     # key_pattern = "h:Recommendation:" + username + ":" + url
-    key_pattern = "h:Recommendation:" + username + ":*"
-    keys = get_redis_connection().keys(key_pattern)
+    # key_pattern = "h:Recommendation:" + username + ":*"
+    # keys = get_redis_connection().keys(key_pattern)
 
-    if len(keys) > 0:
-        value = get_redis_connection().getdel(keys[0]) # type json
+    # if len(keys) > 0:
+    #     value = get_redis_connection().get(keys[0]) # type json
+    #     redis_ret.update(json.loads(value))
+
+    value = request.find_service(name="highlight_event").get_by_username_and_url(username, url)
+    if value:
         redis_ret.update(json.loads(value))
 
     # from rating
@@ -485,7 +491,7 @@ def message(request):
 def event(request):
     event = request.json_body
 
-    print("event api", event)
+    # print("event api", event)
 
     add_user_event(
         userid=request.authenticated_userid,
@@ -540,11 +546,14 @@ def rating(request):
             rating.relevance = data["relevance"]
             rating.timeliness = data["timeliness"]
             rating.updated_timestamp = data["timestamp"]
+            rating.updated = datetime.now()
         elif len(exist_rating) > 1:
             return {"error": "multiple exist_rating error"}
         else:
             data["created_timestamp"] = data["timestamp"]
             data["updated_timestamp"] = data["timestamp"]
+            data["created"] = datetime.now()
+            data["updated"] = datetime.now()
             rating = Rating(**data)
         rating.save()
     except Exception as e:

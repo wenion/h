@@ -148,3 +148,6 @@ def includeme(config):  # pragma: no cover
     config.register_service_factory(
         "h.services.organisation_event.campus_list_factory", name="campus_list"
     )
+    config.register_service_factory(
+        "h.services.highlight_event.highlight_event_factory", name="highlight_event"
+    )
