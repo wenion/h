@@ -30,6 +30,7 @@ from h.security import Permission
 from h.views.api.config import api_config
 from h.models_redis import UserEvent, Rating
 from h.models_redis import get_highlights_from_openai, create_user_event, save_in_redis, add_user_event
+from h.services import OrganisationEventPushLogService
 
 def split_user(userid):
     """
@@ -470,15 +471,24 @@ def message(request):
 
     response = []
     for item in results:
-        response.append({
-            "type": type,
-            "pubid": item.pubid,
-            "event_name": item.event_name,
-            "text": item.text,
-            "date": item.date.strftime("%d/%m/%Y"),
-        })
-
-
+        ret = request.find_service(OrganisationEventPushLogService).fetch_by_userid_and_pubid(userid, item.pubid)
+        if not ret:
+            request.find_service(OrganisationEventPushLogService).create(userid, item.pubid)
+            response.append({
+                "type": type,
+                "pubid": item.pubid,
+                "event_name": item.event_name,
+                "text": item.text,
+                "date": item.date.strftime("%d/%m/%Y"),
+            })
+        elif ret and ret.dismissed:
+            response.append({
+                "type": type,
+                "pubid": item.pubid,
+                "event_name": item.event_name,
+                "text": item.text,
+                "date": item.date.strftime("%d/%m/%Y"),
+            })
     return response
 
 @api_config(

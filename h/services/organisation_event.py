@@ -32,7 +32,7 @@ class OrganisationEventService:
         self.session.add(organization)
         return organization
 
-    def get_by_public_id(self, pubid):
+    def get_by_pubid(self, pubid):
         """
         Get an organization by public id.
 

@@ -5,6 +5,7 @@ from h.services.annotation_write import AnnotationWriteService
 from h.services.auth_cookie import AuthCookieService
 from h.services.bulk_api import BulkAnnotationService, BulkGroupService
 from h.services.subscription import SubscriptionService
+from h.services.organisation_event_push_log import OrganisationEventPushLogService
 
 
 def includeme(config):  # pragma: no cover
@@ -150,4 +151,7 @@ def includeme(config):  # pragma: no cover
     )
     config.register_service_factory(
         "h.services.highlight_event.highlight_event_factory", name="highlight_event"
+    )
+    config.register_service_factory(
+        "h.services.organisation_event_push_log.factory", iface=OrganisationEventPushLogService
     )

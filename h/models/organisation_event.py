@@ -2,15 +2,12 @@ import datetime
 from uuid import UUID
 
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.ext.mutable import MutableDict, MutableList
 
 from h import pubid
 from h.db import Base, types, mixins
 from h.models.group import Group
-from h.util import markdown_render, uri
-from h.util.user import split_user
+from h.util import markdown_render
 
 
 class OrganisationEvent(Base, mixins.Timestamps):

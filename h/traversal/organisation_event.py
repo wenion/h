@@ -17,7 +17,7 @@ class OrganisationEventRoot:
         self.request = request
 
     def __getitem__(self, pubid):
-        organisation_event = self.request.find_service(name="organisation_event").get_by_public_id(
+        organisation_event = self.request.find_service(name="organisation_event").get_by_pubid(
             pubid
         )
 
