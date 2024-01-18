@@ -466,7 +466,7 @@ def message(request):
     # username = split_user(userid)["username"]
     # encoded_url = request.GET.get("url")
 
-    results = request.find_service(name="organisation_event").get_by_date()
+    results = request.find_service(name="organisation_event").get_by_date(3)
 
     response = []
     for item in results:
@@ -475,6 +475,7 @@ def message(request):
             "pubid": item.pubid,
             "event_name": item.event_name,
             "text": item.text,
+            "date": item.date.strftime("%d/%m/%Y"),
         })
 
 

@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import importlib_resources
 
 from h.models import OrganisationEvent
@@ -41,14 +41,18 @@ class OrganisationEventService:
         """
         return self.session.query(OrganisationEvent).filter_by(pubid=pubid).one_or_none()
 
-    def get_by_date(self):
+    def get_by_date(self, days_ahead_of_today):
         """
         Get an organization by public id.
 
         :param pubid: The public id to search for
         :return: An organization model or None if no match is found
         """
-        return self.session.query(OrganisationEvent).filter_by(date=date.today()).all()
+        query_result = self.session.query(OrganisationEvent) \
+        .filter(OrganisationEvent.date <= date.today() + timedelta(days_ahead_of_today)) \
+        .filter(OrganisationEvent.date >= date.today()) \
+        .all()
+        return query_result
 
     # def get_default(self, authority=None):
     #     """
