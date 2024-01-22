@@ -15,7 +15,7 @@ authorization system. You can find the mapping between annotation "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
 import copy
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import json
 import os
 import openai
@@ -452,6 +452,17 @@ def pull_recommendation(request):
     return redis_ret
 
 
+def make_message(type, pubid, event_name, text, date, show_flag, unread_flag):
+    return {
+        'type' : type,
+        'pubid': pubid,
+        'event_name': event_name,
+        'text': text,
+        'date': date,
+        'show': show_flag,
+        'unread': unread_flag,
+    }
+
 @api_config(
     versions=["v1", "v2"],
     route_name="api.message",
@@ -461,34 +472,28 @@ def pull_recommendation(request):
     description="Get the Message",
 )
 def message(request):
+    day_ahead = 3
     userid = request.authenticated_userid
     type = request.GET.get("q")
-    # print("message type", )
-    # username = split_user(userid)["username"]
-    # encoded_url = request.GET.get("url")
-
-    results = request.find_service(name="organisation_event").get_by_date(3)
+    all = request.find_service(name="organisation_event").get_by_days(day_ahead)
 
     response = []
-    for item in results:
-        ret = request.find_service(OrganisationEventPushLogService).fetch_by_userid_and_pubid(userid, item.pubid)
-        if not ret:
-            request.find_service(OrganisationEventPushLogService).create(userid, item.pubid)
-            response.append({
-                "type": type,
-                "pubid": item.pubid,
-                "event_name": item.event_name,
-                "text": item.text,
-                "date": item.date.strftime("%d/%m/%Y"),
-            })
-        elif ret and ret.dismissed:
-            response.append({
-                "type": type,
-                "pubid": item.pubid,
-                "event_name": item.event_name,
-                "text": item.text,
-                "date": item.date.strftime("%d/%m/%Y"),
-            })
+    for item in all:
+        show_flag = False
+        unread_flag = False
+        if item.date.date() >= date.today():
+            ret = request.find_service(OrganisationEventPushLogService).fetch_by_userid_and_pubid(userid, item.pubid)
+            if not ret:
+                request.find_service(OrganisationEventPushLogService).create(userid, item.pubid)
+                show_flag = True
+                unread_flag = True
+            elif ret and ret.dismissed:
+                show_flag = True
+                unread_flag = False
+            else:
+                show_flag = False
+                unread_flag = False
+        response.append(make_message(type, item.pubid, item.event_name, item.text, item.date.strftime("%d/%m/%Y"), show_flag, unread_flag))
     return response
 
 @api_config(

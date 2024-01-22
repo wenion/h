@@ -41,7 +41,11 @@ class OrganisationEventService:
         """
         return self.session.query(OrganisationEvent).filter_by(pubid=pubid).one_or_none()
 
-    def get_by_date(self, days_ahead_of_today):
+    def get_by_days(self, days_ahead_of_today):
+        query_result = self.session.query(OrganisationEvent).filter(OrganisationEvent.date <= date.today()+ timedelta(days_ahead_of_today)).all()
+        return query_result
+
+    def get_by_date_in_ahead(self, days_ahead_of_today):
         """
         Get an organization by public id.
 
