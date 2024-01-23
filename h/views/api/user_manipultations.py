@@ -472,12 +472,32 @@ def make_message(type, pubid, event_name, text, date, show_flag, unread_flag):
     description="Get the Message",
 )
 def message(request):
+    response = []
     day_ahead = 3
     userid = request.authenticated_userid
-    type = request.GET.get("q")
+    request_type = request.GET.get("q")
     all = request.find_service(name="organisation_event").get_by_days(day_ahead)
 
-    response = []
+    tad_url =  urljoin(request.registry.settings.get("tad_url"), "task_classification")
+    tad_response = None
+    try:
+        tad_response = requests.get(tad_url, params={"userid": userid})
+        tad_result = tad_response.json()
+        response.append(
+            make_message("task_classification", "pubid", "task_classification", tad_result['task_name'] + tad_result['certainty'], date.today.strftime("%d/%m/%Y"), True, True)
+        )
+    except Exception as e:
+        print("No Response from tad", str(e))
+        response.append(
+            make_message(
+                "task_classification",
+                "pubid",
+                "Task Classification Error",
+                str(e) + "status code: " + tad_response.status_code if tad_response else str(e),
+                date.today().strftime("%d/%m/%Y"),
+                True, True)
+        )
+
     for item in all:
         show_flag = False
         unread_flag = False
@@ -493,7 +513,7 @@ def message(request):
             else:
                 show_flag = False
                 unread_flag = False
-        response.append(make_message(type, item.pubid, item.event_name, item.text, item.date.strftime("%d/%m/%Y"), show_flag, unread_flag))
+        response.append(make_message(request_type, item.pubid, item.event_name, item.text, item.date.strftime("%d/%m/%Y"), show_flag, unread_flag))
     return response
 
 @api_config(
