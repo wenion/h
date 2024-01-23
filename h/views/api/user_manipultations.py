@@ -459,8 +459,8 @@ def make_message(type, pubid, event_name, text, date, show_flag, unread_flag):
         'event_name': event_name,
         'text': text,
         'date': date,
-        'show': show_flag,
-        'unread': unread_flag,
+        'show_flag': show_flag,
+        'unread_flag': unread_flag,
     }
 
 @api_config(
