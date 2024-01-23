@@ -452,12 +452,12 @@ def pull_recommendation(request):
     return redis_ret
 
 
-def make_message(type, pubid, event_name, text, date, show_flag, unread_flag):
+def make_message(type, pubid, event_name, message, date, show_flag, unread_flag):
     return {
         'type' : type,
-        'pubid': pubid,
-        'event_name': event_name,
-        'text': text,
+        'id': pubid,
+        'title': event_name,
+        'message': message,
         'date': date,
         'show_flag': show_flag,
         'unread_flag': unread_flag,
