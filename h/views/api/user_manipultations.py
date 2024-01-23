@@ -493,7 +493,7 @@ def message(request):
                 "task_classification",
                 "pubid",
                 "Task Classification Error",
-                str(e) + "status code: " + tad_response.status_code if tad_response else str(e),
+                str(e) + "status code: " + str(tad_response.status_code) if tad_response else str(e),
                 date.today().strftime("%d/%m/%Y"),
                 True, True)
         )
