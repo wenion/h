@@ -484,10 +484,15 @@ def message(request):
         tad_response = requests.get(tad_url, params={"userid": userid})
         tad_result = tad_response.json()
         response.append(
-            make_message("task_classification", "pubid", "task_classification", tad_result['task_name'] + tad_result['certainty'], date.today.strftime("%d/%m/%Y"), True, True)
+            make_message(
+                "task_classification",
+                "pubid",
+                "task_classification",
+                tad_result['task_name'] + ": "+ str(tad_result['certainty']),
+                date.today().strftime("%d/%m/%Y"),
+                True, True)
         )
     except Exception as e:
-        print("No Response from tad", str(e))
         response.append(
             make_message(
                 "task_classification",
