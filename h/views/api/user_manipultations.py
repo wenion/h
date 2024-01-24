@@ -491,9 +491,7 @@ def message(request):
                 "Expert trace recommendation",
                 tad_result['message'],
                 date.today().strftime("%d/%m/%Y"),
-                True if tad_result['certainty'] else False,
-                True,
-                True if tad_result['certainty'] else False,)
+                True if tad_result['certainty'] else False, True, False)
         )
     except Exception as e:
         response.append(
