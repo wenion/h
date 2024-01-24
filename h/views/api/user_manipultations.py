@@ -488,17 +488,17 @@ def message(request):
             make_message(
                 "instant_message",
                 datetime.now().strftime("%S%M%H%d%m%Y") + "_" +split_user(userid)["username"],
-                "task_classification",
-                tad_result['task_name'] + ": "+ str(tad_result['certainty']),
+                "Expert trace recommendation",
+                tad_result['message'],
                 date.today().strftime("%d/%m/%Y"),
-                True, True)
+                True if tad_result['certainty'] else False, True)
         )
     except Exception as e:
         response.append(
             make_message(
                 "error_message",
                 "pubid",
-                "Task Classification Error",
+                "Error",
                 str(e) + "status code: " + str(tad_response.status_code) if tad_response else str(e),
                 date.today().strftime("%d/%m/%Y"),
                 True, True, False)
