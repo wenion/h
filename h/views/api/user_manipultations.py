@@ -452,7 +452,7 @@ def pull_recommendation(request):
     return redis_ret
 
 
-def make_message(type, pubid, event_name, message, date, show_flag, unread_flag):
+def make_message(type, pubid, event_name, message, date, show_flag, unread_flag, need_save_flag=True):
     return {
         'type' : type,
         'id': pubid,
@@ -461,6 +461,7 @@ def make_message(type, pubid, event_name, message, date, show_flag, unread_flag)
         'date': date,
         'show_flag': show_flag,
         'unread_flag': unread_flag,
+        'need_save_flag': need_save_flag,
     }
 
 @api_config(
@@ -500,7 +501,7 @@ def message(request):
                 "Task Classification Error",
                 str(e) + "status code: " + str(tad_response.status_code) if tad_response else str(e),
                 date.today().strftime("%d/%m/%Y"),
-                True, True)
+                True, True, False)
         )
 
     for item in all:
