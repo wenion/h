@@ -485,8 +485,8 @@ def message(request):
         tad_result = tad_response.json()
         response.append(
             make_message(
-                "task_classification",
-                "pubid",
+                "instant_message",
+                datetime.now().strftime("%S%M%H%d%m%Y") + "_" +split_user(userid)["username"],
                 "task_classification",
                 tad_result['task_name'] + ": "+ str(tad_result['certainty']),
                 date.today().strftime("%d/%m/%Y"),
@@ -495,7 +495,7 @@ def message(request):
     except Exception as e:
         response.append(
             make_message(
-                "task_classification",
+                "error_message",
                 "pubid",
                 "Task Classification Error",
                 str(e) + "status code: " + str(tad_response.status_code) if tad_response else str(e),
