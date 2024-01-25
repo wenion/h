@@ -124,14 +124,17 @@ def query(request):
                     meta["title"] = "The title and URL are missing."
                 elif "title" not in meta and "url" in meta:
                     meta["title"] = "The title is missing."
-                elif "title" in meta and "url" not in meta:
-                    meta["title"] = "The URL is missing."
+                # elif "title" in meta and "url" not in meta:
+                #     meta["title"] = "The URL is missing."
 
                 if "repository" in meta:
                     source = meta["repository"].split("-")[0]
                     meta["repository"] = source
                     if userid != "anonymous" or source.lower() not in authorised_list:
                         new_topic.append(result_item)
+                else:
+                    meta['repository'] = 'dsi'
+                    new_topic.append(result_item)
 
                 rcount += 1
             topics.append(new_topic)
