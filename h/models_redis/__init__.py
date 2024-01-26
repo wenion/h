@@ -64,10 +64,10 @@ class UserEvent(JsonModel):
     offset_y: Optional[float] = Field(full_text_search=True, sortable=True)
     doc_id: Optional[str] = Field(full_text_search=True, sortable=True)
     region: Optional[str] = Field(index=True, default="Australia/Sydney")
-    task_name: Optional[str] = Field(full_text_search=True, sortable=True)
     session_id: Optional[str] = Field(full_text_search=True, sortable=True)
-    width: int = Field(index=True)
-    height: [int] = Field(index=True)
+    task_name: Optional[str] = Field(full_text_search=True, sortable=True)
+    width: Optional[int] = Field(full_text_search=True, sortable=True)
+    height: Optional[int] = Field(full_text_search=True, sortable=True)
 
 def add_user_event(
         userid,
@@ -84,10 +84,10 @@ def add_user_event(
         offset_y,
         doc_id,
         region,
-        task_name,
-        session_id,
-        width,
-        height
+         session_id=None,
+        task_name=None,
+        width=None,
+        height=None,
         ):
     user_event = UserEvent(
         userid=userid,
@@ -108,7 +108,7 @@ def add_user_event(
         task_name=task_name,
         session_id=session_id,
         width=width,
-        height=height
+        height=height,
     )
     user_event.save()
     return user_event
@@ -138,7 +138,7 @@ def get_user_event(pk):
         'task_name': user_event.task_name,
         'session_id': user_event.session_id,
         'width' : user_event.width,
-        'height': user_event.height
+        'height': user_event.height,
     }
 
 
