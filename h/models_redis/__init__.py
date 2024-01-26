@@ -84,7 +84,7 @@ def add_user_event(
         offset_y,
         doc_id,
         region,
-         session_id=None,
+        session_id=None,
         task_name=None,
         width=None,
         height=None,
@@ -135,8 +135,8 @@ def get_user_event(pk):
         'doc_id': user_event.doc_id,
         'system_time': user_event.system_time.replace(tzinfo=pytz.utc).astimezone(pytz.timezone("Australia/Sydney")) if user_event.system_time else None,
         'region': user_event.region,
-        'task_name': user_event.task_name,
         'session_id': user_event.session_id,
+        'task_name': user_event.task_name,
         'width' : user_event.width,
         'height': user_event.height,
     }

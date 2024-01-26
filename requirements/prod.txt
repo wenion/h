@@ -128,6 +128,7 @@ markupsafe==1.1.1
     #   pyramid-jinja2
 newrelic==9.3.0
     # via -r requirements/prod.in
+nltk==3.8.1 # add ivan
 oauthlib==3.2.2
     # via -r requirements/prod.in
 openai==0.27.8
