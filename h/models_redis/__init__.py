@@ -65,6 +65,9 @@ class UserEvent(JsonModel):
     doc_id: Optional[str] = Field(full_text_search=True, sortable=True)
     region: Optional[str] = Field(index=True, default="Australia/Sydney")
     task_name: Optional[str] = Field(full_text_search=True, sortable=True)
+    session_id: Optional[str] = Field(full_text_search=True, sortable=True)
+    width: int = Field(index=True)
+    height: [int] = Field(index=True)
 
 def add_user_event(
         userid,
@@ -81,7 +84,10 @@ def add_user_event(
         offset_y,
         doc_id,
         region,
-        task_name
+        task_name,
+        session_id,
+        width,
+        height
         ):
     user_event = UserEvent(
         userid=userid,
@@ -100,6 +106,9 @@ def add_user_event(
         system_time=datetime.utcnow().replace(tzinfo=pytz.utc),
         region=region,
         task_name=task_name,
+        session_id=session_id,
+        width=width,
+        height=height
     )
     user_event.save()
     return user_event
@@ -126,7 +135,10 @@ def get_user_event(pk):
         'doc_id': user_event.doc_id,
         'system_time': user_event.system_time.replace(tzinfo=pytz.utc).astimezone(pytz.timezone("Australia/Sydney")) if user_event.system_time else None,
         'region': user_event.region,
-        'task_name': user_event.task_name
+        'task_name': user_event.task_name,
+        'session_id': user_event.session_id,
+        'width' : user_event.width,
+        'height': user_event.height
     }
 
 
