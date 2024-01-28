@@ -420,7 +420,9 @@ def expert_replay(request):
                 eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']))
                 eventPosition=getPositionViewport(int(resultTask['width']),int(resultTask['height']),int(resultTask['offset_x']),int(resultTask['offset_y']))
                 eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": str(resultTask['offset_x']), "offsetY": str(resultTask['offset_y']), "position": str(eventPosition), "title":str(resultTask['event_source']), "description" : str(eventDescription)})
-        auxDict.append({"task name": str(resultSesions['interaction_context']), "steps":eventlist})
+        if resultSesions['task_name'] is None: task_name="test API"
+        else: task_name= str(resultSesions['task_name'])
+        auxDict.append({"task name": task_name, "steps":eventlist})
     dictResult['data']=auxDict
     return dictResult
 
