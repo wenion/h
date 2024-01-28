@@ -414,7 +414,7 @@ def expert_replay(request):
     for resultSesions in resultAllEvents["table_result"]:#For the taskName and session
         #print(str(resultSesions['interaction_context'])) 
         eventlist=[]
-        fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID="7")# Get the event of each session
+        fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID="9")# Get the event of each session
         for resultTask in fetch_result["table_result"]:
             if str(resultTask['event_type'])!="scroll" and str(resultTask['event_type'])!="beforeunload" and str(resultTask['event_type'])!="OPEN" and str(resultTask['event_type'])!="visibilitychange":
                 eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']))
