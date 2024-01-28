@@ -151,6 +151,43 @@ def get_user_event(pk):
         'height': user_event.height,
     }
 
+def fetch_all_user_events_by_session(userid,sessionID):
+    result = UserEvent.find((UserEvent.userid == userid) & (UserEvent.doc_id == sessionID)).sort_by("timestamp").all()
+    #.sort_by("-timestamp")
+    table_result=[]
+    for index, item in enumerate(result):
+        json_item = {'id': index, **get_user_event(item.pk)}
+        table_result.append(json_item)
+    #print(table_result)  
+    return {
+        "table_result": table_result,
+        "total": len(result),
+        }
+
+def fetch_all_user_sessions(userid):
+    result = UserEvent.find(UserEvent.userid == userid).all()
+
+    auxSessionIds=[]
+    table_result=[]
+    for index, item in enumerate(result):
+        json_item = {'id': index, **get_user_event(item.pk)}
+        if json_item['doc_id'] is not None and json_item['doc_id']!="" and json_item['interaction_context'] is not None and json_item['interaction_context']!="":
+            if not auxSessionIds:
+                table_result.append(json_item)
+                auxSessionIds.append(json_item['doc_id'])
+            else:
+                flag=True
+                for sesionid in auxSessionIds:
+                    if sesionid==json_item['doc_id']:
+                        flag=False
+                if flag:
+                    table_result.append(json_item)
+                    auxSessionIds.append(json_item['doc_id'])
+      
+    return {
+        "table_result": table_result,
+        "total": len(result),
+        }
 
 # class Rating(JsonModel):
 #     class Meta:

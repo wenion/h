@@ -29,7 +29,7 @@ from h.exceptions import InvalidUserId
 from h.security import Permission
 from h.views.api.config import api_config
 from h.models_redis import UserEvent, Rating
-from h.models_redis import get_highlights_from_openai, create_user_event, save_in_redis, add_user_event
+from h.models_redis import get_highlights_from_openai, create_user_event, save_in_redis, add_user_event, fetch_all_user_sessions,fetch_all_user_events_by_session
 from h.services import OrganisationEventPushLogService
 
 def split_user(userid):
@@ -393,6 +393,56 @@ def push_recommendation(request):
         "succ": data["url"] + "has been saved"
     }
 
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.expert_replay",
+    request_method="GET",
+    #permission=Permission.Annotation.CREATE,
+    link_name="expert_replay",
+    description="get the session of the expert replay",
+) 
+def expert_replay(request):
+    #userID=request.authenticated_userid
+    userID="acct:admin@localhost"
+
+    resultAllEvents=fetch_all_user_sessions(userid=userID)
+
+    dictResult={}
+    #eventlist=[]
+    auxDict=[]
+
+    for resultSesions in resultAllEvents["table_result"]:#For the taskName and session
+        #print(str(resultSesions['interaction_context'])) 
+        eventlist=[]
+        fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID="7")# Get the event of each session
+        for resultTask in fetch_result["table_result"]:
+            if str(resultTask['event_type'])!="scroll" and str(resultTask['event_type'])!="beforeunload" and str(resultTask['event_type'])!="OPEN" and str(resultTask['event_type'])!="visibilitychange":
+                eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']))
+                eventPosition=getPositionViewport(int(resultTask['width']),int(resultTask['height']),int(resultTask['offset_x']),int(resultTask['offset_y']))
+                eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": str(resultTask['offset_x']), "offsetY": str(resultTask['offset_y']), "position": str(eventPosition), "title":str(resultTask['event_source']), "description" : str(eventDescription)})
+        auxDict.append({"task name": str(resultSesions['interaction_context']), "steps":eventlist})
+    dictResult['data']=auxDict
+    return dictResult
+
+def getTextbyEvent(event_type,text_content):
+    if event_type=="click":
+        return "Click on "+ text_content.replace("  "," ").replace("\n"," ")
+    #elif event_type=="scroll":
+    #    return "Scroll Down in the web page"
+    elif event_type=="keydown":
+        return "Write the contend you need it"
+    else:
+        return "ERROR "
+
+def getPositionViewport(portX,portY,offset_x,offset_y):
+    height=""
+    width=""
+    if (portY/2)> offset_y: height="top"
+    else: height="bottom"
+    if(portX/2)>offset_x: width="left"
+    else: width="rigth"
+    return height+" "+width
+#Ivan
 
 @api_config(
     versions=["v1", "v2"],
@@ -543,13 +593,17 @@ def event(request):
         text_content=event["text_content"],
         base_url=event["base_url"],
         ip_address=request.client_addr,
-        interaction_context="",
-        event_source="",
-        x_path="",
-        offset_x=0.0,
-        offset_y=0.0,
-        doc_id="",
+        interaction_context=event["interaction_context"],
+        event_source=event["event_source"],
+        x_path=event["x_path"],
+        offset_x=event["offset_x"],
+        offset_y=event["offset_y"],
+        doc_id=event["doc_id"],
         region="",
+        session_id=event["session_id"],
+        task_name=event["task_name"],
+        width=event["width"],
+        height=event["height"],
         )
     return {
         "succ": "event has been saved"
