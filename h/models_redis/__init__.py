@@ -183,7 +183,7 @@ def fetch_all_user_sessions(userid):
                 if flag:
                     table_result.append(json_item)
                     auxSessionIds.append(json_item['session_id'])
-    print("Num: "+ len(result)) 
+    print("Num: "+ str(len(result))) 
     return {
         "table_result": table_result,
         "total": len(result),
