@@ -171,18 +171,18 @@ def fetch_all_user_sessions(userid):
     table_result=[]
     for index, item in enumerate(result):
         json_item = {'id': index, **get_user_event(item.pk)}
-        if json_item['doc_id'] is not None and json_item['doc_id']!="" and json_item['interaction_context'] is not None and json_item['interaction_context']!="":
+        if json_item['session_id'] is not None and json_item['session_id']!="" and json_item['task_name'] is not None and json_item['task_name']!="":
             if not auxSessionIds:
                 table_result.append(json_item)
-                auxSessionIds.append(json_item['doc_id'])
+                auxSessionIds.append(json_item['session_id'])
             else:
                 flag=True
                 for sesionid in auxSessionIds:
-                    if sesionid==json_item['doc_id']:
+                    if sesionid==json_item['session_id']:
                         flag=False
                 if flag:
                     table_result.append(json_item)
-                    auxSessionIds.append(json_item['doc_id'])
+                    auxSessionIds.append(json_item['session_id'])
       
     return {
         "table_result": table_result,

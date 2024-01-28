@@ -408,9 +408,7 @@ def expert_replay(request):
     resultAllEvents=fetch_all_user_sessions(userid=userID)
 
     dictResult={}
-    #eventlist=[]
     auxDict=[]
-
     for resultSesions in resultAllEvents["table_result"]:#For the taskName and session
         #print(str(resultSesions['interaction_context'])) 
         eventlist=[]
