@@ -410,7 +410,7 @@ def expert_replay(request):
     dictResult={}
     auxDict=[]
     for resultSesions in resultAllEvents["table_result"]:#For the taskName and session
-        #print(str(resultSesions['interaction_context'])) 
+        print("num: "+len(resultAllEvents)) 
         eventlist=[]
         fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID="9")# Get the event of each session
         for resultTask in fetch_result["table_result"]:
