@@ -403,10 +403,10 @@ def push_recommendation(request):
 ) 
 def expert_replay(request):
     userID=request.authenticated_userid
-    #userID="acct:admin@localhost"
+    # userID="acct:admin@localhost"
 
     resultAllEvents=fetch_all_user_sessions(userid=userID)
-    dictResult={}
+    # dictResult={}
     auxDict=[]
     for resultSesions in resultAllEvents["table_result"]:#For the taskName and session
         #print("num: "+str(len(resultAllEvents))) 
@@ -419,9 +419,9 @@ def expert_replay(request):
                 eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": str(resultTask['offset_x']), "offsetY": str(resultTask['offset_y']), "position": str(eventPosition), "title":str(resultTask['event_source']), "description" : str(eventDescription)})
         if resultSesions['task_name'] is None: task_name="test API"
         else: task_name= str(resultSesions['task_name'])
-        auxDict.append({"task name": task_name, "steps":eventlist})
-    dictResult['data']=auxDict
-    return dictResult
+        auxDict.append({"taskName": task_name, 'sessionId': resultTask['session_id'], "steps":eventlist})
+    # dictResult['data']=auxDict
+    return auxDict
 
 def getTextbyEvent(event_type,text_content):
     if event_type=="click":
