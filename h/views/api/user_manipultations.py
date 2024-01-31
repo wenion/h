@@ -582,7 +582,7 @@ def message(request):
 def event(request):
     event = request.json_body
 
-    # print("event api", event)
+    print("event api", event)
 
     add_user_event(
         userid=request.authenticated_userid,
