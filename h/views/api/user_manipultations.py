@@ -501,7 +501,7 @@ def pull_recommendation(request):
     return redis_ret
 
 
-def make_message(type, pubid, event_name, message, date, show_flag, unread_flag, need_save_flag=True):
+def make_message(type, pubid, event_name, message, date, show_flag, unread_flag, need_save_flag=True, interval=30000):
     return {
         'type' : type,
         'id': pubid,
@@ -511,6 +511,7 @@ def make_message(type, pubid, event_name, message, date, show_flag, unread_flag,
         'show_flag': show_flag,
         'unread_flag': unread_flag,
         'need_save_flag': need_save_flag,
+        'interval': interval,
     }
 
 @api_config(
