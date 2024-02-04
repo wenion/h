@@ -412,12 +412,22 @@ def expert_replay(request):
     for resultSesions in resultAllEvents["table_result"]:#For the taskName and session
         eventlist=[]
         fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID=str(resultSesions['session_id']))# Get the event of each session
+        textKeydown=""
         for resultTask in fetch_result["table_result"]:
             if str(resultTask['event_type'])!="scroll" and str(resultTask['event_type'])!="beforeunload" and str(resultTask['event_type'])!="OPEN" and str(resultTask['event_type'])!="visibilitychange":
-                width = 0 if resultTask['width'] == None else resultTask['width']
-                height = 0 if resultTask['height'] == None else resultTask['height']
-                eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']))
-                eventPosition=getPositionViewport(int(width),int(height),int(resultTask['offset_x']),int(resultTask['offset_y']))
+                if str(resultTask['event_type'])!="keydown":
+                    textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
+                else:
+                    eventDescription,eventPosition=""
+                    if textKeydown!="":
+                        eventDescription=getTextbyEvent("keydown",textKeydown)
+                        eventPosition="N/A"
+                        textKeydown=""
+                    else:
+                        width = 0 if resultTask['width'] == None else resultTask['width']
+                        height = 0 if resultTask['height'] == None else resultTask['height']
+                        eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']))
+                        eventPosition=getPositionViewport(int(width),int(height),int(resultTask['offset_x']),int(resultTask['offset_y']))
                 eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": str(resultTask['offset_x']), "offsetY": str(resultTask['offset_y']), "position": str(eventPosition), "title":str(resultTask['event_source']), "description" : str(eventDescription)})
         if resultSesions['task_name'] is None: task_name="test API"
         else: task_name= str(resultSesions['task_name'])
@@ -425,13 +435,21 @@ def expert_replay(request):
     # dictResult['data']=auxDict
     return auxDict
 
+def getKeyboard(textKeydown, character):
+    if character=="Backspace":
+        return(textKeydown[:-1] )
+    elif character=="Shift" or character=="Enter":
+        return(textKeydown)
+    else:
+        return(textKeydown+character)
+
 def getTextbyEvent(event_type,text_content):
     if event_type=="click":
         return "Click on "+ text_content.replace("  "," ").replace("\n"," ")
     #elif event_type=="scroll":
     #    return "Scroll Down in the web page"
     elif event_type=="keydown":
-        return "Write the contend you need it"
+        return "Write the contend " + text_content
     else:
         return "ERROR "
 
