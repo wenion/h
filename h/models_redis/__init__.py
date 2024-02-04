@@ -54,6 +54,44 @@ class Bookmark(JsonModel):
     deleted: int = Field(index=True, default=0)
 
 
+class UserStatus(JsonModel):
+    class Meta:
+        global_key_prefix = 'h'
+        model_key_prefix = 'UserStatus'
+    userid: str = Field(index=True)
+    task_name: str = Field(index=True)
+    session_id: str = Field(index=True)
+    description: str = Field(index=True)
+    doc_id: Optional[str] = Field(full_text_search=True, sortable=True)
+
+
+def get_user_status_by_userid(userid):
+    total = UserStatus.find(
+        UserStatus.userid == userid
+        ).all()
+    if len(total):
+        return total[0]
+    else:
+        user_status = UserStatus(
+            userid=userid,
+            task_name="",
+            session_id="",
+            description="",
+            doc_id = ""
+        )
+        user_status.save()
+        return user_status
+
+
+def set_user_status(userid, task_name, session_id, description):
+    user_status = get_user_status_by_userid(userid)
+
+    user_status.task_name = task_name
+    user_status.session_id = session_id
+    user_status.description = description
+    user_status.save()
+
+
 class UserEvent(JsonModel):
     class Meta:
         global_key_prefix = 'h'

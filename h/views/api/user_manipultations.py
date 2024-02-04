@@ -30,6 +30,7 @@ from h.security import Permission
 from h.views.api.config import api_config
 from h.models_redis import UserEvent, Rating
 from h.models_redis import get_highlights_from_openai, create_user_event, save_in_redis, add_user_event, fetch_all_user_sessions,fetch_all_user_events_by_session
+from h.models_redis import get_user_status_by_userid, set_user_status
 from h.services import OrganisationEventPushLogService
 
 def split_user(userid):
@@ -585,28 +586,34 @@ def event(request):
     event = request.json_body
 
     print("event api", event)
-    print("")
-
-    add_user_event(
-        userid=request.authenticated_userid,
-        event_type=event["event_type"],
-        timestamp=event["timestamp"],
-        tag_name=event["tag_name"],
-        text_content=event["text_content"],
-        base_url=event["base_url"],
-        ip_address=request.client_addr,
-        interaction_context=event["interaction_context"],
-        event_source=event["event_source"],
-        x_path=event["x_path"],
-        offset_x=event["offset_x"],
-        offset_y=event["offset_y"],
-        doc_id=event["doc_id"],
-        region="",
-        session_id=event["session_id"],
-        task_name=event["task_name"],
-        width=event["width"],
-        height=event["height"],
-        )
+    if event["tag_name"] == "RECORD":
+        if event["event_type"] == "START":
+            set_user_status(request.authenticated_userid, event["task_name"], event["session_id"], "")
+        if event["event_type"] == "END":
+            set_user_status(request.authenticated_userid, "", "", "")
+    else:
+        session_id = get_user_status_by_userid(request.authenticated_userid).session_id if event["session_id"] == "" else event["session_id"]
+        task_name = get_user_status_by_userid(request.authenticated_userid).task_name if event["task_name"] == "" else event["task_name"]
+        add_user_event(
+            userid=request.authenticated_userid,
+            event_type=event["event_type"],
+            timestamp=event["timestamp"],
+            tag_name=event["tag_name"],
+            text_content=event["text_content"],
+            base_url=event["base_url"],
+            ip_address=request.client_addr,
+            interaction_context=event["interaction_context"],
+            event_source=event["event_source"],
+            x_path=event["x_path"],
+            offset_x=event["offset_x"],
+            offset_y=event["offset_y"],
+            doc_id=event["doc_id"],
+            region="",
+            session_id=session_id,
+            task_name=task_name,
+            width=event["width"],
+            height=event["height"],
+            )
     return {
         "succ": "event has been saved"
     }
