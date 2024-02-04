@@ -409,7 +409,6 @@ def expert_replay(request):
     # dictResult={}
     auxDict=[]
     for resultSesions in resultAllEvents["table_result"]:#For the taskName and session
-        #print("num: "+str(len(resultAllEvents))) 
         eventlist=[]
         fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID=str(resultSesions['session_id']))# Get the event of each session
         for resultTask in fetch_result["table_result"]:
@@ -419,7 +418,7 @@ def expert_replay(request):
                 eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": str(resultTask['offset_x']), "offsetY": str(resultTask['offset_y']), "position": str(eventPosition), "title":str(resultTask['event_source']), "description" : str(eventDescription)})
         if resultSesions['task_name'] is None: task_name="test API"
         else: task_name= str(resultSesions['task_name'])
-        auxDict.append({"taskName": task_name, 'sessionId': resultTask['session_id'], "steps":eventlist})
+        auxDict.append({"taskName": task_name, 'sessionId': resultSesions['session_id'], "steps":eventlist})
     # dictResult['data']=auxDict
     return auxDict
 
@@ -525,9 +524,10 @@ def make_message(type, pubid, event_name, message, date, show_flag, unread_flag,
 def message(request):
     response = []
     day_ahead = 3
+    defalut_interval = "30000"
     userid = request.authenticated_userid
     request_type = request.GET.get("q")
-    interval = request.GET.get("interval")
+    interval = request.GET.get("interval") if request.GET.get("interval") else defalut_interval
     all = request.find_service(name="organisation_event").get_by_days(day_ahead)
 
     tad_url =  urljoin(request.registry.settings.get("tad_url"), "task_classification")
