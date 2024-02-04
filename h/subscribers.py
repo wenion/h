@@ -122,4 +122,6 @@ def add_annotation_event(event):
             "",
             get_user_status_by_userid(request.authenticated_userid).session_id,
             get_user_status_by_userid(request.authenticated_userid).task_name,
+            0,
+            0
         )

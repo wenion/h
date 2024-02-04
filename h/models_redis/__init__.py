@@ -134,8 +134,8 @@ def add_user_event(
         region,
         session_id=None,
         task_name=None,
-        width=None,
-        height=None,
+        width=0,
+        height=0,
         ):
     user_event = UserEvent(
         userid=userid,
