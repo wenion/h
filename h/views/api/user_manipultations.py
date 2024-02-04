@@ -527,13 +527,13 @@ def message(request):
     day_ahead = 3
     userid = request.authenticated_userid
     request_type = request.GET.get("q")
-    payload = request.json_body
+    interval = request.GET.get("interval")
     all = request.find_service(name="organisation_event").get_by_days(day_ahead)
 
     tad_url =  urljoin(request.registry.settings.get("tad_url"), "task_classification")
     tad_response = None
     try:
-        tad_response = requests.get(tad_url, params={"userid": userid, "interval": payload["interval"]})
+        tad_response = requests.get(tad_url, params={"userid": userid, "interval": int(interval)})
         tad_result = tad_response.json()
         response.append(
             make_message(
@@ -585,6 +585,7 @@ def event(request):
     event = request.json_body
 
     print("event api", event)
+    print("")
 
     add_user_event(
         userid=request.authenticated_userid,
