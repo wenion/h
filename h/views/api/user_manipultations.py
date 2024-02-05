@@ -413,18 +413,26 @@ def expert_replay(request):
         eventlist=[]
         fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID=str(11))#str(resultSesions['session_id']))# Get the event of each session
         textKeydown=""
-        for i in range(len(fetch_result["table_result"])):
+        lenResult=len(fetch_result["table_result"])
+        for i in range(lenResult):
             resultTask=fetch_result["table_result"][i]
             if str(resultTask['event_type'])!="scroll" and str(resultTask['event_type'])!="beforeunload" and str(resultTask['event_type'])!="OPEN" and str(resultTask['event_type'])!="visibilitychange":
                 if str(resultTask['event_type'])=="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
+                    if  str(fetch_result["table_result"][i+1]['event_type'])!="keydown": #Is last keydownEvent
+                        eventDescription=getTextbyEvent("keydown",textKeydown)
+                        textKeydown=""
+                        eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription)})
                     print("Text Event: "+textKeydown)
-                else: 
+                else:
                     width = 0 if resultTask['width'] == None else resultTask['width']
                     height = 0 if resultTask['height'] == None else resultTask['height']
                     eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']))
                     eventPosition=getPositionViewport(int(width),int(height),int(resultTask['offset_x']),int(resultTask['offset_y']))
                     eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": str(resultTask['offset_x']), "offsetY": str(resultTask['offset_y']), "position": str(eventPosition), "title":str(resultTask['event_source']), "description" : str(eventDescription)})
+        if textKeydown!="":
+            eventDescription=getTextbyEvent("keydown",textKeydown)
+            eventlist.append({"type": str(fetch_result["table_result"][lenResult]['event_type']), "url" : str(fetch_result["table_result"][lenResult]['base_url']), "xpath" : str(fetch_result["table_result"][lenResult]['x_path']),"text" : str(fetch_result["table_result"][lenResult]['text_content']), "offsetX": str(fetch_result["table_result"][lenResult]['offset_x']), "offsetY": str(fetch_result["table_result"][]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][lenResult]['event_source']), "description" : str(eventDescription)})
         if resultSesions['task_name'] is None: task_name="test API"
         else: task_name= str(resultSesions['task_name'])
         auxDict.append({"taskName": task_name, 'sessionId': resultSesions['session_id'], "steps":eventlist})
