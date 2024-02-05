@@ -420,7 +420,7 @@ def expert_replay(request):
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
                     print("Text Event: "+textKeydown)
                 else:
-                    eventDescription,eventPosition=""
+                    eventDescription=eventPosition=""
                     if textKeydown!="":# keyboard Events
                         eventDescription=getTextbyEvent("keydown",textKeydown)
                         eventPosition="N/A"
