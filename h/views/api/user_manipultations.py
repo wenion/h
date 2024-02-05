@@ -420,12 +420,6 @@ def expert_replay(request):
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
                     print("Text Event: "+textKeydown)
                 else:
-                    eventDescription=eventPosition=""
-                    if textKeydown!="":# keyboard Events
-                        eventDescription=getTextbyEvent("keydown",textKeydown)
-                        eventPosition="N/A"
-                        textKeydown=""
-                        eventlist.append({"type": str(fetch_result["table_result"][i-1]['event_type']), "url" : str(fetch_result["table_result"][i-1]['base_url']), "xpath" : str(fetch_result["table_result"][i-1]['x_path']),"text" : str(fetch_result["table_result"][i-1]['text_content']), "offsetX": str(fetch_result["table_result"][i-1]['offset_x']), "offsetY": str(fetch_result["table_result"][i-1]['offset_y']), "position": str(eventPosition), "title":str(fetch_result["table_result"][i-1]['event_source']), "description" : str(eventDescription)})
                     width = 0 if resultTask['width'] == None else resultTask['width']
                     height = 0 if resultTask['height'] == None else resultTask['height']
                     eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']))
