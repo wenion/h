@@ -519,7 +519,7 @@ def pull_recommendation(request):
     return redis_ret
 
 
-def make_message(type, pubid, event_name, message, date, show_flag, unread_flag, need_save_flag=True, interval=30000):
+def make_message(type, pubid, event_name, message, date, show_flag, unread_flag, need_save_flag=True):
     return {
         'type' : type,
         'id': pubid,
@@ -529,8 +529,8 @@ def make_message(type, pubid, event_name, message, date, show_flag, unread_flag,
         'show_flag': show_flag,
         'unread_flag': unread_flag,
         'need_save_flag': need_save_flag,
-        'interval': interval,
     }
+
 
 @api_config(
     versions=["v1", "v2"],
@@ -554,24 +554,27 @@ def message(request):
     try:
         tad_response = requests.get(tad_url, params={"userid": userid, "interval": int(interval)})
         tad_result = tad_response.json()
-        response.append(
-            make_message(
-                "instant_message",
-                datetime.now().strftime("%S%M%H%d%m%Y") + "_" +split_user(userid)["username"],
-                "Expert trace recommendation",
-                tad_result['message'],
-                date.today().strftime("%d/%m/%Y"),
-                True if tad_result['certainty'] else False, True, False)
-        )
+        certainty = tad_result["certainty"] if "certainty" in tad_result else 0
+        rep_interval = tad_result["interval"] if "interval" in tad_result else defalut_interval
+
+        message = make_message(
+            "instant_message",
+            datetime.now().strftime("%S%M%H%d%m%Y") + "_" +split_user(userid)["username"],
+            "Expert trace recommendation",
+            tad_result["message"],
+            date.today().strftime("%d/%m/%Y"),
+            True if certainty else False, True, False)
+        message["interval"] = rep_interval
+        response.append(message)
     except Exception as e:
         response.append(
             make_message(
                 "error_message",
                 "pubid",
                 "Error",
-                str(e) + "status code: " + str(tad_response.status_code) if tad_response else str(e),
+                str(e) + "! status code: " + str(tad_response.status_code) if tad_response else str(e),
                 date.today().strftime("%d/%m/%Y"),
-                True, True, False)
+                False, True, False)
         )
 
     for item in all:
