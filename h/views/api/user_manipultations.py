@@ -398,7 +398,7 @@ def push_recommendation(request):
     versions=["v1", "v2"],
     route_name="api.expert_replay",
     request_method="GET",
-    permission=Permission.Annotation.CREATE,
+    #permission=Permission.Annotation.CREATE,
     link_name="expert_replay",
     description="get the session of the expert replay",
 ) 
