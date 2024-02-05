@@ -419,7 +419,7 @@ def expert_replay(request):
                 if str(resultTask['event_type'])=="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
                     print("Text Event: "+textKeydown)
-                else:
+                else: 
                     width = 0 if resultTask['width'] == None else resultTask['width']
                     height = 0 if resultTask['height'] == None else resultTask['height']
                     eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']))
