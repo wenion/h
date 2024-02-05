@@ -411,7 +411,7 @@ def expert_replay(request):
     auxDict=[]
     for resultSesions in resultAllEvents["table_result"]:#For the taskName and session
         eventlist=[]
-        fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID=11)#str(resultSesions['session_id']))# Get the event of each session
+        fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID=str(11))#str(resultSesions['session_id']))# Get the event of each session
         textKeydown=""
         for i in range(len(fetch_result["table_result"])):
             resultTask=fetch_result["table_result"][i]
