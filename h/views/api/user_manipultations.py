@@ -398,20 +398,20 @@ def push_recommendation(request):
     versions=["v1", "v2"],
     route_name="api.expert_replay",
     request_method="GET",
-    #permission=Permission.Annotation.CREATE,
+    permission=Permission.Annotation.CREATE,
     link_name="expert_replay",
     description="get the session of the expert replay",
 ) 
 def expert_replay(request):
-    #userID=request.authenticated_userid
-    userID="acct:admin@localhost"
+    userID=request.authenticated_userid
+    #userID="acct:admin@localhost"
 
     resultAllEvents=fetch_all_user_sessions(userid=userID)
     # dictResult={}
     auxDict=[]
     for resultSesions in resultAllEvents["table_result"]:#For the taskName and session
         eventlist=[]
-        fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID=str(12))#str(resultSesions['session_id']))# Get the event of each session
+        fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID=str(resultSesions['session_id']))# Get the event of each session
         textKeydown=""
         flagScroll=True
         lenResult=len(fetch_result["table_result"])
@@ -462,7 +462,7 @@ def getTextbyEvent(event_type,text_content):
     elif event_type=="select":
         return "Select the text "+text_content
     elif event_type=="keydown":
-        return "Write the contend " + text_content
+        return "Write the contend '" + text_content+"'"
     else:
         return "No description "
 
