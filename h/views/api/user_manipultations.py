@@ -15,7 +15,7 @@ authorization system. You can find the mapping between annotation "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
 import copy
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timezone
 import json
 import os
 import openai
@@ -577,7 +577,7 @@ def message(request):
             datetime.now().strftime("%S%M%H%d%m%Y") + "_" +split_user(userid)["username"],
             "Expert trace recommendation",
             tad_result["message"],
-            date.today().strftime("%d/%m/%Y"),
+            datetime.now().strftime("%s%f"),
             True if certainty else False, True, False)
         message["interval"] = rep_interval
         response.append(message)
@@ -588,7 +588,7 @@ def message(request):
                 "pubid",
                 "Error",
                 str(e) + "! status code: " + str(tad_response.status_code) if tad_response else str(e),
-                date.today().strftime("%d/%m/%Y"),
+                datetime.now().strftime("%s%f"),
                 False, True, False)
         )
 
@@ -607,7 +607,7 @@ def message(request):
             else:
                 show_flag = False
                 unread_flag = False
-        response.append(make_message(request_type, item.pubid, item.event_name, item.text, item.date.strftime("%d/%m/%Y"), show_flag, unread_flag))
+        response.append(make_message(request_type, item.pubid, item.event_name, item.text, item.date.replace(tzinfo=timezone.utc).astimezone().strftime("%s%f"), show_flag, unread_flag))
     return response
 
 @api_config(
