@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from jinja2 import Markup
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config, view_defaults
@@ -65,7 +65,7 @@ class OrganisationEventCreateController:
             event_name = appstruct["event_name"]
             campus = appstruct["campus"]
             text = appstruct["text"]
-            date_datetime = datetime.strptime(date_str, '%d/%m/%Y').date()
+            date_datetime = datetime.strptime(date_str, '%d/%m/%Y').astimezone(timezone.utc)
             organization = OrganisationEvent(date=date_datetime, groupid=groupid, event_name=event_name, campus=campus, text=text)
 
             self.request.db.add(organization)
@@ -149,7 +149,7 @@ class OrganizationEditController:
         org = self.organization
 
         def on_success(appstruct):
-            org.date = datetime.strptime(appstruct["date"], '%d/%m/%Y').date()
+            org.date = datetime.strptime(appstruct["date"], '%d/%m/%Y').astimezone(timezone.utc)
             org.event_name = appstruct["event_name"]
             org.groupid = appstruct["groupid"]
             org.campus = appstruct["campus"]
@@ -169,7 +169,7 @@ class OrganizationEditController:
     def _update_appstruct(self):
         org = self.organization
         self.form.set_appstruct(
-            {"date": org.date.strftime('%d/%m/%Y'), "event_name": org.event_name, "campus": org.campus, "groupid": self.selected_group, "text": org.text}
+            {"date": org.date.replace(tzinfo=timezone.utc).astimezone().strftime('%d/%m/%Y'), "event_name": org.event_name, "campus": org.campus, "groupid": self.selected_group, "text": org.text}
         )
 
     def _template_context(self):

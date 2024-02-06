@@ -1,3 +1,4 @@
+from datetime import timezone
 import functools
 import math
 
@@ -137,6 +138,7 @@ def paginate_query(wrapped=None, page_size=PAGE_SIZE):
             "results": result.offset(offset).limit(page_size).all(),
             "total": total,
             "page": page,
+            'timezone': timezone,
         }
 
     return wrapper

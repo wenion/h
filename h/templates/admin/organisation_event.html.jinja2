@@ -25,7 +25,7 @@
           <tr>
             <td>
               {% set edit_url = request.route_url('admin.organisation_event_edit', pubid=org.pubid) %}
-              <a href="{{ edit_url }}">{{ org.date.strftime("%d/%m/%Y") }}</a>
+              <a href="{{ edit_url }}">{{ org.date.replace(tzinfo=timezone.utc).astimezone().strftime("%d/%m/%Y") }}</a>
             </td>
             <td>
               {% set edit_url = request.route_url('admin.organisation_event_edit', pubid=org.pubid) %}
