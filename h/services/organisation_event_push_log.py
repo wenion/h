@@ -39,7 +39,7 @@ class OrganisationEventPushLogService:
         query_result = self.session.query(OrganisationEventPushLog) \
         .filter(OrganisationEventPushLog.user_id==user.id) \
         .filter(OrganisationEventPushLog.organisation_event_id==organisation_event.id) \
-        .one_or_none()
+        .all()
         # .filter(OrganisationEventPushLog.dismissed==dismissed) \
         return query_result
 

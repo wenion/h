@@ -597,6 +597,10 @@ def message(request):
         unread_flag = False
         if item.date.date() >= date.today():
             ret = request.find_service(OrganisationEventPushLogService).fetch_by_userid_and_pubid(userid, item.pubid)
+            if len(ret):
+                ret = ret[0]
+            else:
+                ret = None
             if not ret:
                 request.find_service(OrganisationEventPushLogService).create(userid, item.pubid)
                 show_flag = True
