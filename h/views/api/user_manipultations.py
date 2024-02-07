@@ -417,7 +417,7 @@ def expert_replay(request):
         lenResult=len(fetch_result["table_result"])
         for i in range(lenResult):
             resultTask=fetch_result["table_result"][i]
-            if str(resultTask['event_type'])!="beforeunload" and str(resultTask['event_type'])!="OPEN" and str(resultTask['event_type'])!="visibilitychange" and str(resultTask['event_type'])!="server-record" and str(resultTask['event_type'])!="submit":
+            if str(resultTask['event_type'])!="beforeunload" and str(resultTask['event_type'])!="OPEN" and str(resultTask['event_type'])!="open" and str(resultTask['event_type'])!="visibilitychange" and str(resultTask['event_type'])!="server-record" and str(resultTask['event_type'])!="submit":
                 if str(resultTask['event_type'])=="scroll":
                     if flagScroll:
                         flagScroll=False
@@ -466,7 +466,7 @@ def getTextbyEvent(event_type,text_content):
     elif event_type=="keydown":
         return "Type the content '" + text_content+"'"
     else:
-        return "No description "
+        return "No description"
 
 def getPositionViewport(portX,portY,offset_x,offset_y):
     height=""
