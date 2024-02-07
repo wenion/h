@@ -203,7 +203,7 @@ def fetch_all_user_events_by_session(userid,sessionID):
         }
 
 def fetch_all_user_sessions(userid):
-    result = UserEvent.find(UserEvent.userid == userid).sort_by("timestamp").all()
+    result = UserEvent.find(UserEvent.userid == userid).sort_by("-timestamp").all()
 
     auxSessionIds=[]
     table_result=[]
