@@ -633,29 +633,29 @@ def event(request):
             set_user_status(request.authenticated_userid, event["task_name"], event["session_id"], "")
         if event["event_type"] == "END":
             set_user_status(request.authenticated_userid, "", "", "")
-    else:
-        session_id = get_user_status_by_userid(request.authenticated_userid).session_id if event["session_id"] == "" else event["session_id"]
-        task_name = get_user_status_by_userid(request.authenticated_userid).task_name if event["task_name"] == "" else event["task_name"]
-        add_user_event(
-            userid=request.authenticated_userid,
-            event_type=event["event_type"],
-            timestamp=event["timestamp"],
-            tag_name=event["tag_name"],
-            text_content=event["text_content"],
-            base_url=event["base_url"],
-            ip_address=request.client_addr,
-            interaction_context=event["interaction_context"],
-            event_source=event["event_source"],
-            x_path=event["x_path"],
-            offset_x=event["offset_x"],
-            offset_y=event["offset_y"],
-            doc_id=event["doc_id"],
-            region="",
-            session_id=session_id,
-            task_name=task_name,
-            width=event["width"],
-            height=event["height"],
-            )
+
+    session_id = get_user_status_by_userid(request.authenticated_userid).session_id if event["session_id"] == "" else event["session_id"]
+    task_name = get_user_status_by_userid(request.authenticated_userid).task_name if event["task_name"] == "" else event["task_name"]
+    add_user_event(
+        userid=request.authenticated_userid,
+        event_type=event["event_type"],
+        timestamp=event["timestamp"],
+        tag_name=event["tag_name"],
+        text_content=event["text_content"],
+        base_url=event["base_url"],
+        ip_address=request.client_addr,
+        interaction_context=event["interaction_context"],
+        event_source=event["event_source"],
+        x_path=event["x_path"],
+        offset_x=event["offset_x"],
+        offset_y=event["offset_y"],
+        doc_id=event["doc_id"],
+        region="",
+        session_id=session_id,
+        task_name=task_name,
+        width=event["width"],
+        height=event["height"],
+        )
     return {
         "succ": "event has been saved"
     }
