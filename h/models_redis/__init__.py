@@ -213,6 +213,7 @@ def fetch_all_user_sessions(userid):
             if not auxSessionIds:
                 table_result.append(json_item)
                 auxSessionIds.append(json_item['session_id'])
+                print("INIT session: "+json_item['session_id'])
             else:
                 flag=True
                 for sesionid in auxSessionIds:
@@ -221,6 +222,7 @@ def fetch_all_user_sessions(userid):
                 if flag:
                     table_result.append(json_item)
                     auxSessionIds.append(json_item['session_id'])
+                    print("INIT session: "+json_item['session_id'])
     #print("Num: "+ str(len(result))) 
     return {
         "table_result": table_result,
