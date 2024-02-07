@@ -426,7 +426,7 @@ def expert_replay(request):
                 elif str(resultTask['event_type'])=="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
                     if i<lenResult:
-                        if str(fetch_result["table_result"][i+1]['event_type'])!="keydown": #Is last keydownEvent
+                        if i+1 < len(fetch_result["table_result"]) and str(fetch_result["table_result"][i+1]['event_type'])!="keydown": #Is last keydownEvent
                             eventDescription=getTextbyEvent("keydown",textKeydown)
                             textKeydown=""
                             eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription)})
@@ -438,7 +438,7 @@ def expert_replay(request):
                     eventPosition=getPositionViewport(int(width),int(height),int(resultTask['offset_x']),int(resultTask['offset_y']))
                     eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": str(resultTask['offset_x']), "offsetY": str(resultTask['offset_y']), "position": str(eventPosition), "title":str(resultTask['event_source']), "description" : str(eventDescription)})
                     flagScroll=True
-        if textKeydown!="":
+        if lenResult< len(fetch_result["table_result"]) and textKeydown!="":
             eventDescription=getTextbyEvent("keydown",textKeydown)
             eventlist.append({"type": str(fetch_result["table_result"][lenResult]['event_type']), "url" : str(fetch_result["table_result"][lenResult]['base_url']), "xpath" : str(fetch_result["table_result"][lenResult]['x_path']),"text" : str(fetch_result["table_result"][lenResult]['text_content']), "offsetX": str(fetch_result["table_result"][lenResult]['offset_x']), "offsetY": str(fetch_result["table_result"][lenResult]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][lenResult]['event_source']), "description" : str(eventDescription)})
         if resultSesions['task_name'] is None: task_name="test API"
