@@ -403,32 +403,33 @@ def push_recommendation(request):
     description="get the session of the expert replay",
 ) 
 def expert_replay(request):
-    userID=request.authenticated_userid
-    #userID="acct:admin@localhost"
+    #userID=request.authenticated_userid
+    userID="acct:admin@localhost"
 
     resultAllEvents=fetch_all_user_sessions(userid=userID)
     # dictResult={}
     auxDict=[]
     for resultSesions in resultAllEvents["table_result"]:#For the taskName and session
         eventlist=[]
-        fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID=str(resultSesions['session_id']))# Get the event of each session
+        fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID=str(12)) #str(resultSesions['session_id']))# Get the event of each session
         textKeydown=""
         flagScroll=True
         lenResult=len(fetch_result["table_result"])
         for i in range(lenResult):
             resultTask=fetch_result["table_result"][i]
-            if str(resultTask['event_type'])!="beforeunload" and str(resultTask['event_type'])!="OPEN" and str(resultTask['event_type'])!="visibilitychange":
+            if str(resultTask['event_type'])!="beforeunload" and str(resultTask['event_type'])!="OPEN" and str(resultTask['event_type'])!="visibilitychange" and str(resultTask['event_type'])!="server-record" and str(resultTask['event_type'])!="submit":
                 if str(resultTask['event_type'])=="scroll":
                     if flagScroll:
                         flagScroll=False
-                        eventDescription=getTextbyEvent("scroll",str(fetch_result["table_result"][i]['tag_name']))
-                        eventlist.append({"type": str(fetch_result["table_result"][i]['tag_name']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription)})
+                        eventDescription=getTextbyEvent("scroll",str(fetch_result["table_result"][i]['text_content']).split(":")[0])
+                        eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription)})
                 elif str(resultTask['event_type'])=="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
-                    if str(fetch_result["table_result"][i+1]['event_type'])!="keydown": #Is last keydownEvent
-                        eventDescription=getTextbyEvent("keydown",textKeydown)
-                        textKeydown=""
-                        eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription)})
+                    if i<lenResult:
+                        if str(fetch_result["table_result"][i+1]['event_type'])!="keydown": #Is last keydownEvent
+                            eventDescription=getTextbyEvent("keydown",textKeydown)
+                            textKeydown=""
+                            eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription)})
                     flagScroll=True
                 else:
                     width = 0 if resultTask['width'] == None else resultTask['width']
@@ -444,7 +445,7 @@ def expert_replay(request):
         else: task_name= str(resultSesions['task_name'])
         auxDict.append({"taskName": task_name, 'sessionId': resultSesions['session_id'], "steps":eventlist})
     # dictResult['data']=auxDict
-    return auxDict
+    return sorted(auxDict['sessionId'].items())
 
 def getKeyboard(textKeydown, character):
     if character=="Backspace":
@@ -458,11 +459,11 @@ def getTextbyEvent(event_type,text_content):
     if event_type=="click":
         return "Click on "+ text_content.replace("  "," ").replace("\n"," ")
     elif event_type=="scroll":
-        return text_content + " in the web page"
+        return text_content.lower() + " in the web page"
     elif event_type=="select":
         return "Select the text "+text_content
     elif event_type=="keydown":
-        return "Write the contend '" + text_content+"'"
+        return "Type the search message '" + text_content+"'"
     else:
         return "No description "
 
