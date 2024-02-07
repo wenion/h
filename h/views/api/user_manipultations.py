@@ -32,6 +32,7 @@ from h.models_redis import UserEvent, Rating
 from h.models_redis import get_highlights_from_openai, create_user_event, save_in_redis, add_user_event, fetch_all_user_sessions,fetch_all_user_events_by_session
 from h.models_redis import get_user_status_by_userid, set_user_status
 from h.services import OrganisationEventPushLogService
+from operator import itemgetter
 
 def split_user(userid):
     """
@@ -445,7 +446,7 @@ def expert_replay(request):
         else: task_name= str(resultSesions['task_name'])
         auxDict.append({"taskName": task_name, 'sessionId': resultSesions['session_id'], "steps":eventlist})
     # dictResult['data']=auxDict
-    return sorted(auxDict['sessionId'].items())
+    return sorted(auxDict, key=itemgetter('sessionId'))
 
 def getKeyboard(textKeydown, character):
     if character=="Backspace":
