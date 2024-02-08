@@ -580,7 +580,7 @@ def message(request):
             "Expert trace recommendation",
             tad_result["message"],
             datetime.now().strftime("%s%f"),
-            True if certainty else False, True)
+            True if certainty else False, True, True if certainty else False)
         message["interval"] = rep_interval
         response.append(message)
     except Exception as e:
