@@ -444,7 +444,6 @@ def expert_replay(request):
         if resultSesions['task_name'] is None: task_name="test API"
         else: task_name= str(resultSesions['task_name'])
         auxDict.append({"taskName": task_name, 'sessionId': resultSesions['session_id'], "steps":eventlist})
-        print("Session: "+resultSesions['session_id'])
     # dictResult['data']=auxDict
     return auxDict
 
