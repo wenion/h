@@ -432,7 +432,7 @@ def expert_replay(request):
                             eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription)})
                     flagScroll=True
                 else:
-                    if str(resultTask['event_type'])!="":
+                    if str(resultTask['text_content'])!="":
                         width = 0 if resultTask['width'] == None else resultTask['width']
                         height = 0 if resultTask['height'] == None else resultTask['height']
                         eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']))
