@@ -113,7 +113,7 @@ def _privacy_accepted_message():
     terms_links = {
         # pylint:disable=consider-using-f-string
         "privacy_policy": '<a class="link" href="{href}">{text}</a>'.format(
-            href="https://web.hypothes.is/privacy/", text=_("privacy policy")
+            href="hhttps://colam.kmass.cloud.edu.au/privacy/", text=_("privacy policy")
         ),
         "terms_of_service": '<a class="link" href="{href}">{text}</a>'.format(
             href="https://web.hypothes.is/terms-of-service/", text=_("terms of service")
