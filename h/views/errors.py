@@ -34,7 +34,7 @@ def json_error(context, request):
     handle_exception(request, exception=context)
     message = _(
         "Hypothesis had a problem while handling this request. "
-        "Our team has been notified. Please contact support@hypothes.is"
+        "Our team has been notified. Please contact goldmindtools@gmail.com"
         " if the problem persists."
     )
     return {"status": "failure", "reason": message}
