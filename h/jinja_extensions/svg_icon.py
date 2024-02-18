@@ -3,6 +3,7 @@ from xml.etree import ElementTree
 from markupsafe import Markup
 
 SVG_NAMESPACE_URI = "http://www.w3.org/2000/svg"
+SVG_XLINK_NAMESPACE_URI = "http://www.w3.org/1999/xlink"
 
 
 def svg_icon(name, css_class=""):
@@ -29,6 +30,7 @@ def svg_icon(name, css_class=""):
     # '<ns0:svg>...') and browsers will not render the result as SVG.
     # See http://stackoverflow.com/questions/8983041
     ElementTree.register_namespace("", SVG_NAMESPACE_URI)
+    ElementTree.register_namespace("xlink", SVG_XLINK_NAMESPACE_URI)
 
     with open(f"build/images/icons/{name}.svg", encoding="utf8") as handle:
         svg_data = handle.read()
