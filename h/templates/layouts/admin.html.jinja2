@@ -47,7 +47,7 @@
     <nav class="admin-navbar">
       <div class="admin-navbar__container">
         <a class="admin-navbar__logo-link" href="{{ request.route_url('admin.index') }}">
-          {{ svg_icon('goldmind-logo', 'admin-navbar__logo') }}
+          {{ svg_icon('logo', 'admin-navbar__logo') }}
         </a>
         <ul class="admin-navbar__tab-list">
           {% for tab in navbar_data_admin(request) %}
