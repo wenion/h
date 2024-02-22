@@ -581,7 +581,7 @@ def message(request):
         message = make_message(
             "instant_message",
             datetime.now().strftime("%S%M%H%d%m%Y") + "_" +split_user(userid)["username"],
-            "Expert trace recommendation",
+            "ShareFlow recommendation",
             tad_result["message"],
             datetime.now().strftime("%s%f"),
             True if certainty else False, True, True if certainty else False)
