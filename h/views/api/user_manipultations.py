@@ -434,9 +434,9 @@ def expert_replay(request):
                 else:
                     if str(resultTask['text_content'])!="" and str(resultTask['tag_name'])!="SIDEBAR-TAB":
                         width = 0 if resultTask['width'] == None else resultTask['width']
-                        height = 0 if resultTask['height'] == None else resultTask['height']
-                        eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']))
+                        height = 0 if resultTask['height'] == None else resultTask['height']                        
                         eventPosition=getPositionViewport(int(width),int(height),int(resultTask['offset_x']),int(resultTask['offset_y']))
+                        eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']),eventPosition)
                         if eventDescription!="No description":
                             eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": str(resultTask['offset_x']), "offsetY": str(resultTask['offset_y']), "position": str(eventPosition), "title":str(resultTask['event_source']), "description" : str(eventDescription)})
                     flagScroll=True
@@ -457,18 +457,18 @@ def getKeyboard(textKeydown, character):
     else:
         return(textKeydown+character)
 
-def getTextbyEvent(event_type,text_content):
+def getTextbyEvent(event_type,text_content,eventPosition):
     if len(text_content)>100:
         text_content=text_content[0:100] + "..."
-        print("Text CONTENT: "+ text_content)
+        #print("Text CONTENT: "+ text_content)
     if event_type=="click":
-        return "Click on "+ text_content.replace("  "," ").replace("\n"," ")
+        return 'Click on "'+ text_content.replace("  "," ").replace("\n"," ")+'" at '+eventPosition
     elif event_type=="scroll":
-        return text_content.lower() + " in the web page"
+        return text_content.lower().capitalize() + " on the web page"
     elif event_type=="select":
-        return "Select the text "+text_content
+        return 'Select  "'+text_content+'" at '+ eventPosition
     elif event_type=="keydown":
-        return "Type the content '" + text_content+"'"
+        return 'Type "' + text_content+'"'
     else:
         return "No description"
 
