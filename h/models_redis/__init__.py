@@ -9,6 +9,7 @@ from pydantic import NonNegativeInt
 from typing import Optional
 
 from h.models_redis.user_role import UserRole
+from h.models_redis.result import Result
 from h.models_redis.rating import Rating
 
 __all__ = (
@@ -19,15 +20,6 @@ __all__ = (
     "Rating",
     "UserFile",
 )
-
-class Result(JsonModel):
-    class Meta:
-        global_key_prefix = 'h'
-        model_key_prefix = 'Result'
-    title: str = Field(index=True)
-    url: str = Field(index=True)
-    summary: Optional[str] #= Field(index=True, full_text_search=True, default="")
-    highlights: Optional[str] #= Field(index=True, full_text_search=True, default="")
 
 
 class Bookmark(JsonModel):
@@ -84,7 +76,7 @@ class UserEvent(JsonModel):
         model_key_prefix = 'UserEvent'
     event_type: str = Field(index=True, full_text_search=True)
     timestamp: int = Field(index=True)
-    tag_name: str = Field(index=True)     # Result pk
+    tag_name: str = Field(index=True)
     text_content: str = Field(index=True)
     base_url: str = Field(index=True)
     userid: str = Field(index=True)
