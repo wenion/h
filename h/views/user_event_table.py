@@ -156,7 +156,7 @@ class UserEventSearchController:
         return {
             "table_head": table_head,
             "table_results": table_results,
-            "page": paginate(self.request, total, page_size=page_size) if type(page_size) == int else paginate(self.request, total, page_size=total),
+            "page": paginate(self.request, total, page_size=page_size) if type(page_size) == int else paginate(self.request, total, page_size=PAGE_SIZE if total == 0 else total),
             "values": values,
             "query": {
                 "page": page,
