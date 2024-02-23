@@ -421,32 +421,32 @@ def expert_replay(request):
                 if str(resultTask['event_type'])=="scroll":
                     if flagScroll:
                         flagScroll=False
-                        eventDescription=getTextbyEvent("scroll",str(fetch_result["table_result"][i]['text_content']).split(":")[0])
+                        eventDescription=getTextbyEvent("scroll",str(fetch_result["table_result"][i]['text_content']).split(":")[0],"")
                         eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription)})
                 elif str(resultTask['event_type'])=="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
                     if i<lenResult:
                         if i+1 < len(fetch_result["table_result"]) and str(fetch_result["table_result"][i+1]['event_type'])!="keydown": #Is last keydownEvent
-                            eventDescription=getTextbyEvent("keydown",textKeydown)
+                            eventDescription=getTextbyEvent("keydown",textKeydown,"")
                             textKeydown=""
                             eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription)})
                     flagScroll=True
                 else:
                     if str(resultTask['text_content'])!="" and str(resultTask['tag_name'])!="SIDEBAR-TAB":
                         width = 0 if resultTask['width'] == None else resultTask['width']
-                        height = 0 if resultTask['height'] == None else resultTask['height']
-                        eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']))
+                        height = 0 if resultTask['height'] == None else resultTask['height']                        
                         eventPosition=getPositionViewport(int(width),int(height),int(resultTask['offset_x']),int(resultTask['offset_y']))
+                        eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']),eventPosition)
                         if eventDescription!="No description":
                             eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": str(resultTask['offset_x']), "offsetY": str(resultTask['offset_y']), "position": str(eventPosition), "title":str(resultTask['event_source']), "description" : str(eventDescription)})
                     flagScroll=True
         if lenResult< len(fetch_result["table_result"]) and textKeydown!="":
-            eventDescription=getTextbyEvent("keydown",textKeydown)
+            eventDescription=getTextbyEvent("keydown",textKeydown,"")
             eventlist.append({"type": str(fetch_result["table_result"][lenResult]['event_type']), "url" : str(fetch_result["table_result"][lenResult]['base_url']), "xpath" : str(fetch_result["table_result"][lenResult]['x_path']),"text" : str(fetch_result["table_result"][lenResult]['text_content']), "offsetX": str(fetch_result["table_result"][lenResult]['offset_x']), "offsetY": str(fetch_result["table_result"][lenResult]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][lenResult]['event_source']), "description" : str(eventDescription)})
         if resultSesions['task_name'] is None: task_name="test API"
         else: task_name= str(resultSesions['task_name'])
         auxDict.append({"taskName": task_name, 'sessionId': resultSesions['session_id'], "steps":eventlist})
-    # dictResult['data']=auxDict
+    # dictResult['data']=auxDict 
     return auxDict
 
 def getKeyboard(textKeydown, character):
@@ -457,18 +457,18 @@ def getKeyboard(textKeydown, character):
     else:
         return(textKeydown+character)
 
-def getTextbyEvent(event_type,text_content):
+def getTextbyEvent(event_type,text_content,eventPosition):
     if len(text_content)>100:
         text_content=text_content[0:100] + "..."
-        print("Text CONTENT: "+ text_content)
+        #print("Text CONTENT: "+ text_content)
     if event_type=="click":
-        return "Click on "+ text_content.replace("  "," ").replace("\n"," ")
+        return 'Click on "'+ text_content.replace("  "," ").replace("\n"," ")+'" at '+eventPosition
     elif event_type=="scroll":
-        return text_content.lower() + " in the web page"
+        return text_content.lower().capitalize() + " on the web page"
     elif event_type=="select":
-        return "Select the text "+text_content
+        return 'Select  "'+text_content+'" at '+ eventPosition
     elif event_type=="keydown":
-        return "Type the content '" + text_content+"'"
+        return 'Type "' + text_content+'"'
     else:
         return "No description"
 
