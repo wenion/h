@@ -110,8 +110,8 @@
 /for-publishers/using-wordpress/                       exact https://web.hypothes.is/publishing/
 /four-ways-to-annotate                                 exact https://web.hypothes.is/four-ways-to-annotate/
 /four-ways-to-annotate/                                exact https://web.hypothes.is/four-ways-to-annotate/
-/help                                                  exact https://web.hypothes.is/help/
-/help/                                                 exact https://web.hypothes.is/help/
+/help                                                  exact https://colam.kmass.cloud.edu.au/welcome/
+/help/                                                 exact https://colam.kmass.cloud.edu.au/welcome/
 /imagine-old-homepage                                  exact https://web.hypothes.is/imagine-old-homepage/
 /imagine-old-homepage/                                 exact https://web.hypothes.is/imagine-old-homepage/
 /installing-the-bookmarklet                            exact https://web.hypothes.is/installing-the-bookmarklet/
@@ -150,8 +150,8 @@
 /primary-source-annotation/                            exact https://web.hypothes.is/primary-source-annotation/
 /principles                                            exact https://web.hypothes.is/principles/
 /principles/                                           exact https://web.hypothes.is/principles/
-/privacy                                               exact https://web.hypothes.is/privacy/
-/privacy/                                              exact https://web.hypothes.is/privacy/
+/privacy                                               exact https://colam.kmass.cloud.edu.au/privacy/
+/privacy/                                              exact https://colam.kmass.cloud.edu.au/privacy/
 /profile-pages                                         exact https://web.hypothes.is/profile-pages/
 /profile-pages/                                        exact https://web.hypothes.is/profile-pages/
 /questions-and-answers-in-annotation                   exact https://web.hypothes.is/questions-and-answers-in-annotation/
