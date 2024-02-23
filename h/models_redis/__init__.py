@@ -93,6 +93,7 @@ class UserEvent(JsonModel):
     task_name: Optional[str] = Field(full_text_search=True, sortable=True)
     width: Optional[int] = Field(full_text_search=True, sortable=True)
     height: Optional[int] = Field(full_text_search=True, sortable=True)
+    image: Optional[str]
 
 
 def add_user_event(
@@ -114,6 +115,7 @@ def add_user_event(
         task_name=None,
         width=0,
         height=0,
+        image=None,
         ):
     user_event = UserEvent(
         userid=userid,
@@ -135,6 +137,7 @@ def add_user_event(
         task_name=task_name,
         width=width,
         height=height,
+        image=image,
     )
     user_event.save()
     return user_event
@@ -165,6 +168,7 @@ def get_user_event(pk):
         'task_name': user_event.task_name,
         'width': user_event.width,
         'height': user_event.height,
+        'image': user_event.image,
     }
 
 def fetch_all_user_events_by_session(userid,sessionID):
@@ -255,6 +259,8 @@ def fetch_user_event(userid, offset, limit, sortby):
 
 def get_user_event_sortable_fields():
     properties = UserEvent.schema()["properties"]
+    if "image" in properties:
+        properties.pop("image")
     sortable_fields = {key: value for key, value in properties.items() if 'format' not in value}
     return sortable_fields
 
