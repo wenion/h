@@ -21,7 +21,7 @@ class HighlightEventService:
     
     def get_by_username_and_url(self, username, url):
         key = self.key + username + ":" + url
-        value = self.session.get(key)
+        value = self.session.getdel(key)
         return value
 
 
