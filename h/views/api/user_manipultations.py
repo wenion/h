@@ -422,14 +422,14 @@ def expert_replay(request):
                     if flagScroll:
                         flagScroll=False
                         eventDescription=getTextbyEvent("scroll",str(fetch_result["table_result"][i]['text_content']).split(":")[0],"")
-                        eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription)})
+                        eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
                 elif str(resultTask['event_type'])=="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
                     if i<lenResult:
                         if i+1 < len(fetch_result["table_result"]) and str(fetch_result["table_result"][i+1]['event_type'])!="keydown": #Is last keydownEvent
                             eventDescription=getTextbyEvent("keydown",textKeydown,"")
                             textKeydown=""
-                            eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription)})
+                            eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
                     flagScroll=True
                 else:
                     if str(resultTask['text_content'])!="" and str(resultTask['tag_name'])!="SIDEBAR-TAB":
@@ -442,7 +442,7 @@ def expert_replay(request):
                     flagScroll=True
         if lenResult< len(fetch_result["table_result"]) and textKeydown!="":
             eventDescription=getTextbyEvent("keydown",textKeydown,"")
-            eventlist.append({"type": str(fetch_result["table_result"][lenResult]['event_type']), "url" : str(fetch_result["table_result"][lenResult]['base_url']), "xpath" : str(fetch_result["table_result"][lenResult]['x_path']),"text" : str(fetch_result["table_result"][lenResult]['text_content']), "offsetX": str(fetch_result["table_result"][lenResult]['offset_x']), "offsetY": str(fetch_result["table_result"][lenResult]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][lenResult]['event_source']), "description" : str(eventDescription)})
+            eventlist.append({"type": str(fetch_result["table_result"][lenResult]['event_type']), "url" : str(fetch_result["table_result"][lenResult]['base_url']), "xpath" : str(fetch_result["table_result"][lenResult]['x_path']),"text" : str(fetch_result["table_result"][lenResult]['text_content']), "offsetX": str(fetch_result["table_result"][lenResult]['offset_x']), "offsetY": str(fetch_result["table_result"][lenResult]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][lenResult]['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
         if resultSesions['task_name'] is None: task_name="test API"
         else: task_name= str(resultSesions['task_name'])
         auxDict.append({"taskName": task_name, 'sessionId': resultSesions['session_id'],  "timestamp": resultSesions['timestamp'],"steps":eventlist})#add the timestap for each taks
