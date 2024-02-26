@@ -29,6 +29,7 @@ jsonschema
 kombu
 markdown
 newrelic
+numpy
 oauthlib
 packaging
 passlib
@@ -43,6 +44,7 @@ pyramid-services
 pyramid-mailer
 pyramid-retry
 pyramid-tm
+pytesseract
 python-dateutil
 python-slugify < 8.1.0
 requests
