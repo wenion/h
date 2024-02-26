@@ -659,6 +659,7 @@ def event(request):
         task_name=task_name,
         width=event["width"],
         height=event["height"],
+        image=event['image'] if 'image' in event else None,
         )
     return {
         "succ": "event has been saved"
