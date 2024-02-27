@@ -480,7 +480,7 @@ def getPositionViewport(portX,portY,offset_x,offset_y):
     if (portY/2)> offset_y: height="top"
     else: height="bottom"
     if(portX/2)>offset_x: width="left"
-    else: width="rigth"
+    else: width="right"
     return height+" "+width
 #Ivan
 
