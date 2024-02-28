@@ -4,6 +4,18 @@ from h.models_redis import get_whitelist
 from h.views.api.config import api_config
 
 
+def compare_string(domain, type):
+    url = urlparse(domain)
+    if type == 'domain' or type == 'url':
+        return '.'.join(url.netloc.split('.')[-2:]).split(':')[0]
+    elif type == 'hostname':
+        return url.netloc.split(':')[0]
+    elif type == 'host':
+        return url.netloc
+    elif type == 'subdirectory':
+        return url.netloc + url.path
+
+
 @api_config(
     versions=["v1", "v2"],
     route_name="api.whitelist",
@@ -16,4 +28,4 @@ from h.views.api.config import api_config
 )
 def whitelist(_context, request):
     whitelist = get_whitelist()
-    return [urlparse(w.domain).netloc for w in whitelist]
+    return [compare_string(w.domain, w.type) for w in whitelist]
