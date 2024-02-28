@@ -8,7 +8,7 @@ from pydantic import NonNegativeInt
 from typing import Optional
 
 from h.models_redis.user_role import UserRole
-from h.models_redis.user_event import UserEvent, add_user_event, get_user_event
+from h.models_redis.user_event import UserEvent, add_user_event, get_user_event, del_user_event
 from h.models_redis.user_event import fetch_all_user_event, fetch_user_event, get_user_event_sortable_fields
 from h.models_redis.result import Result
 from h.models_redis.rating import Rating
@@ -21,6 +21,7 @@ __all__ = (
     "add_user_event",
     "get_user_event",
     "fetch_all_user_event",
+    "del_user_event",
     "fetch_user_event",
     "get_user_event_sortable_fields",
     "Rating",

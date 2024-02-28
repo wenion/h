@@ -150,3 +150,22 @@ def get_user_event_sortable_fields():
     sortable_fields = {key: value for key, value in properties.items() if 'format' not in value}
     return sortable_fields
 
+
+def del_user_event(userid, type):
+    if type == 'all':
+        query = UserEvent.find(
+            UserEvent.userid == userid
+            )
+    else:
+        query = UserEvent.find(
+            (UserEvent.userid == userid) &
+            (UserEvent.event_type == type)
+            )
+    length = len(query.all())
+
+    for item in query:
+        UserEvent.delete(item.pk)
+
+    return {
+        'total': length,
+    }

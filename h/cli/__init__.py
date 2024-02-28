@@ -18,6 +18,7 @@ SUBCOMMANDS = (
     "h.cli.commands.normalize_uris.normalize_uris",
     "h.cli.commands.search.search",
     "h.cli.commands.user.user",
+    "h.cli.commands.user_event.user_event",
     "h.cli.commands.create_annotations.create_annotations",
 )
 
