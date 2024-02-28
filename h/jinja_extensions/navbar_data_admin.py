@@ -115,7 +115,7 @@ _ADMIN_MENU = [
     {
         "id": "security",
         "permission": Permission.AdminPage.HIGH_RISK,
-        "title": "Security",
+        "title": "Access Strategy",
         "route": "admin.security",
     },
     {
