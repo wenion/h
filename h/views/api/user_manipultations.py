@@ -423,6 +423,8 @@ def expert_replay(request):
                         flagScroll=False
                         eventDescription=getTextbyEvent("scroll",str(fetch_result["table_result"][i]['text_content']).split(":")[0],"")
                         eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": str(fetch_result["table_result"][i]['offset_x']), "offsetY": str(fetch_result["table_result"][i]['offset_y']), "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
+                elif str(resultTask['event_type'])=="recording":
+                    eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": '', "offsetY": '', "position": "N/A", "title":resultTask['event_source'], "description" : resultTask['tag_name'], "image": resultTask['image']})
                 elif str(resultTask['event_type'])=="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
                     if i<lenResult:
@@ -478,7 +480,7 @@ def getPositionViewport(portX,portY,offset_x,offset_y):
     if (portY/2)> offset_y: height="top"
     else: height="bottom"
     if(portX/2)>offset_x: width="left"
-    else: width="rigth"
+    else: width="right"
     return height+" "+width
 #Ivan
 
@@ -631,7 +633,7 @@ def message(request):
 def event(request):
     event = request.json_body
 
-    print("event api", event)
+    print("event api", event, request.authenticated_userid)
     if event["tag_name"] == "RECORD":
         if event["event_type"] == "START":
             set_user_status(request.authenticated_userid, event["task_name"], event["session_id"], "")
