@@ -34,24 +34,45 @@
 
   <div class="panel panel-default">
     <div class="panel-heading">
-      <h3 class="panel-title">Current whitelist</h3>
+      <h3 class="panel-title">whitelisting</h3>
     </div>
     <div class="panel-body">
       <form
         method="POST"
         action="{{ request.route_url('admin.security') }}">
         <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
-        <ul>
-          {% for user in whitelist %}
-            <li>
-              {{ user }}
-              <button type="submit" class="btn btn-link btn-sm"
-                      name="remove" value="{{ user }}">
-                Remove
-              </button>
-            </li>
-          {% endfor %}
-        </ul>
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>URL</th>
+                <th>TYPE</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in whitelist %}
+                <tr>
+                  <td>
+                    {{ user.name }}
+                  </td>
+                  <td>
+                    {{ user.URL }}
+                  </td>
+                  <td>
+                    {{ user.type }}
+                  </td>
+                  <td>
+                    <button type="submit" class="btn btn-link btn-sm"
+                            name="remove" value="{{ user }}">
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
       </form>
     </div>
   </div>
@@ -82,24 +103,45 @@
 
   <div class="panel panel-default">
     <div class="panel-heading">
-      <h3 class="panel-title">Current blacklist</h3>
+      <h3 class="panel-title">Blacklisting</h3>
     </div>
     <div class="panel-body">
       <form
         method="POST"
         action="{{ request.route_url('admin.security') }}">
         <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
-        <ul>
-          {% for user in blacklist %}
-            <li>
-              {{ user }}
-              <button type="submit" class="btn btn-link btn-sm"
-                      name="remove" value="{{ user }}">
-                Remove
-              </button>
-            </li>
-          {% endfor %}
-        </ul>
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>TYPE</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in blacklist %}
+                <tr>
+                  <td>
+                    {{ user.name }}
+                  </td>
+                  <td>
+                    {{ user.Category }}
+                  </td>
+                  <td>
+                    {{ user.type }}
+                  </td>
+                  <td>
+                    <button type="submit" class="btn btn-link btn-sm"
+                            name="remove" value="{{ user }}">
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
       </form>
     </div>
   </div>
