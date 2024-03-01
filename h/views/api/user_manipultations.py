@@ -31,6 +31,7 @@ from h.views.api.config import api_config
 from h.models_redis import UserEvent, Rating
 from h.models_redis import get_highlights_from_openai, create_user_event, save_in_redis, add_user_event, fetch_all_user_sessions,fetch_all_user_events_by_session
 from h.models_redis import get_user_status_by_userid, set_user_status
+from h.models_redis import get_user_event, update_user_event
 from h.services import OrganisationEventPushLogService
 
 def split_user(userid):
@@ -394,6 +395,39 @@ def push_recommendation(request):
         "succ": data["url"] + "has been saved"
     }
 
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.share_flow",
+    request_method="DELETE",
+    permission=Permission.Annotation.CREATE,
+    link_name="share_flow.delete",
+    description="Remove the session of the share flow",
+)
+def remove_expert_replay(request):
+    session_id = request.GET.get("session_id")
+    task_name = request.GET.get("task_name")
+    user_id=request.authenticated_userid
+    result = fetch_all_user_events_by_session(user_id, session_id)
+    count = 0
+    for item in result['table_result']:
+        pk = update_user_event(item['pk'], dict(session_id = '', task_name = ''))
+        count += 1
+    return {'reset': count}
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.share_flow",
+    request_method="GET",
+    permission=Permission.Annotation.CREATE,
+    link_name="share_flow.read",
+    description="Get the session of the share flow",
+)
+def read_share_flow(request):
+    return expert_replay(request)
+
+
 @api_config(
     versions=["v1", "v2"],
     route_name="api.expert_replay",
@@ -401,7 +435,7 @@ def push_recommendation(request):
     permission=Permission.Annotation.CREATE,
     link_name="expert_replay",
     description="get the session of the expert replay",
-) 
+)
 def expert_replay(request):
     userID=request.authenticated_userid
     #userID="acct:admin@localhost"

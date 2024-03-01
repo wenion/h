@@ -107,6 +107,18 @@ def get_user_event(pk):
     }
 
 
+def update_user_event(pk, update): #TODO {field1: value, field2: value}
+    try:
+        user_event = UserEvent.get(pk)
+    except NotFoundError:
+        return None
+    else:
+        user_event.session_id = update['session_id']
+        user_event.task_name = update['task_name']
+        user_event.save()
+        return user_event.pk
+
+
 def fetch_all_user_event(userid, sortby):
     result = UserEvent.find(
         UserEvent.userid == userid
