@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
 
 def get_authorised_list():
     blacklist = get_blacklist()
-    return [w.domain for w in blacklist]
+    return [w.domain.lower() for w in blacklist]
 
 
 @api_config(
