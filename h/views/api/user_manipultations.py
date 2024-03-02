@@ -320,6 +320,7 @@ def iterate_directory(dir, name, url, depth):
                     'depth': depth,
                 }
                 directory_node['children'].append(file_node)
+                directory_node['children'].sort(key=lambda x: x.get('creation_time', 0), reverse=True)
             elif entry.is_dir():
                 directory_node['children'].append(iterate_directory(os.path.join(dir, entry.name), entry.name, current_path, depth + 1))
 
