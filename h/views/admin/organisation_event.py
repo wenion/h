@@ -8,6 +8,7 @@ from deform import Form
 
 from h import form, i18n, models, paginator
 from h.models.organisation_event import OrganisationEvent
+from h.models.organisation_event_push_log import OrganisationEventPushLog
 from h.schemas.forms.admin.organisation_event import OrganisationEventSchema
 from h.security import Permission
 
@@ -114,26 +115,12 @@ class OrganizationEditController:
 
     @view_config(request_method="POST", route_name="admin.organisation_event_delete")
     def delete(self):
-        # Prevent deletion while the organization has associated groups.
-        group_count = (
-            self.request.db.query(models.Group)
-            .filter_by(organization=self.organization)
-            .count()
-        )
-        if group_count > 0:
-            self.request.response.status_int = 400
-            self.request.session.flash(
-                _(
-                    # pylint:disable=consider-using-f-string
-                    "Cannot delete organization because it is associated with {} groups".format(
-                        group_count
-                    )
-                ),
-                "error",
-            )
-            return self._template_context()
-
         # Delete the organization.
+        # Delete OrganisationEventPush
+        push_logs = self.request.db.query(OrganisationEventPushLog).filter_by(organisation_event_id=self.organization.id)
+        for log in push_logs:
+            self.request.db.delete(log)
+
         self.request.db.delete(self.organization)
         self.request.session.flash(
             _(
