@@ -176,13 +176,6 @@ def upload(request):
         return {"error": repr(e)}
 
     create_user_event("server-record", "UPLOAD RESPONSE SUCC", name, request.url, userid)
-
-    # transfer to TA B
-    local_file = open(file_path, "rb")
-    files = {"myFile": (name, local_file)}
-    url = urljoin(request.registry.settings.get("query_url"), "upload")
-    data = {"url": os.path.join(settings.get("user_root_url"), "static", relavtive_path)}
-
     succ_response = {"succ": {
         "depth": depth,
         "id": parent_path,
@@ -192,6 +185,16 @@ def upload(request):
         "type": "file"
     }}
 
+    # transfer to TA B
+    url = urljoin(request.registry.settings.get("query_url"), "upload")
+    data = {"url": os.path.join(settings.get("user_root_url"), "static", relavtive_path)}
+
+    return ingest(url, name, file_path, data, userid, succ_response)
+
+
+def ingest(url, name, file_path, data, userid, succ_response):
+    local_file = open(file_path, "rb")
+    files = {"myFile": (name, local_file)}
     try:
         # start ingest
         print('start ingesting')
@@ -222,15 +225,18 @@ def upload(request):
             return {"error": result["message"]}
         elif result["status"] == 303:
             create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:303 " + result["message"], url, userid)
+            return {"error": "The file was ingested successfully [CODE: 303]"}
             pass
         elif result["status"] == 304:
             create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:304 " + result["message"], url, userid)
+            return {"error": result["message"]}
         elif result["status"] == 200:
             create_user_event("server-record", "INGEST RESPONSE SUCC", name, url, userid)
+            return succ_response
 
 
     local_file.close()
-    return succ_response
+    # return succ_response
 
 
 @api_config(
