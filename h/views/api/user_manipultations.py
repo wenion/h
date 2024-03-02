@@ -195,7 +195,9 @@ def upload(request):
     # transfer to TA B
     url = urljoin(request.registry.settings.get("query_url"), "upload")
     data = {"url": os.path.join(settings.get("user_root_url"), "static", relavtive_path)}
-
+    if not name.lower().endswith('.pdf'): # if not pdf file
+        print('upload not pdf')
+        return succ_response
     return ingest(url, name, file_path, data, userid, succ_response)
 
 
