@@ -127,7 +127,7 @@ def upload(request):
             return {"error": repr(e)}
         else:
             create_user_event("server-record", "UPLOAD REQUEST FROM GOOGLE SUCC", name, request.url, userid)
-            return {"succ": {
+            succ_response = {"succ": {
                 "depth": 0,
                 "id": root_dir,
                 "link": os.path.join(settings.get("user_root_url"), "static", relavtive_path),
@@ -135,6 +135,13 @@ def upload(request):
                 "path": filepath,
                 "type": "file"
             }}
+            print("path", filepath)
+            if not name.lower().endswith('.pdf'): # if not pdf file
+                print('not pdf')
+                return succ_response
+            url = urljoin(request.registry.settings.get("query_url"), "upload")
+            data = {"url": os.path.join(settings.get("user_root_url"), "static", relavtive_path)}
+            return ingest(url, name, filepath, data, userid, succ_response)
 
     parent_path = meta["id"]
     file_path = meta["path"]
