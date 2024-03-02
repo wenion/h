@@ -4,14 +4,13 @@ from pyramid.events import subscriber
 from urllib.parse import unquote, urlparse, parse_qs
 
 from h.accounts.events import LoginEvent, LogoutEvent, AuthLoginEvent
-from h.models_redis import create_user_event, save_in_redis, add_user_event
+from h.models_redis import create_user_event, add_user_event
 from h.models_redis import get_user_status_by_userid
 
 
 @subscriber(LoginEvent)
 def save_login_event(event):
     # login_event = create_user_event("sever-record", "LOGIN", "landing login", event.request.url, event.user.userid)
-    # save_in_redis(login_event)
     add_user_event(
         event.user.userid,
         "sever-record",
@@ -35,7 +34,6 @@ def save_login_event(event):
 @subscriber(LogoutEvent)
 def save_logout_event(event):
     # logout_event = create_user_event("sever-record", "LOGOUT", "landing logout", event.request.url, event.request.authenticated_userid)
-    # save_in_redis(logout_event)
     add_user_event(
         event.request.authenticated_userid,
         "sever-record",
@@ -69,8 +67,6 @@ def save_auth_login_event(event):
             text_content = "browser extension login"
         else:
             text_content = "query login"
-        auth_login_event = create_user_event("sever-record", "LOGIN", text_content, decoded_url, event.request.authenticated_userid)
-        save_in_redis(auth_login_event)
+        create_user_event("sever-record", "LOGIN", text_content, decoded_url, event.request.authenticated_userid)
     else:
-        auth_login_event = create_user_event("sever-record", "LOGIN", text_content, url, event.request.authenticated_userid)
-        save_in_redis(auth_login_event)
+        create_user_event("sever-record", "LOGIN", text_content, url, event.request.authenticated_userid)

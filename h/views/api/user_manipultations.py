@@ -29,7 +29,7 @@ from h.exceptions import InvalidUserId
 from h.security import Permission
 from h.views.api.config import api_config
 from h.models_redis import UserEvent, Rating
-from h.models_redis import get_highlights_from_openai, create_user_event, save_in_redis, add_user_event, fetch_all_user_sessions,fetch_all_user_events_by_session
+from h.models_redis import get_highlights_from_openai, create_user_event, add_user_event, fetch_all_user_sessions,fetch_all_user_events_by_session
 from h.models_redis import get_user_status_by_userid, set_user_status
 from h.models_redis import get_user_event, update_user_event
 from h.services import OrganisationEventPushLogService
@@ -89,23 +89,20 @@ def upload(request):
         if not name.endswith(".html"):
             name = name + ".html"
         try:
-            upload_request = create_user_event("server-record", "UPLOAD REQUEST", name, request.url, userid)
-            save_in_redis(upload_request)
+            create_user_event("server-record", "UPLOAD REQUEST", name, request.url, userid)
             filepath = os.path.join(root_dir, name)
             if os.path.exists(filepath):
-                upload_response = create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + " already exists", request.url, userid)
-                save_in_redis(upload_response)
+                print("exist file", filepath)
+                create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + " already exists", request.url, userid)
                 return {"error": name + " already exists"}
             with open(filepath, "wb") as output_file:
                 shutil.copyfileobj(input_file, output_file)
         except Exception as e:
-            upload_response = create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + "error:" + repr(e), request.url, userid)
-            save_in_redis(upload_response)
+            create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + "error:" + repr(e), request.url, userid)
             return {"error": repr(e)}
 
         relavtive_path = os.path.relpath(filepath, settings.get("user_root"))
-        upload_response = create_user_event("server-record", "UPLOAD RESPONSE SUCC", name, request.url, userid)
-        save_in_redis(upload_response)
+        create_user_event("server-record", "UPLOAD RESPONSE SUCC", name, request.url, userid)
         return {"succ": {
             "depth": 0,
             "id": root_dir,
@@ -126,8 +123,10 @@ def upload(request):
             with open(filepath, "wb") as output_file:
                 shutil.copyfileobj(input_file, output_file)
         except Exception as e:
+            create_user_event("server-record", "UPLOAD REQUEST FROM GOOGLE FAIL", name, request.url, userid)
             return {"error": repr(e)}
         else:
+            create_user_event("server-record", "UPLOAD REQUEST FROM GOOGLE SUCC", name, request.url, userid)
             return {"succ": {
                 "depth": 0,
                 "id": root_dir,
@@ -142,8 +141,7 @@ def upload(request):
     depth = int(meta["depth"])
     name = meta["name"]
     if file_path == "" or name == "":
-        upload_request = create_user_event("server-record", "UPLOAD FAILED", name, request.url, userid)
-        save_in_redis(upload_request)
+        create_user_event("server-record", "UPLOAD FAILED", name, request.url, userid)
         return {
             "error": str(meta)
         }
@@ -159,15 +157,13 @@ def upload(request):
 
     public_file_path = os.path.join(public_pdf_dir, name)
     try:
-        upload_request = create_user_event("server-record", "UPLOAD REQUEST", name, request.url, userid)
-        save_in_redis(upload_request)
+        create_user_event("server-record", "UPLOAD REQUEST", name, request.url, userid)
         # check the user directory
         if not os.path.exists(parent_path):
             os.mkdir(parent_path)
 
         if os.path.exists(file_path):
-            upload_response = create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + " already exists", request.url, userid)
-            save_in_redis(upload_response)
+            create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + " already exists", request.url, userid)
             return {"error": name + " already exists"}
 
         with open(file_path, "wb") as output_file:
@@ -176,12 +172,10 @@ def upload(request):
             with open(public_file_path, "wb") as output_file:
                 shutil.copyfileobj(source_file, output_file)
     except Exception as e:
-        upload_response = create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + "error:"+ repr(e), request.url, userid)
-        save_in_redis(upload_response)
+        create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + "error:"+ repr(e), request.url, userid)
         return {"error": repr(e)}
 
-    upload_response = create_user_event("server-record", "UPLOAD RESPONSE SUCC", name, request.url, userid)
-    save_in_redis(upload_response)
+    create_user_event("server-record", "UPLOAD RESPONSE SUCC", name, request.url, userid)
 
     # transfer to TA B
     local_file = open(file_path, "rb")
@@ -200,24 +194,21 @@ def upload(request):
 
     try:
         # start ingest
-        ingest_request = create_user_event("server-record", "INGEST REQUEST", name, url, userid)
-        save_in_redis(ingest_request)
+        print('start ingesting')
+        create_user_event("server-record", "INGEST REQUEST", name, url, userid)
         response = requests.post(url, files=files, data=data)
         # result = response.json()
     except Exception as e:
-        ingest_response = create_user_event("server-record", "INGEST RESPONSE FAILED", name +" error:"+ repr(e), url, userid)
-        save_in_redis(ingest_response)
+        create_user_event("server-record", "INGEST RESPONSE FAILED", name +" error:"+ repr(e), url, userid)
         return {"error": repr(e)}
     else:
         if response.status_code != 200:
-            ingest_response = create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:TA B proxy error", url, userid)
-            save_in_redis(ingest_response)
+            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:TA B proxy error", url, userid)
             return {"error": "TA B proxy error"}
     try:
         result = response.json()
     except Exception as e:
-        ingest_response = create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + repr(e), url, userid)
-        save_in_redis(ingest_response)
+        create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + repr(e), url, userid)
         return {"error": repr(e)}
     else:
         # check the ingesting is succ?
@@ -227,19 +218,15 @@ def upload(request):
         #     else:
         #         return result
         if result["status"] == 404:
-            ingest_response = create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + result["message"], url, userid)
-            save_in_redis(ingest_response)
+            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + result["message"], url, userid)
             return {"error": result["message"]}
         elif result["status"] == 303:
-            ingest_response = create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:303 " + result["message"], url, userid)
-            save_in_redis(ingest_response)
+            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:303 " + result["message"], url, userid)
             pass
         elif result["status"] == 304:
-            ingest_response = create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:304 " + result["message"], url, userid)
-            save_in_redis(ingest_response)
+            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:304 " + result["message"], url, userid)
         elif result["status"] == 200:
-            ingest_response = create_user_event("server-record", "INGEST RESPONSE SUCC", name, url, userid)
-            save_in_redis(ingest_response)
+            create_user_event("server-record", "INGEST RESPONSE SUCC", name, url, userid)
 
 
     local_file.close()
@@ -265,15 +252,16 @@ def delete(request):
     public_file_path = os.path.join(public_pdf_dir, filename)
 
     try:
-        delete_request = create_user_event("server-record", "DELETE", filename, request.url, userid)
-        save_in_redis(delete_request)
+        create_user_event("server-record", "DELETE REQUEST", filename, request.url, userid)
         print("file_path", file_path)
         if os.path.exists(file_path):
             os.remove(file_path)
         print("public_file_path", public_file_path)
         if os.path.exists(public_file_path):
             os.remove(public_file_path)
+        create_user_event("server-record", "DELETE RESPONSE SUCC", filename, request.url, userid)
     except Exception as e:
+        create_user_event("server-record", "DELETE RESPONSE FAIL", filename, request.url, userid)
         return {"error": repr(e)}
 
     # try:
@@ -315,12 +303,19 @@ def iterate_directory(dir, name, url, depth):
     with os.scandir(dir) as it:
         for entry in it:
             if entry.is_file():
+                creation_time = 0
+                try:
+                    stat_info = entry.stat()
+                    creation_time = stat_info.st_ctime
+                except OSError as e:
+                    print(f"Error accessing file {entry.name}: {e}")
                 file_node = {
                     'path': os.path.join(dir, entry.name),
                     'id': dir,
                     'name': entry.name,
                     'type': 'file',
                     'link': os.path.join(current_path, entry.name),
+                    'creation_time': creation_time,
                     'children': [],
                     'depth': depth,
                 }

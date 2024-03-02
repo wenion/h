@@ -26,20 +26,10 @@ from urllib.parse import urljoin
 
 from h.security import Permission
 from h.views.api.config import api_config
-from h.models_redis import Result, Bookmark, UserEvent, create_user_event, save_in_redis
+from h.models_redis import Result, Bookmark, create_user_event
 from h.models_redis import get_user_role_by_userid, get_blacklist
 
 log = logging.getLogger(__name__)
-
-def create_user_event(event_type, tag_name, text_content, base_url, userid):
-    return {
-        "event_type": event_type,
-        "timestamp": int(datetime.datetime.now().timestamp() * 1000),
-        "tag_name": tag_name,
-        "text_content": text_content,
-        "base_url": base_url,
-        "userid": userid
-    }
 
 
 def get_authorised_list():
@@ -65,11 +55,9 @@ def query(request):
     params = {
         'q': query
     }
-    query_request = create_user_event("server-record", "QUERY REQUEST", query, request.url, userid)
-    save_in_redis(query_request)
+    create_user_event("server-record", "QUERY REQUEST", query, request.url, userid)
     response = requests.get(url, params=params)
-    query_response = create_user_event("server-record", "QUERY RESPONSE", query, request.url, userid)
-    save_in_redis(query_response)
+    create_user_event("server-record", "QUERY RESPONSE", query, request.url, userid)
 
     authorised_list = get_authorised_list()
 

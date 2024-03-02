@@ -304,7 +304,7 @@ def get_highlights_from_openai(query, page_content):
 
 
 def create_user_event(event_type, tag_name, text_content, base_url, userid):
-    return {
+    node = {
         "event_type": event_type,
         "timestamp": int(datetime.now().timestamp() * 1000),
         "tag_name": tag_name,
@@ -312,9 +312,10 @@ def create_user_event(event_type, tag_name, text_content, base_url, userid):
         "base_url": base_url,
         "userid": userid
     }
+    _save_in_redis(node)
 
 
-def save_in_redis(event):
+def _save_in_redis(event):
     is_valid = UserEvent.validate(event)
     if is_valid:
         try:
