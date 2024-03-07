@@ -69,6 +69,8 @@ ENV PYTHONPATH /var/lib/hypothesis:$PYTHONPATH
 RUN mkdir -p /var/lib/hypothesis/data
 RUN chown -R hypothesis:hypothesis /var/lib/hypothesis/data
 
+RUN dos2unix bin/*
+
 # Start the web server by default
 USER hypothesis
 CMD ["supervisord", "-c" , "conf/supervisord.conf"]
