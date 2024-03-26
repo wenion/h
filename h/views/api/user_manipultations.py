@@ -469,7 +469,7 @@ def expert_replay(request):
                         eventDescription=getTextbyEvent("scroll",str(fetch_result["table_result"][i]['text_content']).split(":")[0],"")
                         eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": fetch_result["table_result"][i]['offset_x'], "offsetY": fetch_result["table_result"][i]['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
                 elif str(resultTask['event_type'])=="recording":
-                    eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": 0, "offsetY": 0, "position": "N/A", "title":resultTask['event_source'], "description" : resultTask['tag_name'], "image": resultTask['image']})
+                    eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": 0, "offsetY": 0, "position": "N/A", "title":resultTask['event_source'], "description" : resultTask['tag_name'] + ' to ', "image": resultTask['image']})
                 elif str(resultTask['event_type'])=="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
                     if i<lenResult:
