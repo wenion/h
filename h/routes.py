@@ -19,6 +19,7 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route("account_user_event", "/account/user-event")
     config.add_route("claim_account_legacy", "/claim_account/{token}")
     config.add_route("dismiss_sidebar_tutorial", "/app/dismiss_sidebar_tutorial")
+    config.add_route("download", "/download")
 
     # Activity
     config.add_route("activity.search", "/search")

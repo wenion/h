@@ -33,5 +33,6 @@ def links(_context, request):
         "search.tag": tag_search_url,
         "signup": request.route_url("signup"),
         "user": templater.route_template("stream.user_query"),
+        "download": request.route_url("download"),
         "websocket": websocket_url,
     }
