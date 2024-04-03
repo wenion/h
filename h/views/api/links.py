@@ -22,6 +22,7 @@ def links(_context, request):
     oauth_revoke_url = request.route_url("oauth_revoke")
 
     websocket_url = request.registry.settings.get("h.websocket_url")
+    home_url = request.registry.settings.get("homepage_url")
 
     return {
         "account.settings": request.route_url("account"),
@@ -29,6 +30,7 @@ def links(_context, request):
         "forgot-password": request.route_url("forgot_password"),
         "groups.new": request.route_url("group_create"),
         "help": request.route_url("help"),
+        "home": home_url,
         "index": request.route_url("index"),
         "oauth.authorize": oauth_authorize_url,
         "oauth.revoke": oauth_revoke_url,

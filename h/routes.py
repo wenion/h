@@ -198,7 +198,7 @@ def includeme(config):  # pylint: disable=too-many-statements
         "api.delete", "/api/delete"# , factory="h.traversal:FileRoot" TODO implement when finish database
     )
     config.add_route("api.repository", "/api/repository")
-    config.add_route("api.client_url", "/api/client-url")
+    config.add_route("api.client_url", "/api/client-url") # TODO remove
     config.add_route("api.typing", "/api/typing")
     config.add_route("api.slack", "/api/slack")
     config.add_route("api.user_event", "/api/user-event") # TODO

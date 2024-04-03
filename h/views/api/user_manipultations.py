@@ -361,6 +361,7 @@ def repository(request):
     return iterate_directory(dir, username, os.path.join(settings.get("user_root_url"), "static"), 0)
 
 
+# TODO remove
 @api_config(
     versions=["v1", "v2"],
     route_name="api.client_url",
