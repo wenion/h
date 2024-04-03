@@ -25,14 +25,15 @@ def links(_context, request):
 
     return {
         "account.settings": request.route_url("account"),
+        "download": request.route_url("download"),
         "forgot-password": request.route_url("forgot_password"),
         "groups.new": request.route_url("group_create"),
         "help": request.route_url("help"),
+        "index": request.route_url("index"),
         "oauth.authorize": oauth_authorize_url,
         "oauth.revoke": oauth_revoke_url,
         "search.tag": tag_search_url,
         "signup": request.route_url("signup"),
         "user": templater.route_template("stream.user_query"),
-        "download": request.route_url("download"),
         "websocket": websocket_url,
     }
