@@ -11,6 +11,8 @@ from h.models_redis.user_role import UserRole
 from h.models_redis.user_event import UserEvent
 from h.models_redis.user_event import fetch_all_user_event, fetch_user_event, get_user_event_sortable_fields
 from h.models_redis.user_event import add_user_event, get_user_event, del_user_event, update_user_event
+from h.models_redis.user_event_record import UserEventRecord
+from h.models_redis.user_event_record import start_user_event_record, finish_user_event_record, fetch_user_event_record_by_session_id
 from h.models_redis.result import Result
 from h.models_redis.rating import Rating
 
@@ -19,6 +21,7 @@ __all__ = (
     "Result",
     "Bookmark",
     "UserEvent",
+    "UserEventRecord",
     "add_user_event",
     "get_user_event",
     "update_user_event",
@@ -26,6 +29,9 @@ __all__ = (
     "del_user_event",
     "fetch_user_event",
     "get_user_event_sortable_fields",
+    "start_user_event_record",
+    "finish_user_event_record",
+    "fetch_user_event_record_by_session_id",
     "Rating",
     "UserFile",
 )

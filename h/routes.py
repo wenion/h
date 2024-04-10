@@ -128,6 +128,16 @@ def includeme(config):  # pylint: disable=too-many-statements
         factory="h.traversal:AnnotationRoot",
         traverse="/{id}",
     )
+    config.add_route("api.batch", "/api/batch")
+    config.add_route(
+        "api.recordings", "/api/recordings", factory="h.traversal:UserEventRecordRoot"
+    )
+    config.add_route(
+        "api.recording",
+        "/api/recordings/{id:[A-Za-z0-9_-]{10,22}}",
+        factory="h.traversal:UserEventRecordRoot",
+        traverse="/{id}",
+    )
     config.add_route(
         "api.annotation_flag",
         "/api/annotations/{id:[A-Za-z0-9_-]{20,22}}/flag",
