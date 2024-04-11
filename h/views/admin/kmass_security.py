@@ -10,7 +10,9 @@ from h.security import Permission
 
 def compare_string(domain, type):
     url = urlparse(domain)
-    if type == 'domain' or type == 'url':
+    if url.scheme != 'http' or url.scheme != 'http' or (url.scheme =='' and url.netloc == ''):
+        return 'error url'
+    elif type == 'domain' or type == 'url':
         return '.'.join(url.netloc.split('.')[-2:]).split(':')[0]
     elif type == 'hostname':
         return url.netloc.split(':')[0]
@@ -19,10 +21,7 @@ def compare_string(domain, type):
     elif type == 'subdirectory':
         return url.netloc + url.path
     else:
-        if url.scheme =='' and url.netloc == '':
-            return 'error url'
-        else:
-            return 'invalid type'
+        return 'invalid type'
 
 
 @view_config(
