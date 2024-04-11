@@ -59,7 +59,6 @@ def staff_add(request):
     add = request.params["add"].strip()
     name = request.params["name"].strip()
     type = request.params["methodology"].strip()
-    # print("add", add, name, type)
     if type == "domain" or type == "hostname" or type == "host" or type == "subdirectory":
         comp = compare_string(add, type)
         if comp == "error url" or comp == "invalid type":

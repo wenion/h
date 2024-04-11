@@ -28,4 +28,9 @@ def compare_string(domain, type):
 )
 def whitelist(_context, request):
     whitelist = get_whitelist()
-    return [compare_string(w.domain, w.type) for w in whitelist]
+    result = []
+    for w in whitelist:
+        r = compare_string(w.domain, w.type)
+        if r != '':
+            result.append(r)
+    return result
