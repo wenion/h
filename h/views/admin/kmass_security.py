@@ -10,7 +10,7 @@ from h.security import Permission
 
 def compare_string(domain, type):
     url = urlparse(domain)
-    if url.scheme != 'http' or url.scheme != 'https' or (url.scheme =='' and url.netloc == ''):
+    if (url.scheme != 'http' and url.scheme != 'https') or (url.scheme =='' and url.netloc == ''):
         return 'error url'
     elif type == 'domain' or type == 'url':
         return '.'.join(url.netloc.split('.')[-2:]).split(':')[0]
