@@ -17,6 +17,8 @@ objects and Pyramid ACLs in :mod:`h.traversal`.
 from pyramid import i18n
 
 from h.models_redis import start_user_event_record, finish_user_event_record
+from h.models_redis import batch_user_event_record, delete_user_event_record
+from h.views.api.user_manipultations import batch_steps
 from h.security import Permission
 from h.views.api.config import api_config
 
@@ -30,7 +32,10 @@ _ = i18n.TranslationStringFactory(__package__)
     description="batch",
 )
 def batch(request):
-    pass
+    # TODO if authenticated userid is none
+    page_url = request.params.get('target_uri')
+    index_list = batch_user_event_record(request.authenticated_userid)
+    return batch_steps(index_list)
 
 
 @api_config(
@@ -44,7 +49,6 @@ def batch(request):
 def create(request):
     """Create an annotation from the POST payload."""
     data = request.json_body
-    print('create data', data)
     result = start_user_event_record(
         data['startstamp'],
         data['session_id'],
@@ -81,20 +85,26 @@ def read(context, request):
 def update(context, request):
     """Update the specified annotation with data from the PATCH payload."""
     data = request.json_body
-    # if finish
-    return finish_user_event_record(context.pk, data["endstamp"]).dict()
-    # other update
+    action = data["action"]
+    if action == "finish":
+        session = finish_user_event_record(context.pk, data["endstamp"])
+        result = batch_steps([session,])
+        return result[0] if len(result) > 0 else session.dict()
+    elif action == "share":
+        pass
+    elif action == "edit":
+        pass
 
 
 @api_config(
     versions=["v1", "v2"],
     route_name="api.recording",
     request_method="DELETE",
-    permission=Permission.Annotation.DELETE,
+    # permission=Permission.Annotation.DELETE,
     link_name="recording.delete",
     description="Delete an recording",
 )
 def delete(context, request):
-    pass
+    return context.session_id if delete_user_event_record(context.pk) else -1
 
 

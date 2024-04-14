@@ -29,9 +29,10 @@ from h.exceptions import InvalidUserId
 from h.security import Permission
 from h.views.api.config import api_config
 from h.models_redis import UserEvent, Rating
-from h.models_redis import get_highlights_from_openai, create_user_event, add_user_event, fetch_all_user_sessions,fetch_all_user_events_by_session
+from h.models_redis import get_highlights_from_openai, create_user_event, add_user_event
 from h.models_redis import get_user_status_by_userid, set_user_status
-from h.models_redis import get_user_event, update_user_event
+from h.models_redis import get_user_event, update_user_event, fetch_all_user_events_by_session
+from h.models_redis import fetch_user_event_by_timestamp, batch_user_event_record
 from h.services import OrganisationEventPushLogService
 
 def split_user(userid):
@@ -449,35 +450,39 @@ def read_share_flow(request):
     description="get the session of the expert replay",
 )
 def expert_replay(request):
-    userID=request.authenticated_userid
-    #userID="acct:admin@localhost"
+    resultAllEvents=batch_user_event_record(request.authenticated_userid)
+    return batch_steps(resultAllEvents)
 
-    resultAllEvents=fetch_all_user_sessions(userid=userID)
-    # dictResult={}
+
+def batch_steps(index_list):
     auxDict=[]
-    for resultSesions in resultAllEvents["table_result"]:#For the taskName and session
+    for resultSesions in index_list:#For the taskName and session
         eventlist=[]
-        fetch_result=fetch_all_user_events_by_session(userid=userID, sessionID=str(resultSesions['session_id']))# Get the event of each session
+        fetch_result = fetch_user_event_by_timestamp(
+            resultSesions.userid,
+            resultSesions.session_id,
+            resultSesions.startstamp + resultSesions.start * 1000,
+            resultSesions.endstamp)
         textKeydown=""
         flagScroll=True
-        lenResult=len(fetch_result["table_result"])
+        lenResult=len(fetch_result)
         for i in range(lenResult):
-            resultTask=fetch_result["table_result"][i]
+            resultTask=fetch_result[i].dict()
             if str(resultTask['event_type'])!="beforeunload" and str(resultTask['event_type'])!="OPEN" and str(resultTask['event_type'])!="open" and str(resultTask['event_type'])!="visibilitychange" and str(resultTask['event_type'])!="server-record" and str(resultTask['event_type'])!="submit" and str(resultTask['event_type'])!="START" and str(resultTask['event_type'])!="close":
                 if str(resultTask['event_type'])=="scroll":
                     if flagScroll:
                         flagScroll=False
-                        eventDescription=getTextbyEvent("scroll",str(fetch_result["table_result"][i]['text_content']).split(":")[0],"")
-                        eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": fetch_result["table_result"][i]['offset_x'], "offsetY": fetch_result["table_result"][i]['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
+                        eventDescription=getTextbyEvent("scroll",str(resultTask['text_content']).split(":")[0],"")
+                        eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":str(resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
                 elif str(resultTask['event_type'])=="recording":
                     eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": 0, "offsetY": 0, "position": "N/A", "title":resultTask['event_source'], "description" : resultTask['tag_name'] + ' to ', "image": resultTask['image']})
                 elif str(resultTask['event_type'])=="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
                     if i<lenResult:
-                        if i+1 < len(fetch_result["table_result"]) and str(fetch_result["table_result"][i+1]['event_type'])!="keydown": #Is last keydownEvent
+                        if i+1 < len(fetch_result) and str(fetch_result[i+1]['event_type'])!="keydown": #Is last keydownEvent
                             eventDescription=getTextbyEvent("keydown",textKeydown,"")
                             textKeydown=""
-                            eventlist.append({"type": str(fetch_result["table_result"][i]['event_type']), "url" : str(fetch_result["table_result"][i]['base_url']), "xpath" : str(fetch_result["table_result"][i]['x_path']),"text" : str(fetch_result["table_result"][i]['text_content']), "offsetX": fetch_result["table_result"][i]['offset_x'], "offsetY": fetch_result["table_result"][i]['offset_y'], "position": "N/A", "title":str(fetch_result["table_result"][i]['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
+                            eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "title":str(resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
                     flagScroll=True
                 else:
                     if str(resultTask['text_content'])!="" and str(resultTask['tag_name'])!="SIDEBAR-TAB":
@@ -488,12 +493,12 @@ def expert_replay(request):
                         if eventDescription!="No description":
                             eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": str(eventPosition), "title":str(resultTask['event_source']), "width":resultTask['width'], "height":resultTask['height'], "description" : str(eventDescription), "image": resultTask['image']})
                     flagScroll=True
-        if lenResult< len(fetch_result["table_result"]) and textKeydown!="":
+        if lenResult< len(fetch_result) and textKeydown!="":
             eventDescription=getTextbyEvent("keydown",textKeydown,"")
-            eventlist.append({"type": str(fetch_result["table_result"][lenResult]['event_type']), "url" : str(fetch_result["table_result"][lenResult]['base_url']), "xpath" : str(fetch_result["table_result"][lenResult]['x_path']),"text" : str(fetch_result["table_result"][lenResult]['text_content']), "offsetX": fetch_result["table_result"][lenResult]['offset_x'], "offsetY": fetch_result["table_result"][lenResult]['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":str(fetch_result["table_result"][lenResult]['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
-        if resultSesions['task_name'] is None: task_name="test API"
-        else: task_name= str(resultSesions['task_name'])
-        auxDict.append({"taskName": task_name, 'sessionId': resultSesions['session_id'],  "timestamp": resultSesions['timestamp'],"steps":eventlist})#add the timestap for each taks
+            eventlist.append({"type": str(fetch_result[lenResult]['event_type']), "url" : str(fetch_result[lenResult]['base_url']), "xpath" : str(fetch_result[lenResult]['x_path']),"text" : str(fetch_result[lenResult]['text_content']), "offsetX": fetch_result[lenResult]['offset_x'], "offsetY": fetch_result[lenResult]['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":str(fetch_result[lenResult]['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
+        if resultSesions.task_name is None: task_name="test API"
+        else: task_name= str(resultSesions.task_name)
+        auxDict.append({"taskName": task_name, 'sessionId': resultSesions.session_id,  "timestamp": resultSesions.startstamp,"steps":eventlist, "task_name": task_name, 'session_id': resultSesions.session_id})#add the timestap for each taks
     # dictResult['data']=auxDict 
     return auxDict
 

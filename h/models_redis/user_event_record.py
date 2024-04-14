@@ -71,8 +71,12 @@ def update_user_event_record(pk, update, steps):
 
 
 def delete_user_event_record(pk):
-    UserEventRecord.delete(pk)
-    return True
+    try:
+        UserEventRecord.delete(pk)
+    except:
+        return False
+    else:
+        return True
 
 
 def start_user_event_record(startstamp, session_id, task_name, description, target_uri, start, userid, groupid):
@@ -103,3 +107,11 @@ def fetch_user_event_record_by_session_id(session_id, userid):
         )
     total = query.all()
     return total[0] if len(total) > 0 else None
+
+
+def batch_user_event_record(userid):
+    total = UserEventRecord.find(
+        (UserEventRecord.userid == userid) |
+        (UserEventRecord.shared == 1)
+        ).all()
+    return total if len(total) > 0 else []

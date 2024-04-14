@@ -155,6 +155,16 @@ def fetch_user_event(userid, offset, limit, sortby):
         }
 
 
+def fetch_user_event_by_timestamp(userid, session_id, startstamp, endstamp, sortby="-timestamp"):
+    total = UserEvent.find(
+        (UserEvent.userid == userid) &
+        # (UserEvent.session_id == session_id) &
+        (UserEvent.timestamp >= startstamp) &
+        (UserEvent.timestamp <= endstamp)
+        ).sort_by(sortby).all()
+    return total
+
+
 def get_user_event_sortable_fields():
     properties = UserEvent.schema()["properties"]
     if "image" in properties:

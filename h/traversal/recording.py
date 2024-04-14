@@ -13,9 +13,13 @@ class UserEventRecordContext:
     def pk(self):
         return self.user_event_record.pk
 
+    @property
+    def session_id(self):
+        return self.user_event_record.session_id
+
 
 class UserEventRecordRoot:
-    """Root factory for routes whose context is an `AnnotationContext`."""
+    """Root factory for routes whose context is an `UserEventRecordRoot`."""
 
     def __init__(self, request):
         self.userid = request.authenticated_userid
