@@ -29,6 +29,7 @@ class UserEvent(JsonModel):
     width: Optional[int] = Field(full_text_search=True, sortable=True)
     height: Optional[int] = Field(full_text_search=True, sortable=True)
     image: Optional[str]
+    title: Optional[str] = Field(full_text_search=True, sortable=True)
 
 
 def add_user_event(
@@ -51,6 +52,7 @@ def add_user_event(
         width=0,
         height=0,
         image=None,
+        title=None,
         ):
     user_event = UserEvent(
         userid=userid,
@@ -73,6 +75,7 @@ def add_user_event(
         width=width,
         height=height,
         image=image,
+        title=title,
     )
     user_event.save()
     return user_event
@@ -104,6 +107,7 @@ def get_user_event(pk):
         'width': user_event.width,
         'height': user_event.height,
         'image': user_event.image,
+        'title': user_event.title,
     }
 
 
@@ -155,7 +159,7 @@ def fetch_user_event(userid, offset, limit, sortby):
         }
 
 
-def fetch_user_event_by_timestamp(userid, session_id, startstamp, endstamp, sortby="-timestamp"):
+def fetch_user_event_by_timestamp(userid, session_id, startstamp, endstamp, sortby="timestamp"):
     total = UserEvent.find(
         (UserEvent.userid == userid) &
         # (UserEvent.session_id == session_id) &
