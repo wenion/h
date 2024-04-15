@@ -475,7 +475,7 @@ def batch_steps(index_list):
                         eventDescription=getTextbyEvent("scroll",str(resultTask['text_content']).split(":")[0],"")
                         eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":str(resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
                 elif str(resultTask['event_type'])=="recording":
-                    eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": 0, "offsetY": 0, "position": "N/A", "title":resultTask['event_source'], "description" : resultTask['tag_name'] + ' to ', "image": resultTask['image']})
+                    eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": 0, "offsetY": 0, "position": "N/A", "title":resultTask['title'], "description" : resultTask['tag_name'] + ' to ', "image": resultTask['image']})
                 elif str(resultTask['event_type'])=="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
                     if i<lenResult:
@@ -713,6 +713,7 @@ def event(request):
         width=event["width"],
         height=event["height"],
         image=event['image'] if 'image' in event else None,
+        title=event['title'] if 'title' in event else None,
         )
     return {
         "succ": "event has been saved"
