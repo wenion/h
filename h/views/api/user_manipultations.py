@@ -487,8 +487,10 @@ def batch_steps(index_list):
                 else:
                     if str(resultTask['text_content'])!="" and str(resultTask['tag_name'])!="SIDEBAR-TAB":
                         width = 0 if resultTask['width'] == None else resultTask['width']
-                        height = 0 if resultTask['height'] == None else resultTask['height']                        
-                        eventPosition=getPositionViewport(int(width),int(height),int(resultTask['offset_x']),int(resultTask['offset_y']))
+                        height = 0 if resultTask['height'] == None else resultTask['height']
+                        offset_x = 0 if resultTask['offset_x'] == None else resultTask['offset_x']
+                        offset_y = 0 if resultTask['offset_y'] == None else resultTask['offset_y']
+                        eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
                         eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']),eventPosition)
                         if eventDescription!="No description":
                             eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": str(eventPosition), "title":str(resultTask['event_source']), "width":resultTask['width'], "height":resultTask['height'], "description" : str(eventDescription), "image": resultTask['image']})
