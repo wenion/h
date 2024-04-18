@@ -17,7 +17,7 @@ objects and Pyramid ACLs in :mod:`h.traversal`.
 from pyramid import i18n
 
 from h.models_redis import start_user_event_record, finish_user_event_record
-from h.models_redis import batch_user_event_record, delete_user_event_record
+from h.models_redis import batch_user_event_record, update_user_event_record, delete_user_event_record
 from h.views.api.user_manipultations import batch_steps
 from h.security import Permission
 from h.views.api.config import api_config
@@ -91,7 +91,10 @@ def update(context, request):
         result = batch_steps([session,])
         return result[0] if len(result) > 0 else session.dict()
     elif action == "share":
-        pass
+        user_event_record = context.user_event_record.dict()
+        user_event_record['shared'] = 1 if data["shared"] else 0
+        result = update_user_event_record(user_event_record['pk'], user_event_record, None).dict()
+        return result
     elif action == "edit":
         pass
 

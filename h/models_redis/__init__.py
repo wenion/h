@@ -13,7 +13,7 @@ from h.models_redis.user_event import fetch_all_user_event, fetch_user_event, ge
 from h.models_redis.user_event import add_user_event, get_user_event, del_user_event, update_user_event, fetch_user_event_by_timestamp
 from h.models_redis.user_event_record import UserEventRecord
 from h.models_redis.user_event_record import start_user_event_record, finish_user_event_record, fetch_user_event_record_by_session_id
-from h.models_redis.user_event_record import delete_user_event_record, batch_user_event_record
+from h.models_redis.user_event_record import update_user_event_record, delete_user_event_record, batch_user_event_record
 from h.models_redis.result import Result
 from h.models_redis.rating import Rating
 
@@ -34,6 +34,7 @@ __all__ = (
     "start_user_event_record",
     "finish_user_event_record",
     "fetch_user_event_record_by_session_id",
+    "update_user_event_record",
     "delete_user_event_record",
     "batch_user_event_record",
     "Rating",

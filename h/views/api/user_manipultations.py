@@ -500,7 +500,17 @@ def batch_steps(index_list):
             eventlist.append({"type": str(fetch_result[lenResult]['event_type']), "url" : str(fetch_result[lenResult]['base_url']), "xpath" : str(fetch_result[lenResult]['x_path']),"text" : str(fetch_result[lenResult]['text_content']), "offsetX": fetch_result[lenResult]['offset_x'], "offsetY": fetch_result[lenResult]['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":str(fetch_result[lenResult]['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
         if resultSesions.task_name is None: task_name="test API"
         else: task_name= str(resultSesions.task_name)
-        auxDict.append({"taskName": task_name, 'sessionId': resultSesions.session_id,  "timestamp": resultSesions.startstamp,"steps":eventlist, "task_name": task_name, 'session_id': resultSesions.session_id})#add the timestap for each taks
+        auxDict.append({
+            "taskName": task_name,
+            'sessionId': resultSesions.session_id,
+            "timestamp": resultSesions.startstamp,
+            "steps":eventlist,
+            "task_name": task_name,
+            "session_id": resultSesions.session_id,
+            "userid": resultSesions.userid,
+            "groupid": resultSesions.groupid,
+            "shared": resultSesions.shared,
+            })#add the timestap for each taks
     # dictResult['data']=auxDict 
     return auxDict
 
