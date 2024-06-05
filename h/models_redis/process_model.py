@@ -7,7 +7,6 @@ class ProcessModel(JsonModel):
     class Meta:
         global_key_prefix = 'h'
         model_key_prefix = 'ProcessModel'
-    pmid: int = Field(index=True)
     creator: str = Field(index=True) #userid in UserRole
     create_time: int = Field(index=True) # the time process model is created
     group: str = Field(index=True) #the permitted groups for the ShareFlow public_id
@@ -15,8 +14,14 @@ class ProcessModel(JsonModel):
     pm_content: str = Field(index=True)# process model content
 
 
-def fetch_process_model_by_name(name):
-    query = ProcessModel.find(ProcessModel.pm_name == name)
+def fetch_all_process_model():
+    query = ProcessModel.find()
+    all_models = query.all()
+    return all_models if len(all_models) > 0 else None
+
+
+def fetch_process_model_by_name_creator(name, creator):
+    query = ProcessModel.find((ProcessModel.pm_name == name) & (ProcessModel.creator == creator))
     total = query.all()
     return total[0] if len(total) > 0 else None
 
@@ -28,18 +33,12 @@ def get_process_model(pk):
 
 
 def create_process_model(
-        pmid,
         creator,
         create_time,
         group,
         pm_name,
         pm_content,):
-    pm = fetch_process_model_by_name(pm_name)
-    if pm:
-        print("none >>> ")
-        return None
     process_model = ProcessModel(
-        pmid = pmid,
         creator = creator,
         create_time = create_time,
         group = group,
@@ -50,8 +49,8 @@ def create_process_model(
     return process_model
 
 
-def update_process_model(name, update):
-    process_model = fetch_process_model_by_name(name)
+def update_process_model(name, creator, update):
+    process_model = fetch_process_model_by_name_creator(name, creator)
     if process_model:
         # process_model.creator = update.get('creator')
         # process_model.group = update.get('group')
@@ -62,6 +61,16 @@ def update_process_model(name, update):
         return process_model
     else:
         return None
+
+
+def delete_process_model(name, creator):
+    try:
+        pm = fetch_process_model_by_name_creator(name, creator)
+        pm.delete()
+    except:
+        return False
+    else:
+        return True
 
 
 def delete_process_model(pk):
