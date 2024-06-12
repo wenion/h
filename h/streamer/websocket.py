@@ -9,6 +9,7 @@ from gevent.queue import Full
 from ws4py.websocket import WebSocket as _WebSocket
 
 from h.streamer.filter import FILTER_SCHEMA, SocketFilter
+from h.models_redis import add_user_event
 
 log = logging.getLogger(__name__)
 
@@ -122,6 +123,7 @@ def handle_message(message, session=None):
 
     payload = message.payload
     type_ = payload.get("type")
+    message_type_ = payload.get("messageType")
 
     # FIXME: This code is here to tolerate old and deprecated message formats.
     if type_ is None:  # pragma: no cover
@@ -130,10 +132,50 @@ def handle_message(message, session=None):
         if "filter" in payload:
             type_ = "filter"
 
+    if message_type_ == "TraceData":
+        handle_user_trace_message(message)
+        return
+
     # N.B. MESSAGE_HANDLERS[None] handles both incorrect and missing message
     # types.
     handler = MESSAGE_HANDLERS.get(type_, MESSAGE_HANDLERS[None])
     handler(message, session=session)
+
+
+def handle_user_trace_message(message, session=None):
+    if not message.socket.identity:
+        message.reply(
+            {
+                "type": "whoyouare",
+                "userid": message.socket.identity.user.userid if message.socket.identity else None,
+                "error": {"type": "invalid_connection", "description": '"userid" is missing'},
+            },
+            ok=False,
+        )
+        return
+    event = message.payload
+    add_user_event(
+        userid=message.socket.identity.user.userid,
+        event_type=event["type"],
+        timestamp=event["timestamp"],
+        tag_name=event["tagName"],
+        text_content=event["textContent"],
+        base_url=event["url"],
+        ip_address=message.socket.peer_address[0] + ':' + str(message.socket.peer_address[1]),
+        interaction_context=event["interactionContext"],
+        event_source=event["eventSource"],
+        x_path=event["xpath"],
+        offset_x=event.get("clientX"),
+        offset_y=event.get("clientY"),
+        doc_id=event.get("doc_id"),
+        region="",
+        session_id="",
+        task_name="",
+        width=event.get("width"),
+        height=event.get("height"),
+        image=event.get('image'),
+        title=event.get('title'),
+        )
 
 
 def handle_client_id_message(message, session=None):  # pylint: disable=unused-argument

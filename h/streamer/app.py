@@ -17,6 +17,7 @@ def create_app(_global_config, **settings):
     config.include("h.db")
     config.include("h.session")
     config.include("h.services")
+    config.include("h.models_redis")
 
     # We include links in order to set up the alternative link registrations
     # for annotations.

@@ -454,6 +454,18 @@ def expert_replay(request):
     return batch_steps(resultAllEvents)
 
 
+
+#   type: string;
+#   id: string;
+#   url?: string;
+#   description?: string;
+#   title?: string;
+#   position?: string;
+#   image?: string | null;
+#   width? : number;
+#   height? : number;
+#   offsetX? : number;
+#   offsetY? : number;
 def batch_steps(index_list):
     auxDict=[]
     for resultSesions in index_list:#For the taskName and session
@@ -461,19 +473,31 @@ def batch_steps(index_list):
         fetch_result = fetch_user_event_by_timestamp(
             resultSesions.userid,
             resultSesions.session_id,
-            resultSesions.startstamp + resultSesions.start * 1000,
+            resultSesions.startstamp - 10 + resultSesions.start * 1000,
             resultSesions.endstamp)
         textKeydown=""
         flagScroll=True
         lenResult=len(fetch_result)
         for i in range(lenResult):
             resultTask=fetch_result[i].dict()
-            if str(resultTask['event_type'])!="beforeunload" and str(resultTask['event_type'])!="OPEN" and str(resultTask['event_type'])!="open" and str(resultTask['event_type'])!="visibilitychange" and str(resultTask['event_type'])!="server-record" and str(resultTask['event_type'])!="submit" and str(resultTask['event_type'])!="START" and str(resultTask['event_type'])!="close":
+            if str(resultTask['event_type'])!="beforeunload" and str(resultTask['event_type'])!="OPEN" and str(resultTask['event_type'])!="open" and str(resultTask['event_type'])!="visibilitychange" and str(resultTask['event_type'])!="server-record" and str(resultTask['event_type'])!="submit" and str(resultTask['event_type'])!="START" and str(resultTask['event_type'])!="close" and str(resultTask['event_source'])!="MESSAGE" and str(resultTask['event_source'])!="SIDERBAR" and str(resultTask['event_source'])!="RECORDING":
                 if str(resultTask['event_type'])=="scroll":
                     if flagScroll:
                         flagScroll=False
                         eventDescription=getTextbyEvent("scroll",str(resultTask['text_content']).split(":")[0],"")
                         eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":str(resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
+                elif resultTask['event_type'] == 'navigate':
+                    eventlist.append({
+                        "type": resultTask['event_type'],
+                        "url" : resultTask['base_url'],
+                        "xpath" : '',
+                        "text" : '',
+                        "offsetX": 0,
+                        "offsetY": 0,
+                        "position": "N/A",
+                        "title":resultTask['title'],
+                        "description" : resultTask['tag_name'] + ' to ',
+                        })
                 elif str(resultTask['event_type'])=="recording":
                     eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": 0, "offsetY": 0, "position": "N/A", "title":resultTask['title'], "description" : resultTask['tag_name'] + ' to ', "image": resultTask['image']})
                 elif str(resultTask['event_type'])=="keydown":# keyboard Events
@@ -485,15 +509,19 @@ def batch_steps(index_list):
                             eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "title":str(resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
                     flagScroll=True
                 else:
-                    if str(resultTask['text_content'])!="" and str(resultTask['tag_name'])!="SIDEBAR-TAB":
+                    if str(resultTask['text_content'])!="" and str(resultTask['tag_name'])!="SIDEBAR-TAB" and str(resultTask['tag_name'])!="HYPOTHESIS-SIDEBAR":
                         width = 0 if resultTask['width'] == None else resultTask['width']
                         height = 0 if resultTask['height'] == None else resultTask['height']
                         offset_x = 0 if resultTask['offset_x'] == None else resultTask['offset_x']
                         offset_y = 0 if resultTask['offset_y'] == None else resultTask['offset_y']
+                        event_type = resultTask['event_type']
+                        if event_type == 'pointerdown':
+                            event_type = 'click'
                         eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
-                        eventDescription=getTextbyEvent(str(resultTask['event_type']),str(resultTask['text_content']),eventPosition)
+                        print("last>>", resultTask['event_type'])
+                        eventDescription=getTextbyEvent(event_type,str(resultTask['text_content']),eventPosition)
                         if eventDescription!="No description":
-                            eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": str(eventPosition), "title":str(resultTask['event_source']), "width":resultTask['width'], "height":resultTask['height'], "description" : str(eventDescription), "image": resultTask['image']})
+                            eventlist.append({"type": event_type, "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": str(eventPosition), "title":str(resultTask['event_source']), "width":resultTask['width'], "height":resultTask['height'], "description" : str(eventDescription), "image": resultTask['image'] if 'image' in resultTask else None})
                     flagScroll=True
         if lenResult< len(fetch_result) and textKeydown!="":
             eventDescription=getTextbyEvent("keydown",textKeydown,"")
@@ -511,7 +539,7 @@ def batch_steps(index_list):
             "groupid": resultSesions.groupid,
             "shared": resultSesions.shared,
             })#add the timestap for each taks
-    # dictResult['data']=auxDict 
+    # dictResult['data']=auxDict
     return auxDict
 
 def getKeyboard(textKeydown, character):
@@ -538,6 +566,8 @@ def getTextbyEvent(event_type,text_content,eventPosition):
         return "No description"
 
 def getPositionViewport(portX,portY,offset_x,offset_y):
+    if (not portX) or (not portY) or (not offset_x) or (not offset_y):
+        return 'N/A'
     height=""
     width=""
     if (portY/2)> offset_y: height="top"
