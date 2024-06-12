@@ -665,7 +665,7 @@ def message(request):
     interval = request.GET.get("interval") if request.GET.get("interval") else defalut_interval
     all = request.find_service(name="organisation_event").get_by_days(day_ahead)
 
-    tad_url =  urljoin(request.registry.settings.get("tad_url"), "task_classification")
+    tad_url = urljoin(request.registry.settings.get("tad_url"), "task_classification")
     tad_response = None
     try:
         tad_response = requests.get(tad_url, params={"userid": userid, "interval": int(interval)})
