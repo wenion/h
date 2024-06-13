@@ -16,7 +16,7 @@ from h.models_redis.user_event_record import start_user_event_record, finish_use
 from h.models_redis.user_event_record import update_user_event_record, delete_user_event_record, batch_user_event_record
 from h.models_redis.result import Result
 from h.models_redis.rating import Rating
-from h.models_redis.process_model import ProcessModel, fetch_process_model_by_name_creator, create_process_model, update_process_model
+from h.models_redis.process_model import ProcessModel, fetch_all_process_model, fetch_process_model_by_session_creator, get_process_model, create_process_model, update_process_model, delete_process_model_by_session_creator, delete_process_model
 
 __all__ = (
     "UserRole",
@@ -41,9 +41,13 @@ __all__ = (
     "Rating",
     "UserFile",
     "ProcessModel",
-    "fetch_process_model_by_name_creator",
+    "fetch_all_process_model",
+    "fetch_process_model_by_session_creator",
+    "get_process_model",
     "create_process_model",
-    "update_process_model"
+    "update_process_model",
+    "delete_process_model",
+    "delete_process_model_by_session_creator"
 )
 
 
