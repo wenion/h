@@ -34,7 +34,7 @@ def fetch_all_task_pages():
 def fetch_task_page_name_id(pm_name, session_id):
     query = TaskPage.find((TaskPage.pm_name == pm_name) & (TaskPage.session_id == session_id))
     total = query.all()
-    return total[0] if len(total) > 0 else None
+    return total if len(total) > 0 else None
 
 
 def add_task_page(url, pm_name, session_id):
@@ -50,7 +50,8 @@ def delete_task_page_name_id(pm_name, session_id):
     try:
         page = fetch_task_page_name_id(pm_name, session_id)
         if page:
-            TaskPage.delete(page.pk)
+            for p in page:
+                TaskPage.delete(p.pk)
         else:
             return False
     except:
