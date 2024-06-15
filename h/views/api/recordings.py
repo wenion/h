@@ -94,10 +94,10 @@ def update(context, request):
         # Steve: create process model after Shareflow recording completes
         try:
             tad_url = urljoin(request.registry.settings.get("tad_url"), "create_process_model")
-            pm_data = {"user_id": context.userid,
-                       "shareflow_name": context.task_name,
-                       "session_id": context.session_id,
-                       "group_id": context.groupid}
+            pm_data = {"user_id": context.user_event_record.userid,
+                       "shareflow_name": context.user_event_record.task_name,
+                       "session_id": context.user_event_record.session_id,
+                       "group_id": context.user_event_record.groupid}
             headers = {"Content-Type": "application/json"}
             pm_creation_response = requests.post(tad_url, json=pm_data, headers=headers)
             if not pm_creation_response["created"]:
@@ -127,9 +127,9 @@ def delete(context, request):
     # Steve: delete process model when Shareflow gets deleted
     try:
         tad_url = urljoin(request.registry.settings.get("tad_url"), "delete_process_model")
-        pm_data = {"user_id": context.userid,
-                  "shareflow_name": context.task_name,
-                  "session_id": context.session_id}
+        pm_data = {"user_id": context.user_event_record.userid,
+                  "shareflow_name": context.user_event_record.task_name,
+                  "session_id": context.user_event_record.session_id}
         headers = {"Content-Type": "application/json"}
         pm_deletion_response = requests.post(tad_url, json=pm_data, headers=headers)
         if not pm_deletion_response["created"]:
