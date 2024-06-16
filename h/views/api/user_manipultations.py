@@ -32,7 +32,7 @@ from h.models_redis import UserEvent, Rating
 from h.models_redis import get_highlights_from_openai, create_user_event, add_user_event
 from h.models_redis import get_user_status_by_userid, set_user_status
 from h.models_redis import get_user_event, update_user_event, fetch_all_user_events_by_session
-from h.models_redis import fetch_user_event_by_timestamp, batch_user_event_record
+from h.models_redis import fetch_user_event_by_timestamp, batch_user_event_record, is_task_page
 from h.services import OrganisationEventPushLogService
 
 def split_user(userid):
@@ -518,7 +518,6 @@ def batch_steps(index_list):
                         if event_type == 'pointerdown':
                             event_type = 'click'
                         eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
-                        print("last>>", resultTask['event_type'])
                         eventDescription=getTextbyEvent(event_type,str(resultTask['text_content']),eventPosition)
                         if eventDescription!="No description":
                             eventlist.append({"type": event_type, "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": str(eventPosition), "title":str(resultTask['event_source']), "width":resultTask['width'], "height":resultTask['height'], "description" : str(eventDescription), "image": resultTask['image'] if 'image' in resultTask else None})
@@ -663,35 +662,40 @@ def message(request):
     userid = request.authenticated_userid
     request_type = request.GET.get("q")
     interval = request.GET.get("interval") if request.GET.get("interval") else defalut_interval
+    url = request.GET.get("url")
     all = request.find_service(name="organisation_event").get_by_days(day_ahead)
 
     tad_url = urljoin(request.registry.settings.get("tad_url"), "task_classification")
     tad_response = None
-    try:
-        tad_response = requests.get(tad_url, params={"userid": userid, "interval": int(interval)})
-        tad_result = tad_response.json()
-        certainty = tad_result["certainty"] if "certainty" in tad_result else 0
-        rep_interval = tad_result["interval"] if "interval" in tad_result else defalut_interval
+    next = is_task_page(url)
+    if next:
+        try:
+            tad_response = requests.get(tad_url, params={"userid": userid, "interval": int(interval)})
+            tad_result = tad_response.json()
+            print('tad >>>', tad_result)
+            certainty = tad_result["certainty"] if "certainty" in tad_result else 0
+            rep_interval = tad_result["interval"] if "interval" in tad_result else defalut_interval
 
-        message = make_message(
-            "instant_message",
-            datetime.now().strftime("%S%M%H%d%m%Y") + "_" +split_user(userid)["username"],
-            "ShareFlow recommendation",
-            tad_result["message"],
-            datetime.now().strftime("%s%f"),
-            True if certainty else False, True, True if certainty else False)
-        message["interval"] = rep_interval
-        response.append(message)
-    except Exception as e:
-        response.append(
-            make_message(
-                "error_message",
-                "pubid",
-                "Error",
-                str(e) + "! status code: " + str(tad_response.status_code) if tad_response else str(e),
+            message = make_message(
+                "instant_message",
+                datetime.now().strftime("%S%M%H%d%m%Y") + "_" +split_user(userid)["username"],
+                "ShareFlow recommendation",
+                tad_result["message"],
                 datetime.now().strftime("%s%f"),
-                False, True, False)
-        )
+                True if certainty else False, True, True if certainty else False)
+            message["interval"] = rep_interval
+            message["should_next"] = next
+            response.append(message)
+        except Exception as e:
+            response.append(
+                make_message(
+                    "error_message",
+                    "pubid",
+                    "Error",
+                    str(e) + "! status code: " + str(tad_response.status_code) if tad_response else str(e),
+                    datetime.now().strftime("%s%f"),
+                    False, True, False)
+            )
 
     for item in all:
         show_flag = False

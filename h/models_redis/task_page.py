@@ -8,21 +8,18 @@ class TaskPage(JsonModel):
     class Meta:
         global_key_prefix = "h"
         model_key_prefix = "TaskPage"
-    url: str = Field(index=True) # note: task page stores the domain of the task pages not the actual page URLs
+    url: str = Field(index=True, full_text_search=True) # note: task page stores the domain of the task pages not the actual page URLs
     pm_name: str = Field(index=True)
     session_id: str = Field(index=True)
 
 
 def is_task_page(url):
     parsed_url = urlparse(url)
-    if parsed_url:
-        domain = parsed_url.netloc
-        if domain:
-            query = TaskPage.find(url == domain)
-            match = query.all()
-            if len(match) > 0:
-                return True
-    return False
+    domain = parsed_url.netloc
+    # query = TaskPage.find(TaskPage.url.__mod__(domain)) # domain must be escape characters
+    query = TaskPage.find(TaskPage.url == domain)
+    total = query.all()
+    return True if len(total) else False
 
 
 def fetch_all_task_pages():
