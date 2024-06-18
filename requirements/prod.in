@@ -17,7 +17,7 @@ celery
 certifi  # Required to connect to Elasticsearch over SSL.
 cffi
 click
-cv2 # Requiered to create image
+opencv-python # Requiered to create image
 deform
 distance
 elasticsearch==6.8.2
