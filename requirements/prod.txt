@@ -51,6 +51,8 @@ colander==1.8.2
     # via deform
 cryptography==41.0.6
     # via python-jose
+cv2==4.5.5
+    # via -r requirements/prod.in
 data-tasks==0.0.3
     # via -r requirements/prod.in
 deform==2.0.15
