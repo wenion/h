@@ -51,7 +51,7 @@ colander==1.8.2
     # via deform
 cryptography==41.0.6
     # via python-jose
-opencv-python==4.10.0
+opencv-python==4.10.0.82
     # via -r requirements/prod.in
 data-tasks==0.0.3
     # via -r requirements/prod.in
