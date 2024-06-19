@@ -178,6 +178,7 @@ def includeme(config):  # pylint: disable=too-many-statements
         factory="h.traversal.GroupRequiredRoot",
         traverse="/{id}",
     )
+    config.add_route("api.data_comics","api/data-comics")
     config.add_route("api.expert_replay","api/expert-replay")
     config.add_route("api.share_flow", "api/share_flow")
     config.add_route("api.profile", "/api/profile")
