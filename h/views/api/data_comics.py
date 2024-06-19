@@ -1,4 +1,4 @@
-from cv2 import cv2
+import cv2
 import numpy as np
 from h.security import Permission
 from h.views.api.config import api_config
