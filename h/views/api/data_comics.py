@@ -194,7 +194,7 @@ def addArrow(imgLarge,):
     versions=["v1", "v2"],
     route_name="api.data_comics",
     request_method="GET",
-    permission=Permission.Annotation.CREATE,
+    #permission=Permission.Annotation.CREATE,
     link_name="data_comics",
     description="create the data comics images",
 )
@@ -207,6 +207,7 @@ def readJson():
     # Iterating through the json
     for process in data['process']:
         cont=1
+        print(process['name'])
         createCircule(process['name'],process['steps'][0]['title'],process['pos'],True)
         for event in process['steps']:
             if event['type']=='recording':
