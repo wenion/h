@@ -16,7 +16,7 @@ thicknessRec = 2
 colorBlack = (1, 1, 1)
 start_point = (5, 5) 
 
-pathDC="\\wsl.localhost\Ubuntu\home\mitigan\h\h\static\images\\"
+pathDC="\\wsl.localhost\\Ubuntu\\home\\mitigan\\h\\h\\static\\images\\"
 
 #This function create the navigate images
 def createImageNavigate(url,title,processID,position,cont):
@@ -66,7 +66,7 @@ def createBasicImage(event,text,typeSize,processID,position,cont):
     img= addIcon(img,event)
     cv2.imshow("Event", img)
     #k = cv2.waitKey(0)
-    pathSave=pathDC+"data_comics//"+str(position)+"_"+str(processID)+"_"+str(cont)+".jpg"
+    pathSave=pathDC+"data_comics\\"+str(position)+"_"+str(processID)+"_"+str(cont)+".jpg"
     cv2.imwrite(pathSave, img)
 # This fuction create the image to the data comics summary
 def createCircule(processName,title,position,flagArrow):
@@ -98,7 +98,7 @@ def createCircule(processName,title,position,flagArrow):
     #print("Hola")
     #cv2.imshow("Event", img)
     #k = cv2.waitKey(0)
-    pathSave=pathDC+"data_comics//"+str(position)+".jpg"
+    pathSave=pathDC+"data_comics\\"+str(position)+".jpg"
     cv2.imwrite(pathSave, img)
 ###-----------Auxiliar function --------------
 # This function add and image(icon) depending on the event
