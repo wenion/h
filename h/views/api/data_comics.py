@@ -201,7 +201,7 @@ def addArrow(imgLarge,):
 def readJson(request):
     print("READ JSON")
     # Opening JSON file
-    f = open('\\wsl.localhost\\Ubuntu\\home\\mitigan\\h\\h\\views\\api\\processflow.json')
+    f = open(r'\\wsl.localhost\\Ubuntu\\home\\mitigan\\h\\h\\views\\api\\processflow.json')
     # returns JSON object as a dictionary
     data = json.load(f)
     # Iterating through the json
