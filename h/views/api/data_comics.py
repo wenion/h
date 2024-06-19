@@ -198,7 +198,7 @@ def addArrow(imgLarge,):
     link_name="data_comics",
     description="create the data comics images",
 )
-def readJson():
+def readJson(request):
     print("READ JSON")
     # Opening JSON file
     f = open('processflow copy.json')
