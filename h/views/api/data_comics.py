@@ -201,7 +201,7 @@ def addArrow(imgLarge,):
 def readJson(request):
     print("READ JSON")
     # Opening JSON file
-    f = open('processflow copy.json')
+    f = open('processflow.json')
     # returns JSON object as a dictionary
     data = json.load(f)
     # Iterating through the json
