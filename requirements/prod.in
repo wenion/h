@@ -1,4 +1,5 @@
 # Hypothesis packages
+sentry-sdk
 h-pyramid-sentry
 h-matchers
 h-api
@@ -7,7 +8,6 @@ data_tasks
 pyramid-sanity
 
 # 3rd-party packages
-python-jose[cryptography]
 PyJWT
 SQLAlchemy >= 1.1.4
 alembic
@@ -29,7 +29,6 @@ jsonschema
 kombu
 markdown
 newrelic
-numpy
 oauthlib
 packaging
 passlib
