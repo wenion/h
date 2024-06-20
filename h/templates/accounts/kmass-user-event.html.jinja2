@@ -6,6 +6,7 @@
 {% block page_content %}
   <div class="js-kmass">
     <div class="header">
+    <form action="/account/user-event" method="post">
       <label> page size
         <select class="pageSize" name="pageSize" data-ref="pageSizeSelect">
           {% if query and query.page_size == 10 %}
@@ -62,10 +63,12 @@
           {% endif %}
         </select>
       </label>
+      <hr>
 
-      <form action="/account/user-event" method="post">
-        <input type="submit" value="Export" />
-      </form>
+      <label for="pages">Export Pages:</label>
+      <input type="number" id="pages" name="pages" min="1" max="25" value="5">
+      <input type="submit" value="Export" />
+    </form>
     </div>
     <div class="search-results" style="margin-top: 25px">
 
