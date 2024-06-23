@@ -37,7 +37,20 @@ def batch(request):
     # TODO if authenticated userid is none
     page_url = request.params.get('target_uri')
     index_list = batch_user_event_record(request.authenticated_userid)
-    return batch_steps(index_list)
+    results = []
+    for record in index_list:
+        results.append({
+            "taskName": record.task_name,
+            'sessionId': record.session_id,
+            "timestamp": record.startstamp,
+            "steps": None,
+            "task_name": record.task_name,
+            "session_id": record.session_id,
+            "userid": record.userid,
+            "groupid": record.groupid,
+            "shared": record.shared
+            })
+    return results
 
 
 @api_config(
@@ -68,12 +81,27 @@ def create(request):
     versions=["v1", "v2"],
     route_name="api.recording",
     request_method="GET",
-    permission=Permission.Annotation.READ,
+    # permission=Permission.Annotation.READ,
     link_name="recording.read",
     description="Fetch an recording",
 )
 def read(context, request):
-    pass
+    record = context.user_event_record
+    results = batch_steps([record, ])
+    if len(results):
+        return batch_steps([record, ])[0]
+    else:
+        return [{
+            "taskName": record.task_name,
+            'sessionId': record.session_id,
+            "timestamp": record.startstamp,
+            "steps": None,
+            "task_name": record.task_name,
+            "session_id": record.session_id,
+            "userid": record.userid,
+            "groupid": record.groupid,
+            "shared": record.shared
+            },]
 
 
 @api_config(

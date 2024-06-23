@@ -175,10 +175,20 @@ class UserEventSearchController:
         except InvalidUserId:
             name = userid
 
-        sortby = self.request.params.get("sortby", SORT_BY)
-        order = self.request.params.get("order", ORDER)
+        pages = int(self.request.POST.get("pages", 25))
 
-        bunch_data = fetch_all_user_event(userid=userid, sortby="-"+sortby if order =="desc" else sortby)['table_result']
+        page_size = self.request.POST.get("pageSize", 25)
+        if page_size.isdigit():
+            page_size = int(page_size)
+        else:
+            page_size = 25
+
+        offset = 0
+        limit = page_size * pages
+        sortby = self.request.POST.get("sortby", SORT_BY)
+        order = self.request.POST.get("order", ORDER)
+
+        bunch_data = fetch_user_event(userid=self.request.authenticated_userid, offset=offset, limit=limit, sortby="-"+sortby if order =="desc" else sortby)['table_result']
 
         csv_data = StringIO()
         csv_writer = csv.writer(csv_data)
