@@ -22,7 +22,9 @@ class UserEventRecordRoot:
     """Root factory for routes whose context is an `UserEventRecordRoot`."""
 
     def __init__(self, request):
-        self.userid = request.authenticated_userid
+        self.userid = request.params.get("userid")
+        if self.userid is None:
+            self.userid = request.authenticated_userid
 
     def __getitem__(self, session_id):
         record = fetch_user_event_record_by_session_id(session_id, self.userid)
