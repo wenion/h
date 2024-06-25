@@ -538,12 +538,13 @@ def batch_steps(index_list):
                         last_keyup = None
                 elif str(resultTask['event_type'])=="keyup":
                     interaction_context = resultTask.get('interaction_context', '')
-                    if len(interaction_context) == 1:
-                        interaction_context = {'name': '', 'value': interaction_context.decode('utf-8')}
-                    else:
+                    try:
                         interaction_context = json.loads(interaction_context)
-                    name = interaction_context.get('name', "") if interaction_context != '' else ''
-                    value = interaction_context.get('value', "") if interaction_context != '' else ''
+                        name = interaction_context.get('name', "") if interaction_context != '' else ''
+                        value = interaction_context.get('value', "") if interaction_context != '' else ''
+                    except json.JSONDecodeError:
+                        name = ''
+                        value = interaction_context
                     xpath = resultTask.get('x_path', '')
                     if last_keyup and xpath != last_keyup.get('xpath') and last_keyup.get('xpath') != '':
                         eventlist.append(last_keyup)
