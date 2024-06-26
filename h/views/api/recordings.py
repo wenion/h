@@ -21,6 +21,7 @@ from pyramid import i18n
 from h.models_redis import start_user_event_record, finish_user_event_record
 from h.models_redis import batch_user_event_record, update_user_event_record, delete_user_event_record
 from h.views.api.user_manipultations import batch_steps
+from h.views.api.data_comics_process import data_commics_process
 from h.security import Permission
 from h.views.api.config import api_config
 
@@ -119,6 +120,7 @@ def update(context, request):
     if action == "finish":
         session = finish_user_event_record(context.pk, data["endstamp"])
         result = batch_steps([session,])
+        data_commics_process(result)
         # Steve: create process model after Shareflow recording completes
         try:
             tad_url = urljoin(request.registry.settings.get("tad_url"), "create_process_model")
