@@ -21,6 +21,7 @@ from pyramid import i18n
 from h.models_redis import start_user_event_record, finish_user_event_record
 from h.models_redis import batch_user_event_record, update_user_event_record, delete_user_event_record
 from h.views.api.user_manipultations import batch_steps
+from h.views.api.data_comics_process import data_commics_process
 from h.security import Permission
 from h.views.api.config import api_config
 
@@ -37,7 +38,20 @@ def batch(request):
     # TODO if authenticated userid is none
     page_url = request.params.get('target_uri')
     index_list = batch_user_event_record(request.authenticated_userid)
-    return batch_steps(index_list)
+    results = []
+    for record in index_list:
+        results.append({
+            "taskName": record.task_name,
+            'sessionId': record.session_id,
+            "timestamp": record.startstamp,
+            "steps": None,
+            "task_name": record.task_name,
+            "session_id": record.session_id,
+            "userid": record.userid,
+            "groupid": record.groupid,
+            "shared": record.shared
+            })
+    return results
 
 
 @api_config(
@@ -68,12 +82,27 @@ def create(request):
     versions=["v1", "v2"],
     route_name="api.recording",
     request_method="GET",
-    permission=Permission.Annotation.READ,
+    # permission=Permission.Annotation.READ,
     link_name="recording.read",
     description="Fetch an recording",
 )
 def read(context, request):
-    pass
+    record = context.user_event_record
+    results = batch_steps([record, ])
+    if len(results):
+        return batch_steps([record, ])[0]
+    else:
+        return [{
+            "taskName": record.task_name,
+            'sessionId': record.session_id,
+            "timestamp": record.startstamp,
+            "steps": None,
+            "task_name": record.task_name,
+            "session_id": record.session_id,
+            "userid": record.userid,
+            "groupid": record.groupid,
+            "shared": record.shared
+            },]
 
 
 @api_config(
@@ -91,6 +120,7 @@ def update(context, request):
     if action == "finish":
         session = finish_user_event_record(context.pk, data["endstamp"])
         result = batch_steps([session,])
+        data_commics_process(result)
         # Steve: create process model after Shareflow recording completes
         try:
             tad_url = urljoin(request.registry.settings.get("tad_url"), "create_process_model")

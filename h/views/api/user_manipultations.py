@@ -33,7 +33,9 @@ from h.models_redis import get_highlights_from_openai, create_user_event, add_us
 from h.models_redis import get_user_status_by_userid, set_user_status
 from h.models_redis import get_user_event, update_user_event, fetch_all_user_events_by_session
 from h.models_redis import fetch_user_event_by_timestamp, batch_user_event_record, is_task_page
+from h.models_redis import add_push_record, delete_push_record, fetch_push_record, has_three_push, same_as_previous
 from h.services import OrganisationEventPushLogService
+
 
 def split_user(userid):
     """
@@ -94,7 +96,8 @@ def upload(request):
             filepath = os.path.join(root_dir, name)
             if os.path.exists(filepath):
                 print("exist file", filepath)
-                create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + " already exists", request.url, userid)
+                create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + " already exists", request.url,
+                                  userid)
                 return {"error": name + " already exists"}
             with open(filepath, "wb") as output_file:
                 shutil.copyfileobj(input_file, output_file)
@@ -137,7 +140,7 @@ def upload(request):
                 "type": "file"
             }}
             print("path", filepath)
-            if not name.lower().endswith('.pdf'): # if not pdf file
+            if not name.lower().endswith('.pdf'):  # if not pdf file
                 print('not pdf')
                 return succ_response
             url = urljoin(request.registry.settings.get("query_url"), "upload")
@@ -180,7 +183,7 @@ def upload(request):
             with open(public_file_path, "wb") as output_file:
                 shutil.copyfileobj(source_file, output_file)
     except Exception as e:
-        create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + "error:"+ repr(e), request.url, userid)
+        create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + "error:" + repr(e), request.url, userid)
         return {"error": repr(e)}
 
     create_user_event("server-record", "UPLOAD RESPONSE SUCC", name, request.url, userid)
@@ -196,7 +199,7 @@ def upload(request):
     # transfer to TA B
     url = urljoin(request.registry.settings.get("query_url"), "upload")
     data = {"url": os.path.join(settings.get("user_root_url"), "static", relavtive_path)}
-    if not name.lower().endswith('.pdf'): # if not pdf file
+    if not name.lower().endswith('.pdf'):  # if not pdf file
         print('upload not pdf')
         return succ_response
     return ingest(url, name, file_path, data, userid, succ_response)
@@ -212,7 +215,7 @@ def ingest(url, name, file_path, data, userid, succ_response):
         response = requests.post(url, files=files, data=data)
         # result = response.json()
     except Exception as e:
-        create_user_event("server-record", "INGEST RESPONSE FAILED", name +" error:"+ repr(e), url, userid)
+        create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + repr(e), url, userid)
         return {"error": repr(e)}
     else:
         if response.status_code != 200:
@@ -231,19 +234,21 @@ def ingest(url, name, file_path, data, userid, succ_response):
         #     else:
         #         return result
         if result["status"] == 404:
-            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + result["message"], url, userid)
+            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + result["message"], url,
+                              userid)
             return {"error": result["message"]}
         elif result["status"] == 303:
-            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:303 " + result["message"], url, userid)
+            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:303 " + result["message"], url,
+                              userid)
             return {"error": "The file was ingested successfully [CODE: 303]"}
             pass
         elif result["status"] == 304:
-            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:304 " + result["message"], url, userid)
+            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:304 " + result["message"], url,
+                              userid)
             return {"error": result["message"]}
         elif result["status"] == 200:
             create_user_event("server-record", "INGEST RESPONSE SUCC", name, url, userid)
             return succ_response
-
 
     local_file.close()
     # return succ_response
@@ -302,7 +307,7 @@ def delete(request):
     return {'succ': {
         "filepath": file_path,
         "parent_filepath": os.path.dirname(file_path),
-        }}
+    }}
 
 
 def iterate_directory(dir, name, url, depth):
@@ -311,7 +316,7 @@ def iterate_directory(dir, name, url, depth):
         'path': dir,
         'id': dir,
         'name': name,
-        'type': 'dir', # dir | file
+        'type': 'dir',  # dir | file
         'link': current_path,
         'children': [],
         'depth': depth,
@@ -338,7 +343,8 @@ def iterate_directory(dir, name, url, depth):
                 directory_node['children'].append(file_node)
                 directory_node['children'].sort(key=lambda x: x.get('creation_time', 0), reverse=True)
             elif entry.is_dir():
-                directory_node['children'].append(iterate_directory(os.path.join(dir, entry.name), entry.name, current_path, depth + 1))
+                directory_node['children'].append(
+                    iterate_directory(os.path.join(dir, entry.name), entry.name, current_path, depth + 1))
 
     return directory_node
 
@@ -358,7 +364,7 @@ def repository(request):
 
     dir = os.path.join(settings.get("user_root"), username)
     if not os.path.exists(dir):
-            os.mkdir(dir)
+        os.mkdir(dir)
     return iterate_directory(dir, username, os.path.join(settings.get("user_root_url"), "static"), 0)
 
 
@@ -387,7 +393,7 @@ def client_url(request):
 )
 def push_recommendation(request):
     username = split_user(request.authenticated_userid)["username"]
-    data = request.json_body # dict
+    data = request.json_body  # dict
 
     if data["query"] and data["context"] and data["query"] != "":
         # data["context"].replace("\n", " ")
@@ -420,11 +426,11 @@ def push_recommendation(request):
 def remove_expert_replay(request):
     session_id = request.GET.get("session_id")
     task_name = request.GET.get("task_name")
-    user_id=request.authenticated_userid
+    user_id = request.authenticated_userid
     result = fetch_all_user_events_by_session(user_id, session_id)
     count = 0
     for item in result['table_result']:
-        pk = update_user_event(item['pk'], dict(session_id = '', task_name = ''))
+        pk = update_user_event(item['pk'], dict(session_id='', task_name=''))
         count += 1
     return {'reset': count}
 
@@ -450,9 +456,8 @@ def read_share_flow(request):
     description="get the session of the expert replay",
 )
 def expert_replay(request):
-    resultAllEvents=batch_user_event_record(request.authenticated_userid)
+    resultAllEvents = batch_user_event_record(request.authenticated_userid)
     return batch_steps(resultAllEvents)
-
 
 
 #   type: string;
@@ -467,39 +472,102 @@ def expert_replay(request):
 #   offsetX? : number;
 #   offsetY? : number;
 def batch_steps(index_list):
-    auxDict=[]
-    for resultSesions in index_list:#For the taskName and session
-        eventlist=[]
+    auxDict = []
+    for resultSesions in index_list:  # For the taskName and session
+        eventlist = []
         fetch_result = fetch_user_event_by_timestamp(
             resultSesions.userid,
             resultSesions.session_id,
             resultSesions.startstamp - 10 + resultSesions.start * 1000,
             resultSesions.endstamp)
         textKeydown=""
+        last_keyup = None
+        last_navigate = None
+        last_scroll = None
         flagScroll=True
         lenResult=len(fetch_result)
         for i in range(lenResult):
             resultTask=fetch_result[i].dict()
             if str(resultTask['event_type'])!="beforeunload" and str(resultTask['event_type'])!="OPEN" and str(resultTask['event_type'])!="open" and str(resultTask['event_type'])!="visibilitychange" and str(resultTask['event_type'])!="server-record" and str(resultTask['event_type'])!="submit" and str(resultTask['event_type'])!="START" and str(resultTask['event_type'])!="close" and str(resultTask['event_source'])!="MESSAGE" and str(resultTask['event_source'])!="SIDERBAR" and str(resultTask['event_source'])!="RECORDING":
                 if str(resultTask['event_type'])=="scroll":
-                    if flagScroll:
-                        flagScroll=False
+                    if last_scroll and flagScroll:
                         eventDescription=getTextbyEvent("scroll",str(resultTask['text_content']).split(":")[0],"")
-                        eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":str(resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
+                        if last_scroll["description"] != eventDescription:
+                            last_scroll = {"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":str(resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']}
+                            eventlist.append(last_scroll)
+                            flagScroll = False
+                    elif not last_scroll:
+                        eventDescription=getTextbyEvent("scroll",str(resultTask['text_content']).split(":")[0],"")
+                        last_scroll = {"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":str(resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']}
+                        eventlist.append(last_scroll)
+                        flagScroll = False
+                    if last_keyup:
+                        eventlist.append(last_keyup)
+                        last_keyup = None
                 elif resultTask['event_type'] == 'navigate':
-                    eventlist.append({
+                    if not last_navigate:
+                        last_navigate = {
                         "type": resultTask['event_type'],
-                        "url" : resultTask['base_url'],
-                        "xpath" : '',
-                        "text" : '',
+                        "url": resultTask['base_url'],
+                        "xpath": '',
+                        "text": '',
                         "offsetX": 0,
                         "offsetY": 0,
                         "position": "N/A",
                         "title":resultTask['title'],
                         "description" : resultTask['tag_name'] + ' to ',
-                        })
+                        }
+                        eventlist.append(last_navigate)
+                    else:
+                     if last_navigate.get("title") != resultTask['title']:
+                        eventlist.append(last_navigate)
+                        last_navigate = {
+                            "type": resultTask['event_type'],
+                            "url" : resultTask['base_url'],
+                            "xpath" : '',
+                            "text" : '',
+                            "offsetX": 0,
+                            "offsetY": 0,
+                            "position": "N/A",
+                            "title":resultTask['title'],
+                            "description" : resultTask['tag_name'] + ' to ',
+                            }
+                    flagScroll=False
+                    if last_keyup:
+                        eventlist.append(last_keyup)
+                        last_keyup = None
                 elif str(resultTask['event_type'])=="recording":
                     eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": 0, "offsetY": 0, "position": "N/A", "title":resultTask['title'], "description" : resultTask['tag_name'] + ' to ', "image": resultTask['image']})
+
+                    if last_keyup:
+                        eventlist.append(last_keyup)
+                        last_keyup = None
+                elif str(resultTask['event_type'])=="keyup":
+                    interaction_context = resultTask.get('interaction_context', '')
+                    try:
+                        interaction_context = json.loads(interaction_context)
+                        name = interaction_context.get('name', "") if interaction_context != '' else ''
+                        value = interaction_context.get('value', "") if interaction_context != '' else ''
+                    except json.JSONDecodeError:
+                        name = ''
+                        value = interaction_context
+                    xpath = resultTask.get('x_path', '')
+                    if last_keyup and xpath != last_keyup.get('xpath') and last_keyup.get('xpath') != '':
+                        eventlist.append(last_keyup)
+                        last_keyup = None
+
+                    name_filed = '' if name == '' else ' in the "' + name + '" input box'
+                    last_keyup = {
+                        'type': resultTask['event_type'],
+                        'url': resultTask['base_url'],
+                        "xpath" : resultTask.get('x_path'),
+                        "text" : '',
+                        "offsetY": resultTask['offset_y'],
+                        "position": "N/A",
+                        "title":str(resultTask['event_source']),
+                        "description" : "Typing \"" + value + '"'+ name_filed,
+                        # "image": resultTask['image']
+                        }
                 elif str(resultTask['event_type'])=="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
                     if i<lenResult:
@@ -509,7 +577,7 @@ def batch_steps(index_list):
                             eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "title":str(resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
                     flagScroll=True
                 else:
-                    if str(resultTask['text_content'])!="" and str(resultTask['tag_name'])!="SIDEBAR-TAB" and str(resultTask['tag_name'])!="HYPOTHESIS-SIDEBAR":
+                    if str(resultTask['text_content']) != "" and str(resultTask['tag_name']) != "SIDEBAR-TAB" and str(resultTask['tag_name']) != "HYPOTHESIS-SIDEBAR":
                         width = 0 if resultTask['width'] == None else resultTask['width']
                         height = 0 if resultTask['height'] == None else resultTask['height']
                         offset_x = 0 if resultTask['offset_x'] == None else resultTask['offset_x']
@@ -522,6 +590,9 @@ def batch_steps(index_list):
                         if eventDescription!="No description":
                             eventlist.append({"type": event_type, "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": str(eventPosition), "title":str(resultTask['event_source']), "width":resultTask['width'], "height":resultTask['height'], "description" : str(eventDescription), "image": resultTask['image'] if 'image' in resultTask else None})
                     flagScroll=True
+                    if last_keyup:
+                        eventlist.append(last_keyup)
+                        last_keyup = None
         if lenResult< len(fetch_result) and textKeydown!="":
             eventDescription=getTextbyEvent("keydown",textKeydown,"")
             eventlist.append({"type": str(fetch_result[lenResult]['event_type']), "url" : str(fetch_result[lenResult]['base_url']), "xpath" : str(fetch_result[lenResult]['x_path']),"text" : str(fetch_result[lenResult]['text_content']), "offsetX": fetch_result[lenResult]['offset_x'], "offsetY": fetch_result[lenResult]['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":str(fetch_result[lenResult]['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
@@ -531,50 +602,59 @@ def batch_steps(index_list):
             "taskName": task_name,
             'sessionId': resultSesions.session_id,
             "timestamp": resultSesions.startstamp,
-            "steps":eventlist,
+            "steps": eventlist,
             "task_name": task_name,
             "session_id": resultSesions.session_id,
             "userid": resultSesions.userid,
             "groupid": resultSesions.groupid,
             "shared": resultSesions.shared,
-            })#add the timestap for each taks
+        })  # add the timestap for each taks
     # dictResult['data']=auxDict
     return auxDict
 
-def getKeyboard(textKeydown, character):
-    if character=="Backspace":
-        return(textKeydown[:-1] )
-    elif character=="Shift" or character=="Enter":
-        return(textKeydown)
-    else:
-        return(textKeydown+character)
 
-def getTextbyEvent(event_type,text_content,eventPosition):
-    if len(text_content)>100:
-        text_content=text_content[0:100] + "..."
-        #print("Text CONTENT: "+ text_content)
-    if event_type=="click":
-        return 'Click on "'+ text_content.replace("  "," ").replace("\n"," ")+'" at '+eventPosition
-    elif event_type=="scroll":
+def getKeyboard(textKeydown, character):
+    if character == "Backspace":
+        return (textKeydown[:-1])
+    elif character == "Shift" or character == "Enter":
+        return (textKeydown)
+    else:
+        return (textKeydown + character)
+
+
+def getTextbyEvent(event_type, text_content, eventPosition):
+    if len(text_content) > 100:
+        text_content = text_content[0:100] + "..."
+        # print("Text CONTENT: "+ text_content)
+    if event_type == "click":
+        return 'Click on "' + text_content.replace("  ", " ").replace("\n", " ") + '" at ' + eventPosition
+    elif event_type == "scroll":
         return text_content.lower().capitalize() + " on the web page"
-    elif event_type=="select":
-        return 'Select  "'+text_content+'" at '+ eventPosition
-    elif event_type=="keydown":
-        return 'Type "' + text_content+'"'
+    elif event_type == "select":
+        return 'Select  "' + text_content + '" at ' + eventPosition
+    elif event_type == "keydown":
+        return 'Type "' + text_content + '"'
     else:
         return "No description"
 
-def getPositionViewport(portX,portY,offset_x,offset_y):
+
+def getPositionViewport(portX, portY, offset_x, offset_y):
     if (not portX) or (not portY) or (not offset_x) or (not offset_y):
         return 'N/A'
-    height=""
-    width=""
-    if (portY/2)> offset_y: height="top"
-    else: height="bottom"
-    if(portX/2)>offset_x: width="left"
-    else: width="right"
-    return height+" "+width
-#Ivan
+    height = ""
+    width = ""
+    if (portY / 2) > offset_y:
+        height = "top"
+    else:
+        height = "bottom"
+    if (portX / 2) > offset_x:
+        width = "left"
+    else:
+        width = "right"
+    return height + " " + width
+
+
+# Ivan
 
 @api_config(
     versions=["v1", "v2"],
@@ -636,7 +716,7 @@ def pull_recommendation(request):
 
 def make_message(type, pubid, event_name, message, date, show_flag, unread_flag, need_save_flag=True):
     return {
-        'type' : type,
+        'type': type,
         'id': pubid,
         'title': event_name,
         'message': message,
@@ -667,22 +747,36 @@ def message(request):
 
     tad_url = urljoin(request.registry.settings.get("tad_url"), "task_classification")
     tad_response = None
-    next = is_task_page(url)
+    # only request for TAD Shareflow push when users are on task pages and the current task page has received less than 3 Shareflow Pushes
+    next = is_task_page(url) and not has_three_push(url, userid)
     if next:
         try:
             tad_response = requests.get(tad_url, params={"userid": userid, "interval": int(interval)})
             tad_result = tad_response.json()
-            print('tad >>>', tad_result)
             certainty = tad_result["certainty"] if "certainty" in tad_result else 0
             rep_interval = tad_result["interval"] if "interval" in tad_result else defalut_interval
-
+            tids = tad_result["task_ids"] if "task_ids" in tad_result else []
+            # only push the message if the current message is not exactly the same as the previous one
+            same = same_as_previous(user_id=userid,
+                                    url=url,
+                                    push_type="SF",
+                                    push_content=tad_result["message"],
+                                    additional_info="_[SEP]_".join(tids))
+            if not same:
+                pr = add_push_record(timestamp=datetime.now().timestamp(),
+                                     push_type="SF",
+                                     push_to=userid,
+                                     push_content=tad_result["message"],
+                                     url=url,
+                                     additional_info="_[SEP]_".join(tids))
+                pr.expire(90)  # the push records are stored for 2 minutes, then expired and removed
             message = make_message(
                 "instant_message",
-                datetime.now().strftime("%S%M%H%d%m%Y") + "_" +split_user(userid)["username"],
+                datetime.now().strftime("%S%M%H%d%m%Y") + "_" + split_user(userid)["username"],
                 "ShareFlow recommendation",
                 tad_result["message"],
                 datetime.now().strftime("%s%f"),
-                True if certainty else False, True, True if certainty else False)
+                True if certainty and not same else False, True, True if certainty and not same else False)
             message["interval"] = rep_interval
             message["should_next"] = next
             response.append(message)
@@ -716,8 +810,11 @@ def message(request):
             else:
                 show_flag = False
                 unread_flag = False
-        response.append(make_message(request_type, item.pubid, item.event_name, item.text, item.date.replace(tzinfo=timezone.utc).astimezone().strftime("%s%f"), show_flag, unread_flag))
+        response.append(make_message(request_type, item.pubid, item.event_name, item.text,
+                                     item.date.replace(tzinfo=timezone.utc).astimezone().strftime("%s%f"), show_flag,
+                                     unread_flag))
     return response
+
 
 @api_config(
     versions=["v1", "v2"],
@@ -737,8 +834,10 @@ def event(request):
         if event["event_type"] == "END":
             set_user_status(request.authenticated_userid, "", "", "")
 
-    session_id = get_user_status_by_userid(request.authenticated_userid).session_id if event["session_id"] == "" else event["session_id"]
-    task_name = get_user_status_by_userid(request.authenticated_userid).task_name if event["task_name"] == "" else event["task_name"]
+    session_id = get_user_status_by_userid(request.authenticated_userid).session_id if event["session_id"] == "" else \
+    event["session_id"]
+    task_name = get_user_status_by_userid(request.authenticated_userid).task_name if event["task_name"] == "" else \
+    event["task_name"]
     add_user_event(
         userid=request.authenticated_userid,
         event_type=event["event_type"],
@@ -760,7 +859,7 @@ def event(request):
         height=event["height"],
         image=event['image'] if 'image' in event else None,
         title=event['title'] if 'title' in event else None,
-        )
+    )
     return {
         "succ": "event has been saved"
     }
@@ -776,7 +875,7 @@ def event(request):
 )
 def rating(request):
     userid = request.authenticated_userid
-    data = request.json_body # dict
+    data = request.json_body  # dict
     data["userid"] = userid
     rating = None
 
@@ -809,7 +908,7 @@ def rating(request):
             rating = Rating(**data)
         rating.save()
     except Exception as e:
-        return {"error" : repr(e)}
+        return {"error": repr(e)}
     else:
         return {
             "succ": "rating" + rating.pk + "has been saved"
