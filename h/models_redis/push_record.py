@@ -48,8 +48,8 @@ def has_three_push(url, user_id):
     """
     Checking whether the most recent three Shareflow Pushes for the user are for the same task page
     """
-    query = PushRecord.find(PushRecord.push_to == user_id).sort_by("-timestamp").limit(3)
-    result = query.all()
+    query = PushRecord.find(PushRecord.push_to == user_id)
+    result = query.copy(limit=3).sort_by("-timestamp").execute()
     if not result or len(result) == 0:
         return False
     count = 0
@@ -62,10 +62,11 @@ def has_three_push(url, user_id):
 
 
 def same_as_previous(user_id, url, push_type, push_content, additional_info):
-    query = PushRecord.find(PushRecord.push_to == user_id).sort_by("-timestamp").limit(1)
-    result = query.all()
+    query = PushRecord.find(PushRecord.push_to == user_id)
+    result = query.copy(limit=1).sort_by("-timestamp").execute()
     if not result or len(result) == 0:
         return False
     if result.url == url and result.push_type == push_type and result.push_content == push_content and result.additional_info == additional_info:
         return True
     return False
+
