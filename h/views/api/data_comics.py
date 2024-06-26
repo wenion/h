@@ -1,5 +1,5 @@
 import cv2
-
+import numpy as np
 from h.security import Permission
 from h.views.api.config import api_config
 import json
@@ -201,7 +201,6 @@ def addArrow(imgLarge,):
     description="create the data comics images",
 )
 def readJson(request):
-    print("READ JSON")
     # Opening JSON file
     f = open(r'\wsl.localhost\Ubuntu\home\mitigan\h\h\views\api\processflow.json')
     # returns JSON object as a dictionary
