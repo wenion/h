@@ -3,6 +3,8 @@ import numpy as np
 from h.security import Permission
 from h.views.api.config import api_config
 import json
+import base64
+
 #Global variables
 globalWidth = 800
 globalheight = 250
@@ -15,8 +17,6 @@ thickness              = 1
 thicknessRec = 2
 colorBlack = (1, 1, 1)
 start_point = (5, 5) 
-
-pathDC="\\wsl.localhost\\Ubuntu\\home\\mitigan\\h\\h\\static\\images\\"
 
 #This function create the navigate images
 def createImageNavigate(url,title,processID,position,cont):
@@ -35,10 +35,15 @@ def createImageNavigate(url,title,processID,position,cont):
         y_offset=50
         x_offset=20#Cambia
         img[y_offset:y_offset+imgText.shape[0], x_offset:x_offset+imgText.shape[1]] = imgText
-    pathSave=pathDC+"data_comics\\"+str(position)+"_"+str(processID)+"_"+str(cont)+".jpg"
-    cv2.imwrite(pathSave, img)
-    #cv2.imshow("Navigate", img)
-    #k = cv2.waitKey(0)
+    
+    retval, buffer = cv2.imencode('.jpg', img)
+    resEncode = base64.b64encode(buffer)#Convert to base64
+    #log.info("Hola")
+    print(resEncode)
+    #resDecode = base64.b64decode(resEncode)
+    #im_arr= np.frombuffer(base64.b64decode(resEncode), dtype=np.uint8)
+    #image = cv2.imdecode(im_arr, flags=cv2.IMREAD_COLOR)
+    
 # This fuction create the event images
 def createBasicImage(event,text,typeSize,processID,position,cont):
     width=int(globalWidth/2)
@@ -64,10 +69,9 @@ def createBasicImage(event,text,typeSize,processID,position,cont):
         img[y_offset:y_offset+imgText.shape[0], x_offset:x_offset+imgText.shape[1]] = imgText
     # Displaying the image  
     img= addIcon(img,event)
-    cv2.imshow("Event", img)
-    #k = cv2.waitKey(0)
-    pathSave=pathDC+"data_comics\\"+str(position)+"_"+str(processID)+"_"+str(cont)+".jpg"
-    cv2.imwrite(pathSave, img)
+    retval, buffer = cv2.imencode('.jpg', img)
+    resEncode = base64.b64encode(buffer)#Convert to base64
+    print(resEncode)
 # This fuction create the image to the data comics summary
 def createCircule(processName,title,position,flagArrow):
     widthCircule=201
@@ -95,11 +99,9 @@ def createCircule(processName,title,position,flagArrow):
         x_offset=10
         img[y_offset:y_offset+imgText.shape[0], x_offset:x_offset+imgText.shape[1]] = imgText
     img=addArrow(img)
-    #print("Hola")
-    #cv2.imshow("Event", img)
-    #k = cv2.waitKey(0)
-    pathSave=pathDC+"data_comics\\"+str(position)+".jpg"
-    cv2.imwrite(pathSave, img)
+    retval, buffer = cv2.imencode('.jpg', img)
+    resEncode = base64.b64encode(buffer) #Convert to base64
+    print(resEncode)
 ###-----------Auxiliar function --------------
 # This function add and image(icon) depending on the event
 def addIcon(imgLarge,event):
