@@ -213,7 +213,8 @@ def readJson(request):
         print("REQUEST readJSON")
         #print(share_flow)
         #json.loads()
-        data= data_commics_process(share_flow)
+        #share_flow = task_name = entry.get('taskName', 'No taskName')| AttributeError: 'str' object has no attribute 'get
+        data= data_commics_process(json.loads(share_flow))
         # Iterating through the json
         for process in data['process']:
             cont=1
