@@ -76,6 +76,7 @@ h-matchers==1.2.15
     # via -r requirements/prod.in
 h-pyramid-sentry==1.2.4
     # via -r requirements/prod.in
+html2text=2024.2.26
 hupper==1.10.2
     # via pyramid
 importlib-metadata==4.8.1
