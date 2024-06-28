@@ -4,8 +4,8 @@ from h.security import Permission
 from h.views.api.config import api_config
 import json
 import base64
-from user_manipultations import expert_replay
-from data_comics_process import data_commics_process
+from h.views.api.user_manipultations import expert_replay
+#from h.views.api.d data_comics_process import data_commics_process
 
 #Global variables
 globalWidth = 800
@@ -210,7 +210,7 @@ def readJson(request):
     data = expert_replay(request)
     print(data)
     for share_flow in data:
-        data_commics_process(share_flow)
+        #data_commics_process(share_flow)
         # Iterating through the json
         for process in data['process']:
             cont=1
