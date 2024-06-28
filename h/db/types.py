@@ -1,4 +1,5 @@
 """Custom SQLAlchemy types for use with the Annotations API database."""
+
 import base64
 import binascii
 import uuid
@@ -12,7 +13,9 @@ class InvalidUUID(Exception, DontWrapMixin):
     pass
 
 
-class URLSafeUUID(types.TypeDecorator):  # pylint:disable=abstract-method
+class URLSafeUUID(
+    types.TypeDecorator
+):  # pylint:disable=abstract-method,too-many-ancestors
     """
     Expose UUIDs as URL-safe base64-encoded strings.
 
@@ -28,6 +31,10 @@ class URLSafeUUID(types.TypeDecorator):  # pylint:disable=abstract-method
 
     impl = postgresql.UUID
     cache_ok = True
+
+    def __init__(self):
+        # We handle the UUID conversion, explicitly not use as_uuid
+        super().__init__(as_uuid=False)
 
     def process_bind_param(self, value, dialect):
         return self.url_safe_to_hex(value)
@@ -126,7 +133,9 @@ class URLSafeUUID(types.TypeDecorator):  # pylint:disable=abstract-method
         return hex_str[0:12] + hex_str[13:16] + hex_str[17:32]
 
 
-class AnnotationSelectorJSONB(types.TypeDecorator):  # pylint:disable=abstract-method
+class AnnotationSelectorJSONB(
+    types.TypeDecorator
+):  # pylint:disable=abstract-method, too-many-ancestors
     r"""
     Special type for the Annotation selector column.
 
@@ -136,6 +145,7 @@ class AnnotationSelectorJSONB(types.TypeDecorator):  # pylint:disable=abstract-m
     """
 
     impl = postgresql.JSONB
+    cache_ok = False
 
     def process_bind_param(self, value, dialect):
         return _transform_quote_selector(value, _escape_null_byte)
