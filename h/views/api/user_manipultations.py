@@ -456,7 +456,8 @@ def read_share_flow(request):
     description="get the session of the expert replay",
 )
 def expert_replay(request):
-    resultAllEvents = batch_user_event_record(request.authenticated_userid)
+    userID="acct:admin@localhost"
+    resultAllEvents = batch_user_event_record(userID)
     return batch_steps(resultAllEvents)
 
 

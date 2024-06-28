@@ -4,6 +4,8 @@ from h.security import Permission
 from h.views.api.config import api_config
 import json
 import base64
+from user_manipultations import expert_replay
+from data_comics_process import data_commics_process
 
 #Global variables
 globalWidth = 800
@@ -181,7 +183,7 @@ def positionTextCircule(label,heigth, width,maxCharacter,lenText):
     #k = cv2.waitKey(0)
     return img
 # This function add the an arrow to the circule image 
-def addArrow(imgLarge,):
+def addArrow(imgLarge):
     path="icons//arrow.png"
     imgSmall = cv2.imread(path)
 
@@ -202,36 +204,38 @@ def addArrow(imgLarge,):
 )
 def readJson(request):
     # Opening JSON file
-    f = open(r'\wsl.localhost\Ubuntu\home\mitigan\h\h\views\api\processflow.json')
+    #request.userID="acct:admin@localhost"
     # returns JSON object as a dictionary
-    data = json.load(f)
-    # Iterating through the json
-    for process in data['process']:
-        cont=1
-        print(process['name'])
-        createCircule(process['name'],process['steps'][0]['title'],process['pos'],True)
-        for event in process['steps']:
-            if event['type']=='recording':
-                createImageNavigate(event['url'],event['title'],process['code'],process['pos'],cont)
-                print("Title")
-            elif event['type']=='Click':
-                createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                print("Click")
-            elif event['type']=='Scroll':
-                createBasicImage(event['type'],"",1,process['code'],process['pos'],cont)
-                print("Scroll")
-            elif event['type']=='Select':
-                createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                print("select")
-            elif event['type']=='Type':
-                createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                print("annotate")
-            elif event['type']=='Annotate':
-                createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                print("annotate")
-            elif event['type']=='Uploaded':
-                createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                print("Uploaded")
-            cont=cont+1
-    # Closing file
-    f.close()
+    print("REQUEST readJSON")
+    data = expert_replay(request)
+    print(data)
+    for share_flow in data:
+        data_commics_process(share_flow)
+        # Iterating through the json
+        for process in data['process']:
+            cont=1
+            print(process['name'])
+            createCircule(process['name'],process['steps'][0]['title'],process['pos'],True)
+            for event in process['steps']:
+                if event['type']=='recording':
+                    createImageNavigate(event['url'],event['title'],process['code'],process['pos'],cont)
+                    print("Title")
+                elif event['type']=='Click':
+                    createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
+                    print("Click")
+                elif event['type']=='Scroll':
+                    createBasicImage(event['type'],"",1,process['code'],process['pos'],cont)
+                    print("Scroll")
+                elif event['type']=='Select':
+                    createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
+                    print("select")
+                elif event['type']=='Type':
+                    createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
+                    print("annotate")
+                elif event['type']=='Annotate':
+                    createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
+                    print("annotate")
+                elif event['type']=='Uploaded':
+                    createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
+                    print("Uploaded")
+                cont=cont+1
