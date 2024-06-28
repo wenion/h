@@ -211,8 +211,9 @@ def readJson(request):
     #print(data)
     for share_flow in expert_replay_file:
         print("REQUEST readJSON")
-        print(share_flow)
-        data= data_commics_process(json.loads(share_flow))
+        #print(share_flow)
+        #json.loads()
+        data= data_commics_process(share_flow)
         # Iterating through the json
         for process in data['process']:
             cont=1
