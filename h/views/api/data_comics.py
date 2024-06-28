@@ -5,7 +5,7 @@ from h.views.api.config import api_config
 import json
 import base64
 from h.views.api.user_manipultations import expert_replay
-#from h.views.api.d data_comics_process import data_commics_process
+from h.views.api.data_comics_process import  data_commics_process
 
 #Global variables
 globalWidth = 800
@@ -206,11 +206,13 @@ def readJson(request):
     # Opening JSON file
     #request.userID="acct:admin@localhost"
     # returns JSON object as a dictionary
-    print("REQUEST readJSON")
-    data = expert_replay(request)
-    print(data)
-    for share_flow in data:
-        #data_commics_process(share_flow)
+    
+    expert_replay_file = expert_replay(request)
+    #print(data)
+    for share_flow in expert_replay_file:
+        print("REQUEST readJSON")
+        data= data_commics_process(share_flow)
+        print(data)
         # Iterating through the json
         for process in data['process']:
             cont=1

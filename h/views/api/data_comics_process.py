@@ -15,6 +15,7 @@ authorization system. You can find the mapping between annotation "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
 import json
+import re
 from pyramid import i18n
 from collections import defaultdict
 
