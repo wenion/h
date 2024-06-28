@@ -211,7 +211,7 @@ def readJson(request):
     #print(data)
     for share_flow in expert_replay_file:
         print("REQUEST readJSON")
-        data= data_commics_process(share_flow)
+        data= data_commics_process(json.loads(share_flow))
         print(data)
         # Iterating through the json
         for process in data['process']:
@@ -221,23 +221,16 @@ def readJson(request):
             for event in process['steps']:
                 if event['type']=='recording':
                     createImageNavigate(event['url'],event['title'],process['code'],process['pos'],cont)
-                    print("Title")
                 elif event['type']=='Click':
                     createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                    print("Click")
                 elif event['type']=='Scroll':
                     createBasicImage(event['type'],"",1,process['code'],process['pos'],cont)
-                    print("Scroll")
                 elif event['type']=='Select':
                     createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                    print("select")
                 elif event['type']=='Type':
                     createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                    print("annotate")
                 elif event['type']=='Annotate':
                     createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                    print("annotate")
                 elif event['type']=='Uploaded':
                     createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                    print("Uploaded")
                 cont=cont+1
