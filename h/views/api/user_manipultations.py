@@ -732,7 +732,7 @@ def make_message(type, pubid, event_name, message, date, show_flag, unread_flag,
     versions=["v1", "v2"],
     route_name="api.message",
     request_method="GET",
-    permission=Permission.Annotation.CREATE,
+    # permission=Permission.Annotation.CREATE,
     link_name="message",
     description="Get the Message",
 )
@@ -741,6 +741,9 @@ def message(request):
     day_ahead = 3
     defalut_interval = "30000"
     userid = request.authenticated_userid
+    if not userid:
+        return []
+
     request_type = request.GET.get("q")
     interval = request.GET.get("interval") if request.GET.get("interval") else defalut_interval
     url = request.GET.get("url")
