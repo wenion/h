@@ -757,27 +757,30 @@ def message(request):
             certainty = tad_result["certainty"] if "certainty" in tad_result else 0
             rep_interval = tad_result["interval"] if "interval" in tad_result else defalut_interval
             tids = tad_result["task_ids"] if "task_ids" in tad_result else []
-            # only push the message if the current message is not exactly the same as the previous one
-            same = same_as_previous(user_id=userid,
-                                    url=url,
-                                    push_type="SF",
-                                    push_content=tad_result["message"],
-                                    additional_info="_[SEP]_".join(tids))
-            if not same:
-                pr = add_push_record(timestamp=datetime.now().timestamp(),
-                                     push_type="SF",
-                                     push_to=userid,
-                                     push_content=tad_result["message"],
-                                     url=url,
-                                     additional_info="_[SEP]_".join(tids))
-                pr.expire(90)  # the push records are stored for 2 minutes, then expired and removed
+            push_message = False
+            if certainty > 0:
+                # only push the message if the current message is not exactly the same as the previous one
+                same = same_as_previous(user_id=userid,
+                                        url=url,
+                                        push_type="SF",
+                                        push_content=tad_result["message"],
+                                        additional_info="_[SEP]_".join(tids))
+                if not same:
+                    pr = add_push_record(timestamp=datetime.now().timestamp(),
+                                        push_type="SF",
+                                        push_to=userid,
+                                        push_content=tad_result["message"],
+                                        url=url,
+                                        additional_info="_[SEP]_".join(tids))
+                    pr.expire(90)  # the push records are stored for 1.5 minutes, then expired and removed
+                    push_message = True
             message = make_message(
                 "instant_message",
                 datetime.now().strftime("%S%M%H%d%m%Y") + "_" + split_user(userid)["username"],
                 "ShareFlow recommendation",
                 tad_result["message"],
                 datetime.now().strftime("%s%f"),
-                True if certainty and not same else False, True, True if certainty and not same else False)
+                True if certainty and push_message else False, True, True if certainty and push_message else False)
             message["interval"] = rep_interval
             message["should_next"] = next
             response.append(message)
