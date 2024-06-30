@@ -110,8 +110,11 @@ def fetch_user_event_record_by_session_id(session_id, userid):
 
 
 def batch_user_event_record(userid):
-    total = UserEventRecord.find(
-        (UserEventRecord.userid == userid) |
-        (UserEventRecord.shared == 1)
-        ).all()
+    if userid:
+        total = UserEventRecord.find(
+            (UserEventRecord.userid == userid) |
+            (UserEventRecord.shared == 1)
+            ).all()
+    else:
+        total = UserEventRecord.find(UserEventRecord.shared == 1).all()
     return total if len(total) > 0 else []
