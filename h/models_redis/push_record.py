@@ -64,8 +64,9 @@ def has_three_push(url, user_id):
 def same_as_previous(user_id, url, push_type, push_content, additional_info):
     query = PushRecord.find(PushRecord.push_to == user_id)
     result = query.copy(limit=1).sort_by("-timestamp").execute()
-    if not result or len(result) == 0:
+    if not result or len(result) != 1:
         return False
+    result = result[0]
     if result.url == url and result.push_type == push_type and result.push_content == push_content and result.additional_info == additional_info:
         return True
     return False
