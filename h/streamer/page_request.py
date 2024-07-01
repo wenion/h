@@ -3,6 +3,8 @@ import logging
 import requests
 from urllib.parse import urljoin
 
+from h.models_redis import is_task_page
+
 log = logging.getLogger(__name__)
 
 
@@ -32,6 +34,10 @@ def handle_web_page(message, registry=None):
         'userid': message.socket.identity.user.userid,
         'content': plain_text,
     }
+
+    if is_task_page(url):
+        return
+
     response = requests.post(url, data=data)
     if response.status_code == 200:
         try:
