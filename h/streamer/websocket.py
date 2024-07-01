@@ -9,6 +9,7 @@ from gevent.queue import Full
 from ws4py.websocket import WebSocket as _WebSocket
 
 from h.streamer.filter import FILTER_SCHEMA, SocketFilter
+from h.streamer.page_request import handle_web_page
 from h.models_redis import add_user_event
 
 log = logging.getLogger(__name__)
@@ -104,7 +105,7 @@ class WebSocket(_WebSocket):
             self.send(json.dumps(payload))
 
 
-def handle_message(message, session=None):
+def handle_message(message, registry=None, session=None):
     """
     Handle an incoming message from a client websocket.
 
@@ -134,6 +135,9 @@ def handle_message(message, session=None):
 
     if message_type_ == "TraceData":
         handle_user_trace_message(message)
+        return
+    if message_type_ == "PageData":
+        handle_web_page(message, registry)
         return
 
     # N.B. MESSAGE_HANDLERS[None] handles both incorrect and missing message

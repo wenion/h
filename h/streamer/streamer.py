@@ -79,7 +79,7 @@ def process_work_queue(registry, queue):
             if isinstance(msg, messages.Message):
                 messages.handle_message(msg, registry, session, TOPIC_HANDLERS)
             elif isinstance(msg, websocket.Message):
-                websocket.handle_message(msg, session)
+                websocket.handle_message(msg, registry, session)
             else:
                 raise UnknownMessageType(repr(msg))
 
