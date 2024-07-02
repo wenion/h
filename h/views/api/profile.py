@@ -4,6 +4,7 @@ from h import session as h_session
 from h.presenters import GroupsJSONPresenter
 from h.security import Permission
 from h.views.api.config import api_config
+from h.models_redis import get_user_role_by_userid
 
 
 @api_config(
@@ -15,7 +16,11 @@ from h.views.api.config import api_config
 )
 def profile(request):
     authority = request.params.get("authority")
-    return h_session.profile(request, authority)
+    profile = h_session.profile(request, authority)
+    role = get_user_role_by_userid(profile["userid"])
+    if role:
+        role = role.dict()
+    return {**profile, 'role': role}
 
 
 @api_config(

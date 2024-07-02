@@ -265,6 +265,8 @@ def update_user_role(userid, faculty, role, unit, campus, year, experience, expe
 
 
 def get_user_role_by_userid(userid):
+    if not userid:
+        return None
     return add_user_role(userid, "", "", "", "", 0, 0, 0)
 
 
