@@ -775,7 +775,7 @@ def message(request):
                                         push_content=tad_result["message"],
                                         url=url,
                                         additional_info="_[SEP]_".join(tids))
-                    pr.expire(90)  # the push records are stored for 1.5 minutes, then expired and removed
+                    pr.expire(360)  # the push records are stored for 3 minutes, then expired and removed
                     push_message = True
             message = make_message(
                 "instant_message",
