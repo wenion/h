@@ -35,16 +35,12 @@ def createImageNavigate(url,title,processID,position,cont):
         cv2.putText(img,"Navigate to: ", (int(centerTextHorizontal("Navigate to",globalWidth,fontTitle)),35), font, fontTitle,colorBlack,thickness,cv2.LINE_AA)
         imgText=centerTextVertical("Title: "+str(title),globalWidth,fontTitle)
         y_offset=50
-        x_offset=20#Cambia
+        x_offset=20
         img[y_offset:y_offset+imgText.shape[0], x_offset:x_offset+imgText.shape[1]] = imgText
     
     retval, buffer = cv2.imencode('.jpg', img)
     resEncode = base64.b64encode(buffer)#Convert to base64
-    #log.info("Hola")
-    print(resEncode)
-    #resDecode = base64.b64decode(resEncode)
-    #im_arr= np.frombuffer(base64.b64decode(resEncode), dtype=np.uint8)
-    #image = cv2.imdecode(im_arr, flags=cv2.IMREAD_COLOR)
+    return str(resEncode)
     
 # This fuction create the event images
 def createBasicImage(event,text,typeSize,processID,position,cont):
@@ -56,7 +52,6 @@ def createBasicImage(event,text,typeSize,processID,position,cont):
 
     # represents the bottom right corner of rectangle 
     end_point = (width-5, globalheight-5) 
-
     cv2.rectangle(img, start_point, end_point, colorBlack, thicknessRec,cv2.LINE_AA)# Rec Big
     cv2.rectangle(img, (posRecShort, 5), (width-5,45), colorBlack, thicknessRec,cv2.LINE_AA)
     #cv2.putText(img, event, (width-posText,35), font, fontScale, colorBlack, thickness, cv2.LINE_AA)
@@ -73,7 +68,7 @@ def createBasicImage(event,text,typeSize,processID,position,cont):
     img= addIcon(img,event)
     retval, buffer = cv2.imencode('.jpg', img)
     resEncode = base64.b64encode(buffer)#Convert to base64
-    print(resEncode)
+    return str(resEncode)
 # This fuction create the image to the data comics summary
 def createCircule(processName,title,position,flagArrow):
     widthCircule=201
@@ -103,7 +98,7 @@ def createCircule(processName,title,position,flagArrow):
     img=addArrow(img)
     retval, buffer = cv2.imencode('.jpg', img)
     resEncode = base64.b64encode(buffer) #Convert to base64
-    print(resEncode)
+    return str(resEncode)
 ###-----------Auxiliar function --------------
 # This function add and image(icon) depending on the event
 def addIcon(imgLarge,event):
@@ -194,45 +189,29 @@ def addArrow(imgLarge):
     return imgLarge
 ###-----------Auxiliar function --------------
 
-@api_config(
-    versions=["v1", "v2"],
-    route_name="api.data_comics",
-    request_method="GET",
-    #permission=Permission.Annotation.CREATE,
-    link_name="data_comics",
-    description="create the data comics images",
-)
-def readJson(request):
-    # Opening JSON file
-    #request.userID="acct:admin@localhost"
-    # returns JSON object as a dictionary
-    
-    expert_replay_file = expert_replay(request)
-    #print(data)
-    for share_flow in expert_replay_file:
-        print("REQUEST readJSON")
-        #print(share_flow)
-        #json.loads()
-        #share_flow = task_name = entry.get('taskName', 'No taskName')| AttributeError: 'str' object has no attribute 'get
-        data= data_commics_process(json.loads(share_flow))
-        # Iterating through the json
-        for process in data['process']:
-            cont=1
-            print(process['name'])
-            createCircule(process['name'],process['steps'][0]['title'],process['pos'],True)
-            for event in process['steps']:
-                if event['type']=='recording':
-                    createImageNavigate(event['url'],event['title'],process['code'],process['pos'],cont)
-                elif event['type']=='Click':
-                    createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                elif event['type']=='Scroll':
-                    createBasicImage(event['type'],"",1,process['code'],process['pos'],cont)
-                elif event['type']=='Select':
-                    createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                elif event['type']=='Type':
-                    createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                elif event['type']=='Annotate':
-                    createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                elif event['type']=='Uploaded':
-                    createBasicImage(event['type'],event['text'],1,process['code'],process['pos'],cont)
-                cont=cont+1
+#
+def create_images_DC(data):
+    print("CREATE IMAGE DC")
+    posProcess=1
+    for process in data['KM_Process']:
+        contImages=1
+        code_process=process['name'].split(" ")[0]
+        name_process=process['name'].split(" ")[1]
+        process['image']=createCircule(name_process,process['title'],posProcess,True)
+        for event in process['steps']:
+            if event['type']=='Navigation':
+                event['image']=createImageNavigate(event['url'],event['title'],code_process,posProcess,contImages)
+            elif event['type']=='Click':
+                event['image']=createBasicImage(event['type'],event['description'],1,code_process,posProcess,contImages)
+            elif event['type']=='Scroll':
+                event['image']=createBasicImage(event['type'],"",1,code_process,posProcess,contImages)
+            elif event['type']=='Select':
+                event['image']=createBasicImage(event['type'],event['description'],1,code_process,posProcess,contImages)
+            elif event['type']=='Type':
+                event['image']=createBasicImage(event['type'],event['description'],1,code_process,posProcess,contImages)
+            elif event['type']=='Annotate':
+                event['image']=createBasicImage(event['type'],event['description'],1,code_process,posProcess,contImages)
+            elif event['type']=='Uploaded':
+                event['image']=createBasicImage(event['type'],event['description'],1,code_process,posProcess,contImages)
+            contImages=contImages+1
+        posProcess=posProcess+1

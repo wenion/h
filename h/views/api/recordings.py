@@ -24,6 +24,7 @@ from h.views.api.user_manipultations import batch_steps
 from h.views.api.data_comics_process import data_commics_process
 from h.security import Permission
 from h.views.api.config import api_config
+from h.views.api.data_comics import create_images_DC
 
 _ = i18n.TranslationStringFactory(__package__)
 
@@ -120,7 +121,8 @@ def update(context, request):
     if action == "finish":
         session = finish_user_event_record(context.pk, data["endstamp"])
         result = batch_steps([session,])
-        data_commics_process(result)
+        resultDC=data_commics_process(result)
+        create_images_DC(resultDC)
         # Steve: create process model after Shareflow recording completes
         try:
             tad_url = urljoin(request.registry.settings.get("tad_url"), "create_process_model")
