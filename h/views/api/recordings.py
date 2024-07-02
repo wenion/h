@@ -119,6 +119,7 @@ def update(context, request):
     data = request.json_body
     action = data["action"]
     if action == "finish":
+        print("FINISHHHHHHH:")
         session = finish_user_event_record(context.pk, data["endstamp"])
         result = batch_steps([session,])
         resultDC=data_commics_process(result)

@@ -834,7 +834,7 @@ def message(request):
 def event(request):
     event = request.json_body
 
-    print("event api", event, request.authenticated_userid)
+    #print("event api", event, request.authenticated_userid)
     if event["tag_name"] == "RECORD":
         if event["event_type"] == "START":
             set_user_status(request.authenticated_userid, event["task_name"], event["session_id"], "")
