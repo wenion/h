@@ -468,7 +468,7 @@ class AccountController:
             "password_form": password_form,
         }
 
-
+'''
 # @view_defaults(
 #     route_name="account_profile",
 #     renderer="h:templates/accounts/profile.html.jinja2",
@@ -516,6 +516,7 @@ class EditProfileController:
         user.location = appstruct["location"]
         user.uri = appstruct["link"]
         user.orcid = appstruct["orcid"]
+'''
 
 
 @view_defaults(

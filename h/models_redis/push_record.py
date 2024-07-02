@@ -48,26 +48,49 @@ def has_three_push(url, user_id):
     """
     Checking whether the most recent three Shareflow Pushes for the user are for the same task page
     """
-    query = PushRecord.find(PushRecord.push_to == user_id)
-    result = query.copy(limit=3).sort_by("-timestamp").execute()
-    if not result or len(result) == 0:
+    try:
+        query = PushRecord.find(PushRecord.push_to == user_id)
+        result = query.copy(limit=3).sort_by("-timestamp").execute()
+        if not result or len(result) == 0:
+            return False
+        count = 0
+        for record in result:
+            if record.url == url:
+                count += 1
+        if count == 3:
+            return True
         return False
-    count = 0
-    for record in result:
-        if record.url == url:
-            count += 1
-    if count == 3:
-        return True
-    return False
+    except:
+        return False
 
 
 def same_as_previous(user_id, url, push_type, push_content, additional_info):
-    query = PushRecord.find(PushRecord.push_to == user_id)
-    result = query.copy(limit=1).sort_by("-timestamp").execute()
-    if not result or len(result) != 1:
+    try:
+        query = PushRecord.find(PushRecord.push_to == user_id)
+        result = query.copy(limit=1).sort_by("-timestamp").execute()
+        if not result or len(result) != 1:
+            return False
+        result = result[0]
+        if result.url == url and result.push_type == push_type and result.push_content == push_content and result.additional_info == additional_info:
+            return True
         return False
-    result = result[0]
-    if result.url == url and result.push_type == push_type and result.push_content == push_content and result.additional_info == additional_info:
-        return True
-    return False
+    except:
+        return False
 
+
+def fetch_all_push_record():
+    try:
+        query = PushRecord.find()
+        result = query.all()
+        push_records = []
+        for index, record in enumerate(result):
+            push_records.append({"id": index,
+                                "timestamp": record.timestamp,
+                                "push_type": record.push_type,
+                                "push_to": record.push_to,
+                                "push_content": record.push_content,
+                                "additional_info": record.additional_info,
+                                "url": record.url})
+        return push_records if len(push_records) > 0 else None
+    except:
+        return None
