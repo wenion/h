@@ -137,7 +137,7 @@ def handle_message(message, registry=None, session=None):
         handle_user_trace_message(message)
         return
     if message_type_ == "PageData":
-        handle_web_page(message, registry)
+        #handle_web_page(message, registry)
         return
 
     # N.B. MESSAGE_HANDLERS[None] handles both incorrect and missing message
