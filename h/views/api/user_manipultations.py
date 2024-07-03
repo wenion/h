@@ -23,7 +23,7 @@ import re
 import requests
 import shutil
 from redis_om import get_redis_connection
-from urllib.parse import urljoin, urlparse, unquote
+from urllib.parse import urljoin, urlparse, urlunparse, unquote
 
 from h.exceptions import InvalidUserId
 from h.security import Permission
@@ -49,6 +49,16 @@ def split_user(userid):
     if match:
         return {"username": match.groups()[0], "domain": match.groups()[1]}
     raise InvalidUserId(userid)
+
+
+def remove_url_parameters(url):
+    # Parse the URL into components
+    parsed_url = urlparse(url)
+
+    # Reconstruct the URL without the query parameters
+    url_without_params = urlunparse(parsed_url._replace(query=""))
+
+    return url_without_params
 
 
 @api_config(
@@ -513,7 +523,7 @@ def batch_steps(index_list):
                         }
                         eventlist.append(last_navigate)
 
-                    if last_navigate.get("title") != resultTask['title']:
+                    if last_navigate.get("title") != resultTask['title'] and remove_url_parameters(last_navigate['url']) != remove_url_parameters(resultTask['base_url']):
                         last_navigate = {
                             "type": resultTask['event_type'],
                             "url" : resultTask['base_url'],
