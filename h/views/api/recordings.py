@@ -91,7 +91,7 @@ def read(context, request):
     record = context.user_event_record
     results = batch_steps([record, ])
     if len(results):
-        return batch_steps([record, ])[0]
+        return results[0]
     else:
         return [{
             "taskName": record.task_name,

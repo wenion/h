@@ -519,9 +519,8 @@ def batch_steps(index_list):
                         "description" : resultTask['tag_name'] + ' to ',
                         }
                         eventlist.append(last_navigate)
-                    else:
-                     if last_navigate.get("title") != resultTask['title']:
-                        eventlist.append(last_navigate)
+
+                    if last_navigate.get("title") != resultTask['title']:
                         last_navigate = {
                             "type": resultTask['event_type'],
                             "url" : resultTask['base_url'],
@@ -533,6 +532,7 @@ def batch_steps(index_list):
                             "title":resultTask['title'],
                             "description" : resultTask['tag_name'] + ' to ',
                             }
+                        eventlist.append(last_navigate)
                     flagScroll=False
                     if last_keyup:
                         eventlist.append(last_keyup)
