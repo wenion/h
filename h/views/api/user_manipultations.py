@@ -557,11 +557,40 @@ def batch_steps(index_list):
                     interaction_context = resultTask.get('interaction_context', '')
                     try:
                         interaction_context = json.loads(interaction_context)
-                        name = interaction_context.get('name', "") if interaction_context != '' else ''
-                        value = interaction_context.get('value', "") if interaction_context != '' else ''
+                        name = interaction_context.get('name')
+                        value = interaction_context.get('value')
                     except json.JSONDecodeError:
                         name = ''
                         value = interaction_context
+                    else:
+                        if not value and 'key' in interaction_context:
+                            # last keyup
+                            if last_keyup:
+                                #print("last interaction", interaction_context, "last keyup", last_keyup)
+                                last_keyup_value = last_keyup['interaction_context']['value']
+                                keyValue = interaction_context['key']
+                                if keyValue.lower() == 'shift' or keyValue.lower() == 'meta':
+                                    pass
+                                elif keyValue.lower() == 'backspace':
+                                    last_keyup_value = last_keyup_value[:-1]
+                                else:
+                                    last_keyup_value += keyValue
+                                value = last_keyup_value
+                                name = last_keyup['interaction_context']['name']
+                            else:
+                                # first keyup in this input box
+                                # print("\n\nfirst interaction", interaction_context)
+                                keyValue = interaction_context['key']
+                                if keyValue.lower() == 'shift' or keyValue.lower() == 'meta':
+                                    keyValue = ''
+                                elif keyValue.lower() == 'backspace':
+                                    keyValue = ''
+                                interaction_context['value'] = keyValue
+                                interaction_context['name'] = resultTask.get('x_path').split('/')[-1] if resultTask.get('x_path') else ''
+                                value = interaction_context['value']
+                                name = interaction_context['name']
+                            interaction_context['name'] = name
+                            interaction_context['value'] = value
                     xpath = resultTask.get('x_path', '')
                     if last_keyup and xpath != last_keyup.get('xpath') and last_keyup.get('xpath') != '':
                         eventlist.append(last_keyup)
@@ -577,6 +606,7 @@ def batch_steps(index_list):
                         "position": "N/A",
                         "title":str(resultTask['event_source']),
                         "description" : "Typing \"" + value + '"'+ name_filed,
+                        "interaction_context": interaction_context,
                         # "image": resultTask['image']
                         }
                 elif str(resultTask['event_type'])=="keydown":# keyboard Events
