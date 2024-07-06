@@ -271,5 +271,6 @@ def data_commics_process(share_flow_data):
 
     # Reformat the flat data into nested JSON
     nested_data = reformat_to_nested(updated_process_map_flat_data)
+    return nested_data
 
     # print(json.dumps(nested_data, indent=4))
