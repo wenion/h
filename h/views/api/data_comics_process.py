@@ -36,6 +36,7 @@ action_mapping = {
         ('click', 'k-clip'): 'Click k-clip',
         ('click', 'Post'): 'Click_Post',
         'recording': 'Navigation',
+        'navigate': 'Navigation',
         'click': 'Click',
         'scroll': 'Scroll',
         'select': 'Select',
@@ -43,6 +44,9 @@ action_mapping = {
         'annotate': 'Annotate',
         'upload': 'Upload',
         'drag_and_drop': 'Drag and Drop',
+
+        #Additional
+        'keyup': 'Type',
 }
 
 
@@ -54,10 +58,24 @@ process_map = {
         'SP3. Filling information': ['Scroll', 'Type', 'Click_Save'],
         'ShP1. Annotate': ['Scroll', 'Select', 'Click_Annotate', 'Type', 'Click_Post'],
         'ShP2. Highlight': ['Scroll', 'Select', 'Click_Highlight'],
-        'ApP1. Using Pushes': ['Push', 'Click_Push_Panel']    
+        'ApP1. Using Pushes': ['Push', 'Click_Push_Panel'],
+
+        # Additional Generic
+        'AP1.1a Locate/Navigate': ['Navigation', 'Navigation', 'Navigation'],
+        'AP1.3a Locate/Navigate': ['Navigation', 'Click', 'Click'],
+        'AP1.3b Locate/Navigate': ['Navigation', 'Click'],
+        'AP1.9a Locate/Navigate': [ 'Click', 'Click', 'Click'],
+        'AP1.9b Locate/Navigate': [ 'Click', 'Click'],
+
+        'SP3.7a Filling information': ['Type', 'Click'],
+        'SP3.7b Filling information': ['Click', 'Type'],
+        'SP3.9a Filling information': ['Type', 'Type', 'Type', 'Type'],
+        'SP3.10a Filling information': ['Click', 'Type', 'Type', 'Click'],
+        'SP3.10b Filling information': ['Click', 'Type', 'Type', 'Type', 'Click'],
+        'SP3.10c Filling information': ['Click', 'Type', 'Click'],
 }
 
-    
+
 def map_action_types(action_list, action_mapping):
     """
     Map the 'type' attribute in the action_list to values from the type_mapping dictionary.
@@ -128,7 +146,8 @@ def action_mapper(data):
                 'text': step.get('text', ''),
                 'url': step.get('url', ''),
                 'description': step.get('description', ''),
-                'image': step.get('image', '')
+                'image': step.get('image', ''),
+                'title': step.get('title', '')
             })
             
     #2:  Handle & Flag/Fix Exceptions
@@ -220,40 +239,92 @@ def process_labeller_re(action_list):
     return action_list
 
 
-def reformat_to_nested(flat_data):
-    nested_data = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list))))
+def reformat_to_nested(data):
+    # Use defaultdict to organize the data
+    data = process_serialize(data)
+    users = defaultdict(lambda: defaultdict(list))
 
-    for entry in flat_data:
-        userid = entry["userid"]
-        sessionId = entry["sessionId"]
-        taskName = entry["taskName"]
-        KM_Process = entry["KM_Process"]
+    for entry in data:
+        user_key = (entry["userid"], entry["sessionId"], entry["taskName"], entry["seq_counter"])
+        process_name = entry["KM_Process"]
         step = {
             "type": entry["type"],
             "text": entry["text"],
+            "title": entry["title"],  #new Field S.S
             "url": entry["url"],
             "description": entry["description"],
             "image": entry["image"]
         }
-        nested_data[userid][sessionId][taskName][KM_Process].append(step)
+        users[user_key][process_name].append(step)
 
-    # Convert nested defaultdicts to normal dicts
-    nested_data = {userid: {sessionId: {taskName: dict(KM_Process) for taskName, KM_Process in session.items()} for sessionId, session in user.items()} for userid, user in nested_data.items()}
-    
-    # Transform to desired format
-    formatted_data = []
-    for userid, sessions in nested_data.items():
-        for sessionId, tasks in sessions.items():
-            for taskName, KM_Processes in tasks.items():
-                formatted_entry = {
-                    'userid': userid,
-                    'sessionId': sessionId,
-                    'taskName': taskName,
-                    'KM_Process': KM_Processes
-                }
-                formatted_data.append(formatted_entry)
+    # Build the final structured list
+    result = []
+    for (userid, sessionId, taskName, seq_counter), processes in users.items():
+        km_process = []
+        for name, steps in processes.items():
+            metadata = {
+                "image": "", # get_last_non_empty_image(steps), #new Field S.S TODO
+                "name": name.split(" ", 1)[1],
+                "code" : name.split(" ", 1)[0], #new Field S.S
+                "title" : "", #new Field S.S
+                "steps": set_all_images_to_empty(steps)
+            }
+            km_process.append(metadata)
 
-    return formatted_data
+        result.append({
+            "userid": userid,
+            "sessionId": sessionId,
+            "taskName": taskName,
+            "dataComicsID": "dc-" + sessionId,
+            "KM_Process": km_process
+        })
+
+    return result
+
+
+def set_all_images_to_empty(data):
+    # Loop through each item in the array
+    for item in data:
+        # Set the image field to an empty string
+        item["image"] = ""
+
+    return data
+
+
+def process_serialize(data):
+    # Ensure data is a list of dictionaries
+    if not isinstance(data, list):
+        raise ValueError("Data should be a list of dictionaries")
+
+    # Initialize variables to track the last KM_Process and image value
+    last_km_process = None
+    seq_counter = 0
+
+    for entry in data:
+        current_km_process = entry.get("KM_Process")
+
+        # Increment image_counter if KM_Process changes
+        if current_km_process != last_km_process:
+            seq_counter += 1
+            last_km_process = current_km_process
+
+        # Update the image value in the entry
+        entry["seq_counter"] = seq_counter
+
+    return data
+
+
+def get_last_non_empty_image(data):
+    # Initialize the variable to store the last non-empty image value
+    last_non_empty_image = ""
+
+    # Loop through each item in the array
+    for item in data:
+        # Check if the image field is non-empty
+        if item.get("image"):
+            last_non_empty_image = item["image"]
+
+    return last_non_empty_image
 
 
 # @api_config(
