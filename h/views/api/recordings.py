@@ -91,7 +91,8 @@ def read(context, request):
     record = context.user_event_record
     results = batch_steps([record, ])
     if len(results):
-        return results[0]
+        dc=data_commics_process(results)
+        return {**results[0], "dc": dc}
     else:
         return [{
             "taskName": record.task_name,
