@@ -271,13 +271,13 @@ def reformat_to_nested(data):
             }
             km_process.append(metadata)
 
-        result.append({
-            "userid": userid,
-            "sessionId": sessionId,
-            "taskName": taskName,
-            "dataComicsID": "dc-" + sessionId,
-            "KM_Process": km_process
-        })
+    result.append({
+        "userid": userid,
+        "sessionId": sessionId,
+        "taskName": taskName,
+        "dataComicsID": "dc-" + sessionId,
+        "KM_Process": km_process
+    })
 
     return result
 
