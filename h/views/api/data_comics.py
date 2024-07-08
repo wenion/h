@@ -9,13 +9,13 @@ from h.views.api.data_comics_process import  data_commics_process
 
 #Global variables
 globalWidth = 800
-globalheight = 250
+globalheight = 230
 heightNavigate= 115
 font                   = cv2.FONT_HERSHEY_DUPLEX
 fontTitle             = 0.7 #font size
 fontDescription       = 0.5 #font size
 colorOrange              = (0,165,255)
-thickness              = 1 
+thickness              = 1
 thicknessRec = 2
 colorBlack = (1, 1, 1)
 start_point = (5, 5) 
@@ -60,7 +60,7 @@ def createBasicImage(event,text,typeSize,processID):
     if len(text)<=20:
         cv2.putText(img, text,(int(centerTextHorizontal(text,width,fontTitle))+int(posRecShort/2),int(globalheight/2)+10), font, fontTitle, colorOrange, thickness,cv2.LINE_AA)
     else:
-        imgText=centerTextVertical(text,globalheight-60,width-posRecShort)
+        imgText=positionTextEvent(text,globalheight-60,width-posRecShort)
         y_offset=50
         x_offset=125#Cambia
         img[y_offset:y_offset+imgText.shape[0], x_offset:x_offset+imgText.shape[1]] = imgText
@@ -187,6 +187,42 @@ def positionTextCircule(label,heigth, width,maxCharacter,lenText):
     #cv2.imshow("Event", img)
     #k = cv2.waitKey(0)
     return img
+# This function center the text vertical align in the events
+def positionTextEvent(label,heigth,width):
+    img = np.zeros((heigth,width-8,3), np.uint8)#Cambiar 350
+    img.fill(255)
+
+    tam=len(label)
+    cont=0
+    if tam>=250:
+        tam=250
+    heigthtext=tam/48
+    if heigthtext>=5:    
+        heigthtext=4
+    pos=50
+    lenText=28
+    auxCont=0
+    flagFinish=False
+    for x in range(0,tam,lenText):
+        x=x-auxCont
+        if (lenText+x)>=tam: text=label[x:tam]
+        else:text= label[x:lenText+x]
+        #if text[len(text)]!=''
+        if cont>=140:
+            text=text[:len(text)]+"..."
+            print("CONT")
+            flagFinish=True
+        elif len(text)>=lenText: 
+            pos=text.rfind(" ")
+            text=text[:pos]
+            pos=pos+1# for empty space
+            auxCont=auxCont+(lenText-pos)  
+        cv2.putText(img, text, (8,90+cont-(int(heigthtext)*18)), font, fontDescription, colorOrange, thickness,cv2.LINE_AA)
+        cont= cont +20
+        if flagFinish: break
+    #cv2.imshow("Event", img)
+    #k = cv2.waitKey(0)
+    return img
 # This function add the an arrow to the circule image 
 def addArrow(imgLarge):
     imgBase64= b'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'
@@ -220,3 +256,4 @@ def create_images_DC(data):
                 event['image']=createBasicImage(event['type'],event['description'],1,code_process)
             elif event['type']=='Uploaded':
                 event['image']=createBasicImage(event['type'],event['description'],1,code_process)
+    print(data)
