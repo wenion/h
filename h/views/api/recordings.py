@@ -125,7 +125,7 @@ def update(context, request):
         result = batch_steps([session,])
         resultDC=data_commics_process(result)
         print(resultDC)
-        #create_images_DC(resultDC)
+        jsonDC=create_images_DC(resultDC)
         # Steve: create process model after Shareflow recording completes
         try:
             tad_url = urljoin(request.registry.settings.get("tad_url"), "create_process_model")
