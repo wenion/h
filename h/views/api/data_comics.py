@@ -21,7 +21,7 @@ colorBlack = (1, 1, 1)
 start_point = (5, 5) 
 
 #This function create the navigate images
-def createImageNavigate(url,title,processID,position,cont):
+def createImageNavigate(url,title,processID):
     img = np.zeros((heightNavigate,globalWidth,3), np.uint8)
     img.fill(255)
 
@@ -43,7 +43,7 @@ def createImageNavigate(url,title,processID,position,cont):
     return "data:image/jpg;base64,"+resEncode.decode("utf-8")
     
 # This fuction create the event images
-def createBasicImage(event,text,typeSize,processID,position,cont):
+def createBasicImage(event,text,typeSize,processID):
     width=int(globalWidth/2)
     posText=200
     posRecShort=125
@@ -70,7 +70,7 @@ def createBasicImage(event,text,typeSize,processID,position,cont):
     resEncode = base64.b64encode(buffer)#Convert to base64
     return "data:image/jpg;base64,"+resEncode.decode("utf-8")
 # This fuction create the image to the data comics summary
-def createCircule(processName,title,position,flagArrow):
+def createCircule(processName,title,flagArrow):
     widthCircule=201
     radio=100
     heightCircule=270
