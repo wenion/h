@@ -201,7 +201,7 @@ def addArrow(imgLarge):
 
 def create_images_DC(data):
     print("CREATE IMAGE DC")
-    for process in data['KM_Process']:
+    for process in data[0]['KM_Process']:
         code_process=process['code']
         name_process=process['name']
         process['image']=createCircule(name_process,process['title'],True)
