@@ -244,6 +244,9 @@ def reformat_to_nested(data):
     data = process_serialize(data)
     users = defaultdict(lambda: defaultdict(list))
 
+    if not len(data):
+        return None
+
     for entry in data:
         user_key = (entry["userid"], entry["sessionId"], entry["taskName"], entry["seq_counter"])
         process_name = entry["KM_Process"]

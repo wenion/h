@@ -91,11 +91,11 @@ def read(context, request):
     record = context.user_event_record
     results = batch_steps([record, ])
     if len(results):
-        dc = data_commics_process(results)
-        dc = create_images_DC(dc)
+        dc_1 = data_commics_process(results)
+        dc = create_images_DC(dc) if dc_1 else None
         return {**results[0], "dc": dc}
     else:
-        return [{
+        return {
             "taskName": record.task_name,
             'sessionId': record.session_id,
             "timestamp": record.startstamp,
@@ -104,8 +104,9 @@ def read(context, request):
             "session_id": record.session_id,
             "userid": record.userid,
             "groupid": record.groupid,
-            "shared": record.shared
-            },]
+            "shared": record.shared,
+            "dc": None,
+            },
 
 
 @api_config(
