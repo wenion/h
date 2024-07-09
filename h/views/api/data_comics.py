@@ -236,10 +236,14 @@ def addArrow(imgLarge):
 ###-----------Auxiliar function --------------
 
 def create_images_DC(data):
+    cont_arrow_flag=1 
     for process in data['KM_Process']:
         code_process=process['code']
         name_process=process['name']
-        process['image']=createCircule(name_process,process['title'],True)
+        if len(data['KM_Process'])==cont_arrow_flag:
+            process['image']=createCircule(name_process,process['title'],False)# Do not draw the arrow (Last circle)
+        else:
+            process['image']=createCircule(name_process,process['title'],True)
         for event in process['steps']:
             if event['type']=='Navigation':
                 event['image']=createImageNavigate(event['url'],event['title'],code_process)
@@ -255,4 +259,5 @@ def create_images_DC(data):
                 event['image']=createBasicImage(event['type'],event['description'],1,code_process)
             elif event['type']=='Uploaded':
                 event['image']=createBasicImage(event['type'],event['description'],1,code_process)
+        cont_arrow_flag=cont_arrow_flag+1
     return data
