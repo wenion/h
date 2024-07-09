@@ -91,7 +91,8 @@ def read(context, request):
     record = context.user_event_record
     results = batch_steps([record, ])
     if len(results):
-        dc=data_commics_process(results)
+        dc = data_commics_process(results)
+        dc = create_images_DC(dc)
         return {**results[0], "dc": dc}
     else:
         return [{
@@ -123,9 +124,9 @@ def update(context, request):
         print("FINISHHHHHHH:")
         session = finish_user_event_record(context.pk, data["endstamp"])
         result = batch_steps([session,])
-        resultDC=data_commics_process(result)
-        print(resultDC)
-        jsonDC=create_images_DC(resultDC)
+        # resultDC=data_commics_process(result)
+        # print(resultDC)
+        # jsonDC=create_images_DC(resultDC)
         # Steve: create process model after Shareflow recording completes
         try:
             tad_url = urljoin(request.registry.settings.get("tad_url"), "create_process_model")

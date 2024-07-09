@@ -258,12 +258,11 @@ def reformat_to_nested(data):
         users[user_key][process_name].append(step)
 
     # Build the final structured list
-    result = []
+    km_process = []
     for (userid, sessionId, taskName, seq_counter), processes in users.items():
-        km_process = []
         for name, steps in processes.items():
             metadata = {
-                "image": "", # get_last_non_empty_image(steps), #new Field S.S TODO
+                "image": get_last_non_empty_image(steps), #new Field S.S TODO
                 "name": name.split(" ", 1)[1],
                 "code" : name.split(" ", 1)[0], #new Field S.S
                 "title" : "", #new Field S.S
@@ -271,15 +270,13 @@ def reformat_to_nested(data):
             }
             km_process.append(metadata)
 
-    result.append({
+    return {
         "userid": userid,
         "sessionId": sessionId,
         "taskName": taskName,
         "dataComicsID": "dc-" + sessionId,
         "KM_Process": km_process
-    })
-
-    return result
+    }
 
 
 def set_all_images_to_empty(data):

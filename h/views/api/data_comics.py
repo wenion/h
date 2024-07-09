@@ -236,8 +236,7 @@ def addArrow(imgLarge):
 ###-----------Auxiliar function --------------
 
 def create_images_DC(data):
-    print("CREATE IMAGE DC")
-    for process in data[0]['KM_Process']:
+    for process in data['KM_Process']:
         code_process=process['code']
         name_process=process['name']
         process['image']=createCircule(name_process,process['title'],True)
@@ -256,4 +255,4 @@ def create_images_DC(data):
                 event['image']=createBasicImage(event['type'],event['description'],1,code_process)
             elif event['type']=='Uploaded':
                 event['image']=createBasicImage(event['type'],event['description'],1,code_process)
-    print(data)
+    return data
