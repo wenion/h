@@ -92,7 +92,7 @@ def read(context, request):
     results = batch_steps([record, ])
     if len(results):
         dc_1 = data_commics_process(results)
-        dc = create_images_DC(dc) if dc_1 else None
+        dc = create_images_DC(dc_1) if dc_1 else None
         return {**results[0], "dc": dc}
     else:
         return {
