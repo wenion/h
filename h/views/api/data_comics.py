@@ -55,7 +55,7 @@ def createBasicImage(event,text,typeSize,processID):
     cv2.rectangle(img, start_point, end_point, colorBlack, thicknessRec,cv2.LINE_AA)# Rec Big
     cv2.rectangle(img, (posRecShort, 5), (width-5,45), colorBlack, thicknessRec,cv2.LINE_AA)
     #cv2.putText(img, event, (width-posText,35), font, fontScale, colorBlack, thickness, cv2.LINE_AA)
-    print(str(int((width-posRecShort)/2)))
+    # print(str(int((width-posRecShort)/2)))
     cv2.putText(img, event, (int(centerTextHorizontal(event,width,fontTitle))+int(posRecShort/2),35), font, fontTitle, colorBlack, thickness, cv2.LINE_AA)
     if len(text)<=20:
         cv2.putText(img, text,(int(centerTextHorizontal(text,width,fontTitle))+int(posRecShort/2),int(globalheight/2)+10), font, fontTitle, colorOrange, thickness,cv2.LINE_AA)
@@ -176,7 +176,7 @@ def positionTextCircule(label,heigth, width,maxCharacter,lenText):
             text=text[:pos]
             pos=pos+1# for empty space
             auxCont=auxCont+(lenText-pos)
-        print(text)
+        # print(text)
         # get boundary of this text
         (label_width, label_height), baseline = cv2.getTextSize(text, font, fontTitle, thickness)
         # get coords based on boundary
@@ -210,7 +210,7 @@ def positionTextEvent(label,heigth,width):
         #if text[len(text)]!=''
         if cont>=140:
             text=text[:len(text)]+"..."
-            print("CONT")
+            # print("CONT")
             flagFinish=True
         elif len(text)>=lenText: 
             pos=text.rfind(" ")
@@ -240,10 +240,10 @@ def create_images_DC(data):
     for process in data['KM_Process']:
         code_process=process['code']
         name_process=process['name']
-        if len(data['KM_Process'])==cont_arrow_flag:
-            process['image']=createCircule(name_process,process['title'],False)# Do not draw the arrow (Last circle)
-        else:
-            process['image']=createCircule(name_process,process['title'],True)
+        # if len(data['KM_Process'])==cont_arrow_flag:
+        #     process['image']=createCircule(name_process,process['title'],False)# Do not draw the arrow (Last circle)
+        # else:
+        #     process['image']=createCircule(name_process,process['title'],True)
         for event in process['steps']:
             if event['type']=='Navigation':
                 event['image']=createImageNavigate(event['url'],event['title'],code_process)
