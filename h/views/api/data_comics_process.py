@@ -269,7 +269,8 @@ def reformat_to_nested(data):
                 "name": name.split(" ", 1)[1],
                 "code" : name.split(" ", 1)[0], #new Field S.S
                 "title" : "", #new Field S.S
-                "steps": set_all_images_to_empty(steps)
+                "steps": set_all_images_to_empty(steps),
+                "screenshot": get_last_non_empty_image(steps),
             }
             km_process.append(metadata)
 
@@ -286,7 +287,14 @@ def set_all_images_to_empty(data):
     # Loop through each item in the array
     for item in data:
         # Set the image field to an empty string
+        if item.get("image"):
+            item["screenshot"] = item.get("image")
+            item["width"] = item.get("width")
+            item["height"] = item.get("height")
+            item["offsetX"] = item.get("offsetX")
+            item["offsetY"] = item.get("offsetY")
         item["image"] = ""
+        # if item.get("image"):
 
     return data
 
