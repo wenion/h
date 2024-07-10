@@ -20,6 +20,7 @@ def handle_web_page(message, registry=None):
         )
         return
     data = message.payload
+    page_url = data["url"]
     try:
         parser = html2text.HTML2Text()
         parser.ignore_links = True
@@ -35,7 +36,7 @@ def handle_web_page(message, registry=None):
         'content': plain_text,
     }
 
-    if is_task_page(url):
+    if is_task_page(page_url):
         return
 
     response = requests.post(url, data=data)
