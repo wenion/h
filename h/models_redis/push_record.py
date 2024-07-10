@@ -50,7 +50,7 @@ def has_three_push(url, user_id):
     """
     try:
         query = PushRecord.find(PushRecord.push_to == user_id)
-        result = query.copy(limit=3).sort_by("-timestamp").execute()
+        result = query.all()
         if not result or len(result) == 0:
             return False
         count = 0
