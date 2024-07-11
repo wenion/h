@@ -755,7 +755,7 @@ def pull_recommendation(request):
     return redis_ret
 
 
-def make_message(type, pubid, event_name, message, date, show_flag, unread_flag, need_save_flag=True):
+def make_message(type, pubid, event_name, message, date, show_flag, unread_flag, need_save_flag=True, extra=None):
     return {
         'type': type,
         'id': pubid,
@@ -765,6 +765,7 @@ def make_message(type, pubid, event_name, message, date, show_flag, unread_flag,
         'show_flag': show_flag,
         'unread_flag': unread_flag,
         'need_save_flag': need_save_flag,
+        'extra': extra,
     }
 
 
@@ -823,7 +824,11 @@ def message(request):
                 "ShareFlow recommendation",
                 tad_result["message"],
                 datetime.now().strftime("%s%f"),
-                True if certainty and push_message else False, True, True if certainty and push_message else False)
+                True if certainty and push_message else False,
+                True,
+                True if certainty and push_message else False,
+                tad_result["task_details"]
+                )
             message["interval"] = rep_interval
             message["should_next"] = next
             response.append(message)
