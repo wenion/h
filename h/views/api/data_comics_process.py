@@ -276,7 +276,7 @@ def reformat_to_nested(data):
                 "image": get_last_non_empty_image(steps), #new Field S.S TODO
                 "name": name.split(" ", 1)[1],
                 "code" : name.split(" ", 1)[0], #new Field S.S
-                "title" : "", #new Field S.S
+                "title" : get_first_non_empty_title(steps), #new Field S.S
                 "steps": set_all_images_to_empty(steps),
                 "screenshot": get_last_non_empty_image(steps),
             }
@@ -337,6 +337,20 @@ def get_last_non_empty_image(data):
             last_non_empty_image = item["image"]
 
     return last_non_empty_image
+
+
+def get_first_non_empty_title(data):
+    # Initialize the variable to store the last non-empty image value
+    title = ""
+
+    # Loop through each item in the array
+    for item in data:
+        # Check if the image field is non-empty
+        if item.get("title"):
+            title = item["title"]
+            return title
+
+    return title
 
 
 # @api_config(
