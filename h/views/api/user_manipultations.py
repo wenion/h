@@ -526,7 +526,7 @@ def batch_steps(index_list):
                         "offsetY": 0,
                         "position": "N/A",
                         "title":resultTask['title'],
-                        "description" : resultTask['tag_name'] + ' to ',
+                        "description" : 'Go to ',
                         }
                         eventlist.append(last_navigate)
 
@@ -540,7 +540,7 @@ def batch_steps(index_list):
                             "offsetY": 0,
                             "position": "N/A",
                             "title":resultTask['title'],
-                            "description" : resultTask['tag_name'] + ' to ',
+                            "description" : 'Go to ',
                             }
                         eventlist.append(last_navigate)
                     flagScroll=False
@@ -627,9 +627,10 @@ def batch_steps(index_list):
                         if event_type == 'pointerdown':
                             event_type = 'click'
                         eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
-                        eventDescription=getTextbyEvent(event_type,str(resultTask['text_content']),eventPosition)
+                        text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
+                        eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
                         if eventDescription!="No description":
-                            eventlist.append({"type": event_type, "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": str(eventPosition), "title": resultTask.get('title', resultTask['event_source']), "width":resultTask['width'], "height":resultTask['height'], "description" : str(eventDescription), "image": resultTask['image'] if 'image' in resultTask else None})
+                            eventlist.append({"type": event_type, "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : text_content, "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": str(eventPosition), "title": resultTask.get('title', resultTask['event_source']), "width":resultTask['width'], "height":resultTask['height'], "description" : str(eventDescription), "image": resultTask['image'] if 'image' in resultTask else None})
                     flagScroll=True
                     if last_keyup:
                         eventlist.append(last_keyup)
