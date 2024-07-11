@@ -122,12 +122,14 @@ def update(context, request):
     data = request.json_body
     action = data["action"]
     if action == "finish":
-        print("FINISHHHHHHH:")
         session = finish_user_event_record(context.pk, data["endstamp"])
         result = batch_steps([session,])
-        # resultDC=data_commics_process(result)
-        # print(resultDC)
-        # jsonDC=create_images_DC(resultDC)
+        #COMMENT
+        print("FINISHHHHHHH:")
+        resultDC=data_commics_process(result)
+        #print(resultDC)
+        jsonDC=create_images_DC(resultDC)
+        #COMMENT
         # Steve: create process model after Shareflow recording completes
         try:
             tad_url = urljoin(request.registry.settings.get("tad_url"), "create_process_model")
