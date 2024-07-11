@@ -240,7 +240,6 @@ def create_images_DC(data):
     for process in data['KM_Process']:
         code_process=process['code']
         name_process=process['name']
-        print(str(len(data['KM_Process'])))
         if len(data['KM_Process'])==cont_arrow_flag:
              process['image']=createCircule(name_process,process['title'],False)# Do not draw the arrow (Last circle)
         else:
