@@ -95,7 +95,7 @@ def createCircule(processName,title,flagArrow):
         y_offset=(radio*2)+10
         x_offset=10
         img[y_offset:y_offset+imgText.shape[0], x_offset:x_offset+imgText.shape[1]] = imgText
-    img=addArrow(img)
+    if flagArrow: img=addArrow(img)
     retval, buffer = cv2.imencode('.jpg', img)
     resEncode = base64.b64encode(buffer) #Convert to base64
     return "data:image/jpg;base64,"+resEncode.decode("utf-8")
