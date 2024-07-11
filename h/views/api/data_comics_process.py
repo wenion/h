@@ -147,7 +147,11 @@ def action_mapper(data):
                 'url': step.get('url', ''),
                 'description': step.get('description', ''),
                 'image': step.get('image', ''),
-                'title': step.get('title', '')
+                'title': step.get('title', ''),
+                'width': step.get('width'),
+                'height': step.get('height'),
+                'offsetX': step.get('offsetX'),
+                'offsetY': step.get('offsetY'),
             })
             
     #2:  Handle & Flag/Fix Exceptions
@@ -256,7 +260,11 @@ def reformat_to_nested(data):
             "title": entry["title"],  #new Field S.S
             "url": entry["url"],
             "description": entry["description"],
-            "image": entry["image"]
+            "image": entry["image"],
+            "width": entry.get("width"),
+            "height": entry.get("height"),
+            "offsetX": entry.get("offsetX"),
+            "offsetY": entry.get("offsetY")
         }
         users[user_key][process_name].append(step)
 
@@ -289,10 +297,6 @@ def set_all_images_to_empty(data):
         # Set the image field to an empty string
         if item.get("image"):
             item["screenshot"] = item.get("image")
-            item["width"] = item.get("width")
-            item["height"] = item.get("height")
-            item["offsetX"] = item.get("offsetX")
-            item["offsetY"] = item.get("offsetY")
         item["image"] = ""
         # if item.get("image"):
 
