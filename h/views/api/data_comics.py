@@ -241,10 +241,10 @@ def create_images_DC(data):
         code_process=process['code']
         name_process=process['name']
         print(str(len(data['KM_Process'])))
-        # if len(data['KM_Process'])==cont_arrow_flag:
-        #     process['image']=createCircule(name_process,process['title'],False)# Do not draw the arrow (Last circle)
-        # else:
-        #     process['image']=createCircule(name_process,process['title'],True)
+        if len(data['KM_Process'])==cont_arrow_flag:
+             process['image']=createCircule(name_process,process['title'],False)# Do not draw the arrow (Last circle)
+        else:
+             process['image']=createCircule(name_process,process['title'],True)
         for event in process['steps']:
             if event['type']=='Navigation':
                 event['image']=createImageNavigate(event['url'],event['title'],code_process)
