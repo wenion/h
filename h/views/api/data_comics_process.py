@@ -51,7 +51,7 @@ action_mapping = {
 
 
 process_map = {
-        'AP1. Locate/Navigate': ['Navigation', 'Scroll', 'Click', 'Navigation'],
+        'AP1. Navigate': ['Navigation', 'Scroll', 'Click', 'Navigation'],
         'AP2. Search': ['Type', 'Query', 'Click_Search'],
         'SP1. Upload resources': ['Navigation', 'Click_Upload'],
         'SP2. Knowledge-clip': ['Scroll', 'Click k-clip'],
@@ -61,11 +61,11 @@ process_map = {
         'ApP1. Using Pushes': ['Push', 'Click_Push_Panel'],
 
         # Additional Generic
-        'AP1.1a Locate/Navigate': ['Navigation', 'Navigation', 'Navigation'],
-        'AP1.3a Locate/Navigate': ['Navigation', 'Click', 'Click'],
-        'AP1.3b Locate/Navigate': ['Navigation', 'Click'],
-        'AP1.9a Locate/Navigate': [ 'Click', 'Click', 'Click'],
-        'AP1.9b Locate/Navigate': [ 'Click', 'Click'],
+        'AP1.1a Navigate': ['Navigation', 'Navigation', 'Navigation'],
+        'AP1.3a Navigate': ['Navigation', 'Click', 'Click'],
+        'AP1.3b Navigate': ['Navigation', 'Click'],
+        'AP1.9a Navigate': [ 'Click', 'Click', 'Click'],
+        'AP1.9b Navigate': [ 'Click', 'Click'],
 
         'SP3.7a Filling information': ['Type', 'Click'],
         'SP3.7b Filling information': ['Click', 'Type'],
