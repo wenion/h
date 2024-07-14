@@ -19,6 +19,7 @@ from datetime import datetime, date, timezone
 import json
 import os
 import openai
+import html2text
 import re
 import requests
 import shutil
@@ -36,6 +37,10 @@ from h.models_redis import fetch_user_event_by_timestamp, batch_user_event_recor
 from h.models_redis import add_push_record, delete_push_record, fetch_push_record, has_three_push, same_as_previous
 from h.services import OrganisationEventPushLogService
 
+
+text_maker = html2text.HTML2Text()
+text_maker.ignore_links = True
+text_maker.ignore_images = True
 
 def split_user(userid):
     """
@@ -492,6 +497,7 @@ def batch_steps(index_list):
             resultSesions.startstamp - 10 + resultSesions.start * 1000,
             resultSesions.endstamp)
         textKeydown=""
+        last_click = None
         last_keyup = None
         last_navigate = None
         last_scroll = None
@@ -499,7 +505,17 @@ def batch_steps(index_list):
         lenResult=len(fetch_result)
         for i in range(lenResult):
             resultTask=fetch_result[i].dict()
-            if str(resultTask['event_type'])!="beforeunload" and str(resultTask['event_type'])!="OPEN" and str(resultTask['event_type'])!="open" and str(resultTask['event_type'])!="visibilitychange" and str(resultTask['event_type'])!="server-record" and str(resultTask['event_type'])!="submit" and str(resultTask['event_type'])!="START" and str(resultTask['event_type'])!="close" and str(resultTask['event_source'])!="MESSAGE" and str(resultTask['event_source'])!="SIDERBAR" and str(resultTask['event_source'])!="RECORDING":
+            event_type = resultTask['event_type']
+            if event_type!="beforeunload" and \
+                event_type!="OPEN" and \
+                event_type!="open" and \
+                event_type!="visibilitychange" and \
+                event_type!="server-record" and \
+                event_type!="START" and \
+                event_type!="close" and \
+                str(resultTask['event_source'])!="MESSAGE" and \
+                str(resultTask['event_source'])!="SIDERBAR" and \
+                str(resultTask['event_source'])!="RECORDING":
                 if str(resultTask['event_type'])=="scroll":
                     if last_scroll and flagScroll:
                         eventDescription=getTextbyEvent("scroll",str(resultTask['text_content']).split(":")[0],"")
@@ -512,10 +528,11 @@ def batch_steps(index_list):
                         last_scroll = {"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title": resultTask.get('title', resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']}
                         eventlist.append(last_scroll)
                         flagScroll = False
-                    if last_keyup:
-                        eventlist.append(last_keyup)
-                        last_keyup = None
                 elif resultTask['event_type'] == 'navigate':
+                    if last_keyup:
+                        print('print navigate>>>', resultTask['interaction_context'])
+                        eventlist.append(createKeyupEvent(**last_keyup))
+                        last_keyup = None
                     if not last_navigate:
                         last_navigate = {
                         "type": resultTask['event_type'],
@@ -544,71 +561,265 @@ def batch_steps(index_list):
                             }
                         eventlist.append(last_navigate)
                     flagScroll=False
-                    if last_keyup:
-                        eventlist.append(last_keyup)
-                        last_keyup = None
                 elif str(resultTask['event_type'])=="recording":
-                    eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": 0, "offsetY": 0, "position": "N/A", "title":resultTask['title'], "description" : resultTask['tag_name'] + ' to ', "image": resultTask['image']})
-
                     if last_keyup:
-                        eventlist.append(last_keyup)
+                        print('print recording>>>')
+                        # eventlist.append(last_keyup)
+                        eventlist.append(createKeyupEvent(**last_keyup))
                         last_keyup = None
-                elif str(resultTask['event_type'])=="keyup":
+                    eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": 0, "offsetY": 0, "position": "N/A", "title":resultTask['title'], "description" : resultTask['tag_name'] + ' to ', "image": resultTask['image']})
+                elif event_type=="keyup":
                     interaction_context = resultTask.get('interaction_context', '')
+                    xpath = resultTask.get('x_path', None)
+                    key = None
+                    name = None
+                    value = None
+                    print("\nkeyup event interaction_context", interaction_context, 'xpath', xpath)
                     try:
                         interaction_context = json.loads(interaction_context)
-                        name = interaction_context.get('name')
-                        value = interaction_context.get('value')
                     except json.JSONDecodeError:
-                        name = ''
-                        value = interaction_context
+                        break
                     else:
-                        if not value and 'key' in interaction_context:
-                            # last keyup
-                            if last_keyup:
-                                #print("last interaction", interaction_context, "last keyup", last_keyup)
-                                last_keyup_value = last_keyup['interaction_context']['value']
-                                keyValue = interaction_context['key']
-                                if keyValue.lower() == 'shift' or keyValue.lower() == 'meta':
-                                    pass
-                                elif keyValue.lower() == 'backspace':
-                                    last_keyup_value = last_keyup_value[:-1]
-                                else:
-                                    last_keyup_value += keyValue
-                                value = last_keyup_value
-                                name = last_keyup['interaction_context']['name']
-                            else:
-                                # first keyup in this input box
-                                # print("\n\nfirst interaction", interaction_context)
-                                keyValue = interaction_context['key']
-                                if keyValue.lower() == 'shift' or keyValue.lower() == 'meta':
-                                    keyValue = ''
-                                elif keyValue.lower() == 'backspace':
-                                    keyValue = ''
-                                interaction_context['value'] = keyValue
-                                interaction_context['name'] = resultTask.get('x_path').split('/')[-1] if resultTask.get('x_path') else ''
-                                value = interaction_context['value']
-                                name = interaction_context['name']
-                            interaction_context['name'] = name
-                            interaction_context['value'] = value
-                    xpath = resultTask.get('x_path', '')
-                    if last_keyup and xpath != last_keyup.get('xpath') and last_keyup.get('xpath') != '':
-                        eventlist.append(last_keyup)
+                        key = interaction_context.get('key', None)
+                        name = interaction_context.get('name', None)
+                        value = interaction_context.get('value', None)
+
+                    if last_keyup and last_keyup['xpath'] != xpath:
+                        # last_keyup.pop('interaction_context')
+                        # eventlist.append(last_keyup)
+                        eventlist.append(createKeyupEvent(**last_keyup))
                         last_keyup = None
 
-                    name_filed = '' if name == '' else ' in the "' + name + '" input box'
-                    last_keyup = {
-                        'type': resultTask['event_type'],
-                        'url': resultTask['base_url'],
-                        "xpath" : resultTask.get('x_path'),
-                        "text" : '',
-                        "offsetY": resultTask['offset_y'],
-                        "position": "N/A",
-                        "title": resultTask.get('title', resultTask['event_source']),
-                        "description" : "Typing \"" + value + '"'+ name_filed,
-                        "interaction_context": interaction_context,
-                        # "image": resultTask['image']
+                    if not value:
+                        if last_keyup and key:
+                            print(">>>", last_keyup)
+                            # last_keyup_value = last_keyup['interaction_context']['value']
+                            last_keyup_value = last_keyup['value']
+                            if key.lower() == 'shift' or \
+                                key.lower() == 'control' or \
+                                key.lower() == 'meta' or \
+                                key.lower() == 'enter' or \
+                                key.lower() == 'arrowright' or \
+                                key.lower() == 'arrowleft':
+                                pass
+                            elif key.lower() == 'backspace':
+                                last_keyup_value = last_keyup_value[:-1]
+                            else:
+                                last_keyup_value += key
+
+                            # last_keyup = {
+                            #     'type': resultTask['event_type'],
+                            #     'url': resultTask['base_url'],
+                            #     "xpath" : resultTask.get('x_path'),
+                            #     "title": resultTask.get('title', resultTask['event_source']),
+                            #     "description" : "Typing \"" + last_keyup_value + '"' + ((" in the \"" + name + "\" input box") if name else ""),
+                            #     "interaction_context": {'key': key, 'value': last_keyup_value, 'name': name},
+                            #     }
+                            last_keyup = {
+                                'event_type': resultTask['event_type'],
+                                'url': resultTask['base_url'],
+                                "xpath" : resultTask.get('x_path'),
+                                "title": resultTask.get('title', resultTask['event_source']),
+                                'key': key,
+                                'name': name,
+                                'value': last_keyup_value
+                            }
+                        elif (not last_keyup) and key:
+                            if key.lower() == 'shift' or \
+                                key.lower() == 'control' or \
+                                key.lower() == 'meta' or \
+                                key.lower() == 'enter' or \
+                                key.lower() == 'arrowright' or \
+                                key.lower() == 'arrowleft':
+                                key=''
+                            elif key.lower() == 'backspace':
+                                key=''
+                            else:
+                                pass
+                            # last_keyup = {
+                            #     'type': resultTask['event_type'],
+                            #     'url': resultTask['base_url'],
+                            #     "xpath" : resultTask.get('x_path'),
+                            #     "title": resultTask.get('title', resultTask['event_source']),
+                            #     "description" : "Typing \"" + key + '"' + ((" in the \"" + name + "\" input box") if name else ""),
+                            #     "interaction_context": {'key': key, 'value': key, 'name': name},
+                            #     }
+                            last_keyup = {
+                                'event_type': resultTask['event_type'],
+                                'url': resultTask['base_url'],
+                                "xpath" : resultTask.get('x_path'),
+                                "title": resultTask.get('title', resultTask['event_source']),
+                                'key': key,
+                                'name': name,
+                                'value': key
+                            }
+                    else:
+                        # last_keyup = {
+                        #     'type': resultTask['event_type'],
+                        #     'url': resultTask['base_url'],
+                        #     "xpath" : resultTask.get('x_path'),
+                        #     "title": resultTask.get('title', resultTask['event_source']),
+                        #     "description" : "Typing \"" + value + '"'+ ((" in the \"" + name + "\" input box") if name else ""),
+                        #     "interaction_context": {'key': key, 'value': value, 'name': name},
+                        #     }
+                        last_keyup = {
+                            'event_type': resultTask['event_type'],
+                            'url': resultTask['base_url'],
+                            "xpath" : resultTask.get('x_path'),
+                            "title": resultTask.get('title', resultTask['event_source']),
+                            'key': key,
+                            'name': name,
+                            'value': value
                         }
+                elif event_type == 'change':
+                    print("change event",
+                          'tag', resultTask['tag_name'],
+                          'text_content', resultTask['text_content'],
+                          'interaction_context', resultTask['interaction_context'],
+                          'event_source', resultTask['event_source'],
+                          'x_path', resultTask['x_path'],'\n')
+                    tag = resultTask['tag_name']
+                    interaction_context = resultTask['text_content']
+                    xpath = resultTask['x_path']
+                    if tag.lower() == 'input':# 'checkbox':
+                        if last_keyup and xpath == last_keyup['xpath']:
+                            interaction_context = resultTask.get('interaction_context', '')
+                            input_type = None
+                            try:
+                                interaction_context = json.loads(interaction_context)
+                            except json.JSONDecodeError:
+                                pass
+                            else:
+                                name = interaction_context.get('name')
+                                value = interaction_context.get('value')
+                                input_type = interaction_context.get('type')
+
+                                if not last_keyup['name'] or last_keyup['name'] != name:
+                                    last_keyup['name'] = name
+
+                                if last_keyup['value'] != value:
+                                    last_keyup['value'] = value
+
+                        if last_click and xpath == last_click['xpath']:
+                            if input_type == 'checkbox': # Edit Mode
+                                width = last_click['width']
+                                height = last_click['height']
+                                offset_x = last_click['offset_x']
+                                offset_y = last_click['offset_y']
+                                eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
+                                text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
+                                eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
+
+                                interaction_context = resultTask['interaction_context']
+                                description = 'Tick the checkbox'
+                                try:
+                                    interaction_context = json.loads(interaction_context)
+                                except json.JSONDecodeError:
+                                    pass
+                                else:
+                                    name = interaction_context.get('name', None)
+                                    value = interaction_context.get('value', None)
+                                    if name and value:
+                                        if value.isdigit():
+                                            value = 'off' if int(value) == 0 else 'on'
+                                        description = "Turn " + value + " the \"" + name +"\" dropdown"
+
+                                eventlist.append({
+                                    "type": last_click['type'],
+                                    "url" : last_click['url'],
+                                    "xpath" : last_click['xpath'],
+                                    "text" : text_content,
+                                    "offsetX": offset_x,
+                                    "offsetY": offset_y,
+                                    "position": eventPosition,
+                                    "title": last_click['title'],
+                                    "width": width,
+                                    "height": height,
+                                    "description" : description,
+                                    "image": last_click['image']})
+                    elif tag.lower() == 'text' or tag.lower() == 'textarea': # last keyup
+                        if last_keyup and xpath == last_keyup['xpath']:
+                            print("keyup")
+                            keyup_value = last_keyup['value']
+
+                            value = resultTask['text_content']
+                            interaction_context = resultTask.get('interaction_context', '')
+                            try:
+                                interaction_context = json.loads(interaction_context)
+                            except json.JSONDecodeError:
+                                pass
+                            else:
+                                name = interaction_context.get('name')
+                                value = interaction_context.get('value')
+
+                            decoded_value = text_maker.handle(value).strip()
+                            if keyup_value != decoded_value:
+                                last_keyup['value'] = decoded_value
+                            else:
+                                print("no need to correct")
+                        elif not last_keyup:
+                            print("last keyup", last_keyup)
+                            # if tag.lower() == 'textarea':
+                            #     value = resultTask['text_content']
+                            #     interaction_context = resultTask.get('interaction_context', '')
+                            #     try:
+                            #         interaction_context = json.loads(interaction_context)
+                            #     except json.JSONDecodeError:
+                            #         pass
+                            #     else:
+                            #         name = interaction_context.get('name')
+                            #         value = interaction_context.get('value')
+
+                            #     decoded_value = text_maker.handle(value).strip()
+                            #     last_keyup = {
+                            #         'event_type': resultTask['event_type'],
+                            #         'url': resultTask['base_url'],
+                            #         "xpath" : resultTask.get('x_path'),
+                            #         "title": resultTask.get('title', resultTask['event_source']),
+                            #         'key': 'change',
+                            #         'name': name,
+                            #         'value': decoded_value
+                            #     }
+                    elif tag.lower() == 'select': # last click
+                        print("lask click select>>>")
+                        if last_click['xpath'] == xpath:
+                            width = last_click['width']
+                            height = last_click['height']
+                            offset_x = last_click['offset_x']
+                            offset_y = last_click['offset_y']
+                            eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
+                            text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
+                            eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
+                            print("event description", eventDescription)
+
+                            interaction_context = resultTask['interaction_context']
+                            description = 'Select the option'
+                            try:
+                                interaction_context = json.loads(interaction_context)
+                            except json.JSONDecodeError:
+                                pass
+                            else:
+                                name = interaction_context.get('name', None)
+                                value = interaction_context.get('value', None)
+                                if name and value:
+                                    if value.isdigit():
+                                        value = 'False' if int(value) == 0 else 'True'
+                                    description = "Select the option \"" + value + "\" in the \"" + name +"\" dropdown"
+
+                            eventlist.append({
+                                "type": last_click['type'],
+                                "url" : last_click['url'],
+                                "xpath" : last_click['xpath'],
+                                "text" : last_click['text'],
+                                "offsetX": offset_x,
+                                "offsetY": offset_y,
+                                "position": str(eventPosition),
+                                "title": last_click['title'],
+                                "width": width,
+                                "height": height,
+                                "description" : description,
+                                "image": resultTask['image'] if 'image' in resultTask else None
+                            })
                 elif str(resultTask['event_type'])=="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
                     if i<lenResult:
@@ -617,24 +828,192 @@ def batch_steps(index_list):
                             textKeydown=""
                             eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "title": resultTask.get('title', resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
                     flagScroll=True
+                elif event_type == 'click' or event_type == 'pointerdown': #CLICK
+                    print("click event", event_type,
+                          'tag_name', resultTask['tag_name'],
+                          'text_content', resultTask['text_content'],
+                          'interaction_context', resultTask['interaction_context'],
+                          'event_source', resultTask['event_source'],
+                          'x_path',resultTask['x_path'])
+                    if last_keyup:
+                        print('click>>>', last_keyup)
+                        # eventlist.append(last_keyup)
+                        eventlist.append(createKeyupEvent(**last_keyup))
+                        last_keyup = None
+                    tag = resultTask['tag_name']
+                    if tag == "SIDEBAR-TAB" or tag == "HYPOTHESIS-SIDEBAR":
+                        pass
+                    else:
+                        width = resultTask['width']
+                        height = resultTask['height']
+                        offset_x = resultTask['offset_x']
+                        offset_y = resultTask['offset_y']
+                        eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
+                        text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
+                        eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
+                        if tag == 'SELECT':
+                            print("slect>>>")
+                            pass
+                        elif tag == 'INPUT':
+                            interaction_context = resultTask['interaction_context']
+                            input_type = None
+                            try:
+                                interaction_context = json.loads(interaction_context)
+                            except json.JSONDecodeError:
+                                pass
+                            else:
+                                input_type = interaction_context.get('type', None)
+                                name = interaction_context.get('name', None)
+                                value = interaction_context.get('value', None)
+
+                            if input_type == 'checkbox':
+                                pass
+                            elif input_type == 'submit':
+                                pass
+                            elif input_type == 'text':
+                                width = resultTask['width']
+                                height = resultTask['height']
+                                offset_x = resultTask['offset_x']
+                                offset_y = resultTask['offset_y']
+                                eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
+                                interaction_context = resultTask['interaction_context']
+                                description = "Click " + eventPosition
+                                try:
+                                    interaction_context = json.loads(interaction_context)
+                                except json.JSONDecodeError:
+                                    pass
+                                else:
+                                    name = interaction_context.get('name')
+                                    if name:
+                                        description = 'Click on "' + name + '" at ' + eventPosition
+
+                                eventlist.append({
+                                    "type": resultTask['event_type'],
+                                    "url" : resultTask['base_url'],
+                                    "xpath" : resultTask['x_path'],
+                                    "text" : '',
+                                    "offsetX": offset_x,
+                                    "offsetY": offset_y,
+                                    "position": eventPosition,
+                                    "title": resultTask['title'],
+                                    "width": width,
+                                    "height": height,
+                                    "description" : description,
+                                    "image": resultTask['image']})
+                            else:
+                                eventlist.append({
+                                    "type": event_type,
+                                    "url" : str(resultTask['base_url']),
+                                    "xpath" : str(resultTask['x_path']),
+                                    "text" : text_content,
+                                    "offsetX": resultTask['offset_x'],
+                                    "offsetY": resultTask['offset_y'],
+                                    "position": eventPosition,
+                                    "title": resultTask.get('title', resultTask['event_source']),
+                                    "width":resultTask['width'],
+                                    "height":resultTask['height'],
+                                    "description" : str(eventDescription),
+                                    "image": resultTask['image'] if 'image' in resultTask else None})
+                        elif tag == 'SPAN':
+                            text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
+                            eventlist.append({
+                                "type": event_type,
+                                "url" : str(resultTask['base_url']),
+                                "xpath" : str(resultTask['x_path']),
+                                "text" : text_content,
+                                "offsetX": resultTask['offset_x'],
+                                "offsetY": resultTask['offset_y'],
+                                "position": eventPosition,
+                                "title": resultTask.get('title', resultTask['event_source']),
+                                "width":resultTask['width'],
+                                "height":resultTask['height'],
+                                "description" : getTextbyEvent(event_type, text_content, eventPosition),
+                                "image": resultTask['image'] if 'image' in resultTask else None})
+                        else:
+                            print("here 3")
+                            eventlist.append({
+                                "type": event_type,
+                                "url" : str(resultTask['base_url']),
+                                "xpath" : str(resultTask['x_path']),
+                                "text" : text_content,
+                                "offsetX": resultTask['offset_x'],
+                                "offsetY": resultTask['offset_y'],
+                                "position": str(eventPosition),
+                                "title": resultTask.get('title', resultTask['event_source']),
+                                "width":resultTask['width'],
+                                "height":resultTask['height'],
+                                "description" : str(eventDescription),
+                                "image": resultTask['image'] if 'image' in resultTask else None})
+                    last_click =  {
+                            'type': event_type,
+                            'url': resultTask['base_url'],
+                            "xpath" : resultTask.get('x_path'),
+                            'text': resultTask.get('text_content'),
+                            'interaction_context': resultTask.get('interaction_context'),
+                            'event_source': resultTask.get('event_source'),
+                            'width': resultTask['width'],
+                            'height': resultTask['height'],
+                            'offset_x': resultTask['offset_x'],
+                            'offset_y': resultTask['offset_y'],
+                            "title": resultTask.get('title', resultTask['event_source']),
+                            "image" : resultTask.get('image'),
+                            }
+                    flagScroll=True
+                elif event_type == 'submit':
+                    xpath = resultTask['x_path']
+                    print("submit event", event_type,
+                          'tag_name', resultTask['tag_name'],
+                          'text_content', resultTask['text_content'],
+                          'interaction_context', resultTask['interaction_context'],
+                          'event_source', resultTask['event_source'],
+                          'x_path',resultTask['x_path'])
+                    if last_keyup:
+                        print("submit >>>")
+                        # eventlist.append(last_keyup)
+                        eventlist.append(createKeyupEvent(**last_keyup))
+                        last_keyup = None
+                    value = resultTask.get('text_content')
+                    description = 'Click the \"' + value + '\" to submit'
+                    eventlist.append({
+                        "type": event_type,
+                        "url" : resultTask['base_url'],
+                        "xpath" : resultTask['x_path'],
+                        "text" : text_content,
+                        "offsetX": last_click['offset_x'] if (last_click and last_click['xpath'] == xpath) else resultTask['offset_x'],
+                        "offsetY": last_click['offset_y'] if (last_click and last_click['xpath'] == xpath) else resultTask['offset_y'],
+                        "position": str(eventPosition),
+                        "title": resultTask.get('title', resultTask['event_source']),
+                        "width":resultTask['width'],
+                        "height":resultTask['height'],
+                        "description" : description,
+                        "image": resultTask['image'] if 'image' in resultTask else None})
                 else:
                     if str(resultTask['text_content']) != "" and str(resultTask['tag_name']) != "SIDEBAR-TAB" and str(resultTask['tag_name']) != "HYPOTHESIS-SIDEBAR":
-                        width = 0 if resultTask['width'] == None else resultTask['width']
-                        height = 0 if resultTask['height'] == None else resultTask['height']
-                        offset_x = 0 if resultTask['offset_x'] == None else resultTask['offset_x']
-                        offset_y = 0 if resultTask['offset_y'] == None else resultTask['offset_y']
+                        if last_keyup:
+                            print('print else>>>', resultTask['event_type'], resultTask['interaction_context'], ">>>>\n\n")
+                            # eventlist.append(last_keyup)
+                            eventlist.append(createKeyupEvent(**last_keyup))
+                            last_keyup = None
+                        width = resultTask['width']
+                        height = resultTask['height']
+                        offset_x = resultTask['offset_x']
+                        offset_y = resultTask['offset_y']
                         event_type = resultTask['event_type']
                         if event_type == 'pointerdown':
                             event_type = 'click'
+                        if event_type == 'pointerdown' or event_type == 'click':
+                            print("22223click event", event_type,
+                                  'tag_name', resultTask['tag_name'],
+                                  'text_content', resultTask['text_content'],
+                                  'interaction_context', resultTask['interaction_context'],
+                                  'event_source', resultTask['event_source'],
+                                  'x_path',resultTask['x_path'])
                         eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
                         text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
                         eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
                         if eventDescription!="No description":
                             eventlist.append({"type": event_type, "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : text_content, "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": str(eventPosition), "title": resultTask.get('title', resultTask['event_source']), "width":resultTask['width'], "height":resultTask['height'], "description" : str(eventDescription), "image": resultTask['image'] if 'image' in resultTask else None})
                     flagScroll=True
-                    if last_keyup:
-                        eventlist.append(last_keyup)
-                        last_keyup = None
         if lenResult< len(fetch_result) and textKeydown!="":
             eventDescription=getTextbyEvent("keydown",textKeydown,"")
             eventlist.append({"type": str(fetch_result[lenResult]['event_type']), "url" : str(fetch_result[lenResult]['base_url']), "xpath" : str(fetch_result[lenResult]['x_path']),"text" : str(fetch_result[lenResult]['text_content']), "offsetX": fetch_result[lenResult]['offset_x'], "offsetY": fetch_result[lenResult]['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":fetch_result[lenResult].get('title', fetch_result[lenResult]['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
@@ -655,6 +1034,23 @@ def batch_steps(index_list):
     return auxDict
 
 
+def createKeyupEvent(event_type, url, xpath, title, key, name, value):
+    if name:
+        description = "Typing \"" + value + '"' + " in the \"" + name + "\" input box"
+    else:
+        description = "Typing \"" + value + '"'
+
+    return {
+        'type': event_type,
+        'url': url,
+        'xpath': xpath,
+        'text': '',
+        "position": '',
+        'title': title,
+        'description': description,
+        "interaction_context": {'key': key, 'value': value, 'name': name},
+    }
+
 def getKeyboard(textKeydown, character):
     if character == "Backspace":
         return (textKeydown[:-1])
@@ -669,6 +1065,8 @@ def getTextbyEvent(event_type, text_content, eventPosition):
         text_content = text_content[0:100] + "..."
         # print("Text CONTENT: "+ text_content)
     if event_type == "click":
+        if not text_content or text_content == '':
+            return 'Click at ' + eventPosition
         return 'Click on "' + text_content.replace("  ", " ").replace("\n", " ") + '" at ' + eventPosition
     elif event_type == "scroll":
         return text_content.lower().capitalize() + " on the web page"
@@ -680,20 +1078,43 @@ def getTextbyEvent(event_type, text_content, eventPosition):
         return "No description"
 
 
-def getPositionViewport(portX, portY, offset_x, offset_y):
-    if (not portX) or (not portY) or (not offset_x) or (not offset_y):
+def getPositionViewport(screen_width, screen_height, offset_x, offset_y):
+    if screen_width and screen_height and offset_x and offset_y:
+        screen_width = int(screen_width)
+        screen_height = int(screen_height)
+        offset_x = int(offset_x)
+        offset_y = int(offset_y)
+        horizontal_threshold = screen_width / 4
+        upper_vertical_threshold = screen_height / 4
+        lower_vertical_threshold = screen_height - screen_height / 4
+
+        if offset_y < upper_vertical_threshold:
+            vertical_position = 'top'
+        elif offset_y > lower_vertical_threshold:
+            vertical_position = 'bottom'
+        else:
+            vertical_position = 'center'
+            # vertical_position = 'bottom'
+
+        if offset_x < horizontal_threshold:
+            horizontal_position = 'left'
+        elif offset_x > screen_width - horizontal_threshold:
+            horizontal_position = 'right'
+        else:
+            horizontal_position = 'center'
+            # horizontal_position = 'right'
+
+        # Determine final position
+        if vertical_position == 'center' and horizontal_position == 'center':
+            return 'center'
+        elif vertical_position == 'center' and horizontal_position != 'center':
+            return f"{horizontal_position}"
+        elif vertical_position != 'center' and horizontal_position == 'center':
+            return f"{vertical_position}"
+        elif vertical_position != 'center' and horizontal_position != 'center':
+            return f"{vertical_position} {horizontal_position}"
+    else:
         return 'N/A'
-    height = ""
-    width = ""
-    if (portY / 2) > offset_y:
-        height = "top"
-    else:
-        height = "bottom"
-    if (portX / 2) > offset_x:
-        width = "left"
-    else:
-        width = "right"
-    return height + " " + width
 
 
 # Ivan
