@@ -3,7 +3,7 @@ import logging
 import requests
 from urllib.parse import urljoin
 
-from h.models_redis import is_task_page
+from h.models_redis import is_task_page, create_user_event
 
 log = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ def handle_web_page(message, registry=None):
     try:
         parser = html2text.HTML2Text()
         parser.ignore_links = True
+        parser.ignore_images = True
         plain_text = parser.handle(data["textContent"])
     except Exception as e:
         log.error("html2text", e)
@@ -39,7 +40,9 @@ def handle_web_page(message, registry=None):
     if is_task_page(page_url):
         return
 
+    create_user_event("server-record", "Additional REQUEST", plain_text, page_url, message.socket.identity.user.userid)
     response = requests.post(url, data=data)
+
     if response.status_code == 200:
         try:
             json_data = response.json()
@@ -49,6 +52,7 @@ def handle_web_page(message, registry=None):
                     "payload": json_data
                 },
             )
+            create_user_event("server-record", "Additional RESPONSE", json_data, page_url, message.socket.identity.user.userid)
         except ValueError:
             message.socket.send_json(
                 {
@@ -57,6 +61,7 @@ def handle_web_page(message, registry=None):
                     "error": response.text
                 },
             )
+            create_user_event("server-record", "Additional RESPONSE", response.text, page_url, message.socket.identity.user.userid)
     else:
         message.socket.send_json(
             {
@@ -65,3 +70,4 @@ def handle_web_page(message, registry=None):
                 "error": f'Error {response.status_code}: {response.text}'
             }
         )
+        create_user_event("server-record", "Additional RESPONSE", f'Error {response.status_code}: {response.text}', page_url, message.socket.identity.user.userid)
