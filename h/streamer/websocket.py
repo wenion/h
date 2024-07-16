@@ -48,7 +48,7 @@ class WebSocket(_WebSocket):
     query = None
     identity = None
 
-    debug = False
+    debug = True
     """Enable debug logging for this connection."""
 
     def __init__(self, sock, protocols=None, extensions=None, environ=None):
@@ -60,7 +60,8 @@ class WebSocket(_WebSocket):
             heartbeat_freq=30.0,
         )
 
-        self.debug = environ["h.ws.debug"]
+        # self.debug = environ["h.ws.debug"]
+        self.debug = True
         self.identity = environ["h.ws.identity"]
 
         self._work_queue = environ["h.ws.streamer_work_queue"]
