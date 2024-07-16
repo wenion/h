@@ -123,13 +123,12 @@ def update(context, request):
     action = data["action"]
     if action == "finish":
         session = finish_user_event_record(context.pk, data["endstamp"])
-        result = batch_steps([session,])
-        #COMMENT
-        print("FINISHHHHHHH:")
-        resultDC=data_commics_process(result)
-        #print(resultDC)
-        jsonDC=create_images_DC(resultDC)
-        #COMMENT
+        results = batch_steps([session,])
+        dc = None
+        if len(results):
+            dc_1 = data_commics_process(results)
+            dc = create_images_DC(dc_1) if dc_1 else None
+
         # Steve: create process model after Shareflow recording completes
         try:
             tad_url = urljoin(request.registry.settings.get("tad_url"), "create_process_model")
@@ -144,7 +143,7 @@ def update(context, request):
         except Exception as e:
             print("Process model not created due to error:", e)
             pass
-        return result[0] if len(result) > 0 else session.dict()
+        return {**results[0], 'dc': dc} if len(results) > 0 else session.dict()
     elif action == "share":
         user_event_record = context.user_event_record.dict()
         user_event_record['shared'] = 1 if data["shared"] else 0
