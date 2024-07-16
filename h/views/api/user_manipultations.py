@@ -571,6 +571,22 @@ def batch_steps(index_list):
                         eventlist.append(createKeyupEvent(**last_keyup))
                         last_keyup = None
                     eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": 0, "offsetY": 0, "position": "N/A", "title":resultTask['title'], "description" : resultTask['tag_name'] + ' to ', "image": resultTask['image']})
+                elif event_type == "getfocus":
+                    title = resultTask['title']
+                    if not resultTask['title']:
+                        title = urlparse(resultTask['base_url']).netloc
+                    eventlist.append({
+                        "type": resultTask['event_type'],
+                        "url" : resultTask['base_url'],
+                        "xpath" : '',
+                        "text" : '',
+                        "offsetX": 0,
+                        "offsetY": 0,
+                        "position": "N/A",
+                        "title": title,
+                        "description" : resultTask['tag_name'] + ' to the ' + title,
+                        "image": resultTask['image']
+                    })
                 elif event_type=="keyup":
                     interaction_context = resultTask.get('interaction_context', '')
                     xpath = resultTask.get('x_path', None)
@@ -603,7 +619,9 @@ def batch_steps(index_list):
                                 key.lower() == 'meta' or \
                                 key.lower() == 'enter' or \
                                 key.lower() == 'arrowright' or \
-                                key.lower() == 'arrowleft':
+                                key.lower() == 'arrowleft'or \
+                                key.lower() == 'arrowup'or \
+                                key.lower() == 'arrowdown':
                                 pass
                             elif key.lower() == 'backspace':
                                 last_keyup_value = last_keyup_value[:-1]
@@ -633,7 +651,9 @@ def batch_steps(index_list):
                                 key.lower() == 'meta' or \
                                 key.lower() == 'enter' or \
                                 key.lower() == 'arrowright' or \
-                                key.lower() == 'arrowleft':
+                                key.lower() == 'arrowleft'or \
+                                key.lower() == 'arrowup'or \
+                                key.lower() == 'arrowdown':
                                 key=''
                             elif key.lower() == 'backspace':
                                 key=''
