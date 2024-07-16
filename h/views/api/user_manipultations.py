@@ -533,6 +533,9 @@ def batch_steps(index_list):
                         print('print navigate>>>', resultTask['interaction_context'])
                         eventlist.append(createKeyupEvent(**last_keyup))
                         last_keyup = None
+                    if not resultTask['title']:
+                        parese_url = urlparse(resultTask['base_url'])
+                        resultTask['title'] = parese_url.netloc
                     if not last_navigate:
                         last_navigate = {
                         "type": resultTask['event_type'],
@@ -1243,7 +1246,7 @@ def message(request):
             message = make_message(
                 "instant_message",
                 datetime.now().strftime("%S%M%H%d%m%Y") + "_" + split_user(userid)["username"],
-                "ShareFlow recommendation",
+                "Data comic recommendation",
                 tad_result["message"],
                 datetime.now().strftime("%s%f"),
                 True if certainty and push_message else False,
