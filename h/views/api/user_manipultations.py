@@ -875,8 +875,21 @@ def batch_steps(index_list):
                         text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
                         eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
                         if tag == 'SELECT':
-                            print("slect>>>")
-                            pass
+                            description = "Click to select"
+                            eventlist.append({
+                                "type": resultTask['event_type'],
+                                "url" : resultTask['base_url'],
+                                "xpath" : resultTask['x_path'],
+                                "text" : '',
+                                "offsetX": offset_x,
+                                "offsetY": offset_y,
+                                "position": eventPosition,
+                                "title": resultTask['title'],
+                                "width": width,
+                                "height": height,
+                                "description" : description,
+                                "image": resultTask['image']
+                                })
                         elif tag == 'INPUT':
                             interaction_context = resultTask['interaction_context']
                             input_type = None
@@ -953,7 +966,7 @@ def batch_steps(index_list):
                                 "description" : getTextbyEvent(event_type, text_content, eventPosition),
                                 "image": resultTask['image'] if 'image' in resultTask else None})
                         else:
-                            print("here 3")
+                            print("here 3", tag)
                             eventlist.append({
                                 "type": event_type,
                                 "url" : str(resultTask['base_url']),
