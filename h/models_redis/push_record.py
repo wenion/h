@@ -5,6 +5,7 @@ from redis_om import Migrator
 from redis_om import Field, JsonModel, EmbeddedJsonModel
 from urllib.parse import urlparse
 from typing import Optional
+import json
 
 
 class PushRecord(JsonModel):
@@ -44,18 +45,23 @@ def delete_push_record(pk):
         return False
 
 
-def has_three_push(url, user_id):
+def stop_pushing(url, user_id):
     """
-    Checking whether the most recent three Shareflow Pushes for the user are for the same task page
+    Checking whether the most recent three Shareflow Pushes for the user are for the same task page, or if the previous push on this task page is greater than 0.9
     """
     try:
         query = PushRecord.find(PushRecord.push_to == user_id)
-        result = query.all()
+        result = query.copy(limit=3).sort_by("-timestamp").execute()
         if not result or len(result) == 0:
             return False
         count = 0
         for record in result:
             if record.url == url:
+                additional_info = json.loads(record.additional_info)
+                if additional_info:
+                    for task in additional_info:
+                        if task["certainty"] > 0.9:
+                            return True
                 count += 1
         if count == 3:
             return True
@@ -94,3 +100,4 @@ def fetch_all_push_record():
         return push_records if len(push_records) > 0 else None
     except:
         return None
+

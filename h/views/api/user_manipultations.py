@@ -1251,7 +1251,7 @@ def message(request):
     tad_url = urljoin(request.registry.settings.get("tad_url"), "task_classification")
     tad_response = None
     # only request for TAD Shareflow push when users are on task pages and the current task page has received less than 3 Shareflow Pushes
-    next = is_task_page(url) and not has_three_push(url, userid)
+    next = is_task_page(url) and not stop_pushing(url, userid)
     if next:
         try:
             tad_response = requests.get(tad_url, params={"userid": userid, "interval": int(interval)})
@@ -1266,14 +1266,14 @@ def message(request):
                                         url=url,
                                         push_type="SF",
                                         push_content=tad_result["message"],
-                                        additional_info="_[SEP]_".join(tids))
+                                        additional_info=json.dumps(tad_result["task_details"]))
                 if not same:
                     pr = add_push_record(timestamp=datetime.now().timestamp(),
                                         push_type="SF",
                                         push_to=userid,
                                         push_content=tad_result["message"],
                                         url=url,
-                                        additional_info="_[SEP]_".join(tids))
+                                        additional_info=json.dumps(tad_result["task_details"]))
                     pr.expire(360)  # the push records are stored for 3 minutes, then expired and removed
                     push_message = True
             message = make_message(

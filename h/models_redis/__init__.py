@@ -18,7 +18,7 @@ from h.models_redis.result import Result
 from h.models_redis.rating import Rating
 from h.models_redis.process_model import ProcessModel, fetch_all_process_model, fetch_process_model_by_session_creator, get_process_model, create_process_model, update_process_model, delete_process_model_by_session_creator, delete_process_model
 from h.models_redis.task_page import TaskPage, is_task_page, fetch_all_task_pages, fetch_task_page_name_id, add_task_page, delete_task_page, delete_task_page_name_id
-from h.models_redis.push_record import PushRecord, add_push_record, fetch_push_record, delete_push_record, has_three_push, same_as_previous
+from h.models_redis.push_record import PushRecord, add_push_record, fetch_push_record, delete_push_record, stop_pushing, same_as_previous
 
 __all__ = (
     "UserRole",
@@ -62,7 +62,7 @@ __all__ = (
     "add_push_record",
     "delete_push_record",
     "fetch_push_record",
-    "has_three_push",
+    "stop_pushing",
     "same_as_previous"
 )
 
