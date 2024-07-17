@@ -1072,9 +1072,9 @@ def batch_steps(index_list):
 
 def createKeyupEvent(event_type, url, xpath, title, key, name, value):
     if name:
-        description = "Typing \"" + value + '"' + " in the \"" + name + "\" input box"
+        description = "Type \"" + value + '"' + " in the \"" + name + "\" input box"
     else:
-        description = "Typing \"" + value + '"'
+        description = "Type \"" + value + '"'
 
     return {
         'type': event_type,
