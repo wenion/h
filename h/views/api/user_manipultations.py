@@ -34,7 +34,7 @@ from h.models_redis import get_highlights_from_openai, create_user_event, add_us
 from h.models_redis import get_user_status_by_userid, set_user_status
 from h.models_redis import get_user_event, update_user_event, fetch_all_user_events_by_session
 from h.models_redis import fetch_user_event_by_timestamp, batch_user_event_record, is_task_page
-from h.models_redis import add_push_record, delete_push_record, fetch_push_record, has_three_push, same_as_previous
+from h.models_redis import add_push_record, delete_push_record, fetch_push_record, stop_pushing, same_as_previous
 from h.services import OrganisationEventPushLogService
 
 
