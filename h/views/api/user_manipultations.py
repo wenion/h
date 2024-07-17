@@ -618,6 +618,7 @@ def batch_steps(index_list):
                                 key.lower() == 'control' or \
                                 key.lower() == 'meta' or \
                                 key.lower() == 'enter' or \
+                                key.lower() == 'capslock' or \
                                 key.lower() == 'arrowright' or \
                                 key.lower() == 'arrowleft'or \
                                 key.lower() == 'arrowup'or \
@@ -650,6 +651,7 @@ def batch_steps(index_list):
                                 key.lower() == 'control' or \
                                 key.lower() == 'meta' or \
                                 key.lower() == 'enter' or \
+                                key.lower() == 'capslock' or \
                                 key.lower() == 'arrowright' or \
                                 key.lower() == 'arrowleft'or \
                                 key.lower() == 'arrowup'or \
@@ -745,7 +747,7 @@ def batch_steps(index_list):
                                     if name and value:
                                         if value.isdigit():
                                             value = 'off' if int(value) == 0 else 'on'
-                                        description = "Turn " + value + " the \"" + name +"\" dropdown"
+                                        description = "Turn " + value + " the \"" + name +"\""
 
                                 eventlist.append({
                                     "type": last_click['type'],
