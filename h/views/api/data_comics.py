@@ -249,6 +249,8 @@ def create_images_DC(data):
                 event['image']=createImageNavigate(event['url'],event['title'],code_process)
             elif event['type']=='Click':
                 event['image']=createBasicImage(event['type'],event['description'],1,code_process)
+            elif event['type'].lower() == 'submit':
+                event['image']=createBasicImage('Click',event['description'],1,code_process)
             elif event['type']=='Scroll':
                 event['image']=createBasicImage(event['type'],"",1,code_process)
             elif event['type']=='Select':
