@@ -1256,9 +1256,9 @@ def message(request):
     next = is_task_page(url) and not stop_pushing(url, userid)
     if next:
         try:
-            create_user_event("server-record", "TAD REQUEST", url, url, userid)
+            # create_user_event("server-record", "TAD REQUEST", url, url, userid)
             tad_response = requests.get(tad_url, params={"userid": userid, "interval": int(interval)})
-            create_user_event("server-record", "TAD RESPONSE", "succ", url, userid)
+            # create_user_event("server-record", "TAD RESPONSE", "succ", url, userid)
             tad_result = tad_response.json()
             certainty = tad_result["certainty"] if "certainty" in tad_result else 0
             rep_interval = tad_result["interval"] if "interval" in tad_result else defalut_interval
@@ -1295,7 +1295,7 @@ def message(request):
             message["should_next"] = next
             response.append(message)
         except Exception as e:
-            create_user_event("server-record", "TAD RESPONSE", "fail", url, userid)
+            # create_user_event("server-record", "TAD RESPONSE", "fail", url, userid)
             response.append(
                 make_message(
                     "error_message",
