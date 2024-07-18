@@ -1253,60 +1253,37 @@ def message(request):
     tad_url = urljoin(request.registry.settings.get("tad_url"), "task_classification")
     tad_response = None
     # only request for TAD Shareflow push when users are on task pages and the current task page has received less than 3 Shareflow Pushes
-    next = is_task_page(url)
-    if next:
-        next = not stop_pushing(url, userid)
-    if next:
-        try:
-            # create_user_event("server-record", "TAD REQUEST", url, url, userid)
-            tad_response = requests.get(tad_url, params={"userid": userid, "interval": int(interval)})
-            # create_user_event("server-record", "TAD RESPONSE", "succ", url, userid)
-            tad_result = tad_response.json()
-            certainty = tad_result["certainty"] if "certainty" in tad_result else 0
-            rep_interval = tad_result["interval"] if "interval" in tad_result else defalut_interval
-            tids = tad_result["task_ids"] if "task_ids" in tad_result else []
-            push_message = False
-            if certainty > 0:
-                # only push the message if the current message is not exactly the same as the previous one
-                same = same_as_previous(user_id=userid,
-                                        url=url,
-                                        push_type="SF",
-                                        push_content=tad_result["message"],
-                                        additional_info=json.dumps(tad_result["task_details"]))
-                if not same:
-                    pr = add_push_record(timestamp=datetime.now().timestamp(),
-                                        push_type="SF",
-                                        push_to=userid,
-                                        push_content=tad_result["message"],
-                                        url=url,
-                                        additional_info=json.dumps(tad_result["task_details"]))
-                    pr.expire(360)  # the push records are stored for 3 minutes, then expired and removed
-                    push_message = True
-            message = make_message(
-                "instant_message",
-                datetime.now().strftime("%S%M%H%d%m%Y") + "_" + split_user(userid)["username"],
-                "Need help with this task?",
-                tad_result["message"],
-                datetime.now().strftime("%s%f"),
-                True if certainty and push_message else False,
-                True,
-                True if certainty and push_message else False,
-                tad_result["task_details"]
-                )
-            message["interval"] = rep_interval
-            message["should_next"] = next
-            response.append(message)
-        except Exception as e:
-            # create_user_event("server-record", "TAD RESPONSE", "fail", url, userid)
-            response.append(
-                make_message(
-                    "error_message",
-                    "pubid",
-                    "Error",
-                    str(e) + "! status code: " + str(tad_response.status_code) if tad_response else str(e),
-                    datetime.now().strftime("%s%f"),
-                    False, True, False)
+    try:
+        # create_user_event("server-record", "TAD REQUEST", url, url, userid)
+        tad_response = requests.get(tad_url, params={"userid": userid, "interval": int(interval), "url": unquote(url)})
+        # create_user_event("server-record", "TAD RESPONSE", "succ", url, userid)
+        tad_result = tad_response.json()
+        rep_interval = tad_result["interval"] if "interval" in tad_result else defalut_interval
+        message = make_message(
+            "instant_message",
+            datetime.now().strftime("%S%M%H%d%m%Y") + "_" + split_user(userid)["username"],
+            "Need help with this task?",
+            tad_result["message"],
+            datetime.now().strftime("%s%f"),
+            tad_result['show_flag'],
+            True,
+            tad_result['show_flag'],
+            tad_result["task_details"]
             )
+        message["interval"] = rep_interval
+        message["should_next"] = next
+        response.append(message)
+    except Exception as e:
+        # create_user_event("server-record", "TAD RESPONSE", "fail", url, userid)
+        response.append(
+            make_message(
+                "error_message",
+                "pubid",
+                "Error",
+                str(e) + "! status code: " + str(tad_response.status_code) if tad_response else str(e),
+                datetime.now().strftime("%s%f"),
+                False, True, False)
+        )
 
     for item in all:
         show_flag = False
