@@ -1283,7 +1283,7 @@ def message(request):
             message = make_message(
                 "instant_message",
                 datetime.now().strftime("%S%M%H%d%m%Y") + "_" + split_user(userid)["username"],
-                "Data comic recommendation",
+                "Need help with this task?",
                 tad_result["message"],
                 datetime.now().strftime("%s%f"),
                 True if certainty and push_message else False,
