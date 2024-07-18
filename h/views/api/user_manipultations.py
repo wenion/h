@@ -1258,6 +1258,7 @@ def message(request):
         tad_response = requests.get(tad_url, params={"userid": userid, "interval": int(interval), "url": unquote(url)})
         # create_user_event("server-record", "TAD RESPONSE", "succ", url, userid)
         tad_result = tad_response.json()
+        print('tad_result', tad_result)
         rep_interval = tad_result["interval"] if "interval" in tad_result else defalut_interval
         message = make_message(
             "instant_message",
@@ -1271,7 +1272,7 @@ def message(request):
             tad_result["task_details"]
             )
         message["interval"] = rep_interval
-        message["should_next"] = True
+        message["should_next"] = True if rep_interval != -1 else False
         response.append(message)
     except Exception as e:
         # create_user_event("server-record", "TAD RESPONSE", "fail", url, userid)
