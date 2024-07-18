@@ -1253,7 +1253,9 @@ def message(request):
     tad_url = urljoin(request.registry.settings.get("tad_url"), "task_classification")
     tad_response = None
     # only request for TAD Shareflow push when users are on task pages and the current task page has received less than 3 Shareflow Pushes
-    next = is_task_page(url) and not stop_pushing(url, userid)
+    next = is_task_page(url)
+    if next:
+        next = not stop_pushing(url, userid)
     if next:
         try:
             # create_user_event("server-record", "TAD REQUEST", url, url, userid)
