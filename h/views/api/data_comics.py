@@ -189,7 +189,7 @@ def positionTextCircule(label,heigth, width,maxCharacter,lenText):
     return img
 # This function center the text vertical align in the events
 def positionTextEvent(label,heigth,width):
-    img = np.zeros((heigth,width-8,3), np.uint8)#Cambiar 350
+    img = np.zeros((heigth,width-8,3), np.uint8)
     img.fill(255)
 
     tam=len(label)
@@ -199,26 +199,28 @@ def positionTextEvent(label,heigth,width):
     heigthtext=tam/48
     if heigthtext>=5:    
         heigthtext=4
-    pos=50
+    auxPos=0
     lenText=28
-    auxCont=0
     flagFinish=False
-    for x in range(0,tam,lenText):
-        x=x-auxCont
-        if (lenText+x)>=tam: text=label[x:tam]
-        else:text= label[x:lenText+x]
-        #if text[len(text)]!=''
+    posText=0
+    while posText<=tam:
+        if (lenText+posText)>=tam: text=label[posText:tam]
+        else:text= label[posText:lenText+posText]
         if cont>=140:
             text=text[:len(text)]+"..."
-            # print("CONT")
             flagFinish=True
-        elif len(text)>=lenText: 
-            pos=text.rfind(" ")
-            text=text[:pos]
-            pos=pos+1# for empty space
-            auxCont=auxCont+(lenText-pos)  
+        elif len(text)>=lenText and tam>len(text): 
+            auxPos=text.rfind(" ")
+            if auxPos!=-1: 
+                text=text[:auxPos]
+                auxPos=auxPos+1# for empty space
+            else: 
+                auxPos=lenText
+                text=text[:auxPos]
+        else: auxPos=lenText
         cv2.putText(img, text, (8,90+cont-(int(heigthtext)*18)), font, fontDescription, colorOrange, thickness,cv2.LINE_AA)
         cont= cont +20
+        posText=posText+auxPos
         if flagFinish: break
     #cv2.imshow("Event", img)
     #k = cv2.waitKey(0)
