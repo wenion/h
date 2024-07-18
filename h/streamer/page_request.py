@@ -21,6 +21,7 @@ def handle_web_page(message, registry=None):
         return
     data = message.payload
     page_url = data["url"]
+    plain_text = ''
     try:
         parser = html2text.HTML2Text()
         parser.ignore_links = True
@@ -40,7 +41,7 @@ def handle_web_page(message, registry=None):
     if is_task_page(page_url):
         return
 
-    create_user_event("server-record", "Additional REQUEST", plain_text, page_url, message.socket.identity.user.userid)
+    create_user_event("server-record", "Additional REQUEST", plain_text[0:30], page_url, message.socket.identity.user.userid)
     response = requests.post(url, data=data)
 
     if response.status_code == 200:
@@ -52,7 +53,7 @@ def handle_web_page(message, registry=None):
                     "payload": json_data
                 },
             )
-            create_user_event("server-record", "Additional RESPONSE", json_data, page_url, message.socket.identity.user.userid)
+            create_user_event("server-record", "Additional RESPONSE", json_data[0:30], page_url, message.socket.identity.user.userid)
         except ValueError:
             message.socket.send_json(
                 {
