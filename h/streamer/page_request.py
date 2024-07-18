@@ -53,7 +53,7 @@ def handle_web_page(message, registry=None):
                     "payload": json_data
                 },
             )
-            create_user_event("server-record", "Additional RESPONSE", json_data[0:30], page_url, message.socket.identity.user.userid)
+            create_user_event("server-record", "Additional RESPONSE", json_data, page_url, message.socket.identity.user.userid)
         except ValueError:
             message.socket.send_json(
                 {
