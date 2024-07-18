@@ -201,7 +201,7 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route("api.bookmark", "/api/bookmark")
     config.add_route("api.rating", "/api/rating")
     config.add_route("api.recommendation", "/api/recommendation")
-    config.add_route("api.message", "/api/message")
+    config.add_route("api.pull", "/api/pull")
     config.add_route(
         "api.upload", "/api/upload"# , factory="h.traversal:FileRoot" TODO implement when finish database
     )

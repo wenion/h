@@ -1231,7 +1231,7 @@ def make_message(type, pubid, event_name, message, date, show_flag, unread_flag,
 
 @api_config(
     versions=["v1", "v2"],
-    route_name="api.message",
+    route_name="api.pull",
     request_method="GET",
     # permission=Permission.Annotation.CREATE,
     link_name="message",
