@@ -19,6 +19,7 @@ from h.models_redis.rating import Rating
 from h.models_redis.process_model import ProcessModel, fetch_all_process_model, fetch_process_model_by_session_creator, get_process_model, create_process_model, update_process_model, delete_process_model_by_session_creator, delete_process_model
 from h.models_redis.task_page import TaskPage, is_task_page, fetch_all_task_pages, fetch_task_page_name_id, add_task_page, delete_task_page, delete_task_page_name_id
 from h.models_redis.push_record import PushRecord, add_push_record, fetch_push_record, delete_push_record, stop_pushing, same_as_previous
+from h.models_redis.data_comic import DataComic, get_comic, create_comic, update_comic, delete_comic, fetch_comic
 
 __all__ = (
     "UserRole",
@@ -63,7 +64,9 @@ __all__ = (
     "delete_push_record",
     "fetch_push_record",
     "stop_pushing",
-    "same_as_previous"
+    "same_as_previous",
+    "DataComic",
+    "fetch_comic",
 )
 
 
@@ -358,7 +361,7 @@ def _save_in_redis(event):
     if is_valid:
         try:
             user_event = UserEvent(**event)
-            print("event", event)
+            # print("event", event)
             user_event.save()
         except Exception as e:
             return {"error": repr(e)}

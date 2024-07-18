@@ -17,9 +17,11 @@ objects and Pyramid ACLs in :mod:`h.traversal`.
 from urllib.parse import urljoin
 import requests
 from pyramid import i18n
+import json
 
 from h.models_redis import start_user_event_record, finish_user_event_record
 from h.models_redis import batch_user_event_record, update_user_event_record, delete_user_event_record
+from h.models_redis import fetch_comic, create_comic
 from h.views.api.user_manipultations import batch_steps
 from h.views.api.data_comics_process import data_commics_process
 from h.security import Permission
@@ -91,9 +93,17 @@ def read(context, request):
     record = context.user_event_record
     results = batch_steps([record, ])
     if len(results):
-        dc_1 = data_commics_process(results)
-        dc = create_images_DC(dc_1) if dc_1 else None
-        return {**results[0], "dc": dc}
+        shareflow = results[0]
+        dc_result = fetch_comic(shareflow['session_id'], shareflow['userid'])
+        if dc_result:
+            # decode dc
+            dc = json.loads(dc_result.content)
+        else:
+            dc_1 = data_commics_process(results)
+            dc = create_images_DC(dc_1) if dc_1 else None
+            # save it
+            create_comic(shareflow['session_id'], shareflow['userid'], json.dumps(dc))
+        return {**shareflow, "dc": dc}
     else:
         return {
             "taskName": record.task_name,
