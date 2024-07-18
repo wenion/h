@@ -1271,7 +1271,7 @@ def message(request):
             tad_result["task_details"]
             )
         message["interval"] = rep_interval
-        message["should_next"] = next
+        message["should_next"] = True
         response.append(message)
     except Exception as e:
         # create_user_event("server-record", "TAD RESPONSE", "fail", url, userid)
