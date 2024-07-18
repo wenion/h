@@ -832,7 +832,7 @@ def batch_steps(index_list):
                                     description = "Select the option \"" + value + "\" in the \"" + name +"\" dropdown"
 
                             eventlist.append({
-                                "type": last_click['type'],
+                                "type": "select",
                                 "url" : last_click['url'],
                                 "xpath" : last_click['xpath'],
                                 "text" : last_click['text'],
