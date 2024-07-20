@@ -103,6 +103,11 @@ def read(context, request):
             dc = create_images_DC(dc_1) if dc_1 else None
             # save it
             create_comic(shareflow['session_id'], shareflow['userid'], json.dumps(dc))
+        if 'KM_Process' in dc and dc['KM_Process']:
+            index = 1
+            for k in dc['KM_Process']:
+                print('code_', index, ": ", k['code'])
+                index += 1
         return {**shareflow, "dc": dc}
     else:
         return {
