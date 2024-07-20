@@ -529,10 +529,10 @@ def batch_steps(index_list):
                         eventlist.append(last_scroll)
                         flagScroll = False
                 elif resultTask['event_type'] == 'navigate':
-                    if last_keyup:
-                        print('print navigate>>>', resultTask['interaction_context'])
-                        eventlist.append(createKeyupEvent(**last_keyup))
-                        last_keyup = None
+                    # if last_keyup:
+                    #     print('print navigate>>>', resultTask['interaction_context'])
+                    #     eventlist.append(createKeyupEvent(**last_keyup))
+                    #     last_keyup = None
                     if not resultTask['title']:
                         parese_url = urlparse(resultTask['base_url'])
                         resultTask['title'] = parese_url.netloc
@@ -565,11 +565,11 @@ def batch_steps(index_list):
                         eventlist.append(last_navigate)
                     flagScroll=False
                 elif str(resultTask['event_type'])=="recording":
-                    if last_keyup:
-                        print('print recording>>>')
-                        # eventlist.append(last_keyup)
-                        eventlist.append(createKeyupEvent(**last_keyup))
-                        last_keyup = None
+                    # if last_keyup:
+                    #     print('print recording>>>')
+                    #     # eventlist.append(last_keyup)
+                    #     eventlist.append(createKeyupEvent(**last_keyup))
+                    #     last_keyup = None
                     eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": 0, "offsetY": 0, "position": "N/A", "title":resultTask['title'], "description" : resultTask['tag_name'] + ' to ', "image": resultTask['image']})
                 elif event_type == "getfocus":
                     title = resultTask['title']
@@ -603,11 +603,11 @@ def batch_steps(index_list):
                         name = interaction_context.get('name', None)
                         value = interaction_context.get('value', None)
 
-                    if last_keyup and last_keyup['xpath'] != xpath:
-                        # last_keyup.pop('interaction_context')
-                        # eventlist.append(last_keyup)
-                        eventlist.append(createKeyupEvent(**last_keyup))
-                        last_keyup = None
+                    # if last_keyup and last_keyup['xpath'] != xpath:
+                    #     # last_keyup.pop('interaction_context')
+                    #     # eventlist.append(last_keyup)
+                    #     eventlist.append(createKeyupEvent(**last_keyup))
+                    #     last_keyup = None
 
                     if not value:
                         if last_keyup and key:
@@ -860,11 +860,11 @@ def batch_steps(index_list):
                           'interaction_context', resultTask['interaction_context'],
                           'event_source', resultTask['event_source'],
                           'x_path',resultTask['x_path'])
-                    if last_keyup:
-                        print('click>>>', last_keyup)
-                        # eventlist.append(last_keyup)
-                        eventlist.append(createKeyupEvent(**last_keyup))
-                        last_keyup = None
+                    # if last_keyup:
+                    #     print('click>>>', last_keyup)
+                    #     # eventlist.append(last_keyup)
+                    #     eventlist.append(createKeyupEvent(**last_keyup))
+                    #     last_keyup = None
                     tag = resultTask['tag_name']
                     if tag == "SIDEBAR-TAB" or tag == "HYPOTHESIS-SIDEBAR":
                         pass
@@ -1005,11 +1005,11 @@ def batch_steps(index_list):
                           'interaction_context', resultTask['interaction_context'],
                           'event_source', resultTask['event_source'],
                           'x_path',resultTask['x_path'])
-                    if last_keyup:
-                        print("submit >>>")
-                        # eventlist.append(last_keyup)
-                        eventlist.append(createKeyupEvent(**last_keyup))
-                        last_keyup = None
+                    # if last_keyup:
+                    #     print("submit >>>")
+                    #     # eventlist.append(last_keyup)
+                    #     eventlist.append(createKeyupEvent(**last_keyup))
+                    #     last_keyup = None
                     value = resultTask.get('text_content')
                     description = 'Click the \"' + value + '\" to submit'
                     eventlist.append({
@@ -1027,11 +1027,11 @@ def batch_steps(index_list):
                         "image": resultTask['image'] if 'image' in resultTask else None})
                 else:
                     if str(resultTask['text_content']) != "" and str(resultTask['tag_name']) != "SIDEBAR-TAB" and str(resultTask['tag_name']) != "HYPOTHESIS-SIDEBAR":
-                        if last_keyup:
-                            print('print else>>>', resultTask['event_type'], resultTask['interaction_context'], ">>>>\n\n")
-                            # eventlist.append(last_keyup)
-                            eventlist.append(createKeyupEvent(**last_keyup))
-                            last_keyup = None
+                        # if last_keyup:
+                        #     print('print else>>>', resultTask['event_type'], resultTask['interaction_context'], ">>>>\n\n")
+                        #     # eventlist.append(last_keyup)
+                        #     eventlist.append(createKeyupEvent(**last_keyup))
+                        #     last_keyup = None
                         width = resultTask['width']
                         height = resultTask['height']
                         offset_x = resultTask['offset_x']
