@@ -788,48 +788,28 @@ def batch_steps(index_list):
                                     "image": resultTask['image'] if 'image' in resultTask else None
                                 })
                     elif tag.lower() == 'text' or tag.lower() == 'textarea': # last keyup
-                        if last_keyup and xpath == last_keyup['xpath']:
-                            print("keyup")
-                            keyup_value = last_keyup['value']
-
-                            value = resultTask['text_content']
-                            interaction_context = resultTask.get('interaction_context', '')
-                            try:
-                                interaction_context = json.loads(interaction_context)
-                            except json.JSONDecodeError:
-                                pass
-                            else:
-                                name = interaction_context.get('name')
-                                value = interaction_context.get('value')
-
-                            decoded_value = text_maker.handle(value).strip()
-                            if keyup_value != decoded_value:
-                                last_keyup['value'] = decoded_value
-                            else:
-                                print("no need to correct")
-                        elif not last_keyup:
-                            print("last keyup", last_keyup)
-                            # if tag.lower() == 'textarea':
-                            #     value = resultTask['text_content']
-                            #     interaction_context = resultTask.get('interaction_context', '')
-                            #     try:
-                            #         interaction_context = json.loads(interaction_context)
-                            #     except json.JSONDecodeError:
-                            #         pass
-                            #     else:
-                            #         name = interaction_context.get('name')
-                            #         value = interaction_context.get('value')
-
-                            #     decoded_value = text_maker.handle(value).strip()
-                            #     last_keyup = {
-                            #         'event_type': resultTask['event_type'],
-                            #         'url': resultTask['base_url'],
-                            #         "xpath" : resultTask.get('x_path'),
-                            #         "title": resultTask.get('title', resultTask['event_source']),
-                            #         'key': 'change',
-                            #         'name': name,
-                            #         'value': decoded_value
-                            #     }
+                        value = resultTask.get('text_content', '')
+                        interaction_context = resultTask.get('interaction_context', '')
+                        description = 'Type '
+                        try:
+                            interaction_context = json.loads(interaction_context)
+                        except json.JSONDecodeError:
+                            pass
+                        else:
+                            value = interaction_context.get('value')
+                            description = "Type \"" + value
+                        eventlist.append({
+                            "type": "keyup",
+                            "url" : resultTask.get('url', ''),
+                            "xpath" : resultTask['x_path'],
+                            "text" : resultTask.get('text_content',''),
+                            "position": str(eventPosition),
+                            "title": resultTask['title'],
+                            "width": width,
+                            "height": height,
+                            "description" : description,
+                            "image": resultTask['image'] if 'image' in resultTask else None
+                        })
                     elif tag.lower() == 'select': # last click
                         print("lask click select>>>")
                         if last_click['xpath'] == xpath:
