@@ -69,9 +69,9 @@ process_map = {
 
         'SP3.7a Filling information': ['Type', 'Click'],
         'SP3.7b Filling information': ['Click', 'Type'],
-        'SP3.7c Filling information': ['Click', 'Click', 'Type'],
+        'SP3.7c Filling information': ['Click', 'Click', 'Type', 'Click'],
         'SP3.9a Filling information': ['Type', 'Type', 'Type', 'Type'],
-        'SP3.10a Filling information': ['Click', 'Type', 'Type', 'Click'],
+        'SP3.10a Filling information': ['Click', 'Type', 'Type'],
         'SP3.10b Filling information': ['Click', 'Type', 'Type', 'Type', 'Click'],
         'SP3.10c Filling information': ['Click', 'Type', 'Click'],
 }
