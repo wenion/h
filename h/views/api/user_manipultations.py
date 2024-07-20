@@ -777,7 +777,7 @@ def batch_steps(index_list):
 
                                 eventlist.append({
                                     "type": "keyup",
-                                    "url" : resultTask['url'],
+                                    "url" : resultTask.get('url', ''),
                                     "xpath" : resultTask['x_path'],
                                     "text" : resultTask.get('text_content',''),
                                     "position": str(eventPosition),
