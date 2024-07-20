@@ -731,7 +731,7 @@ def batch_steps(index_list):
                                 height = last_click['height']
                                 offset_x = last_click['offset_x']
                                 offset_y = last_click['offset_y']
-                                eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
+                                eventPosition=getPositionViewport(width,height,offset_x,offset_y)
                                 text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
                                 eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
 
@@ -812,7 +812,7 @@ def batch_steps(index_list):
                             height = last_click['height']
                             offset_x = last_click['offset_x']
                             offset_y = last_click['offset_y']
-                            eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
+                            eventPosition=getPositionViewport(width,height,offset_x,offset_y)
                             text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
                             eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
                             print("event description", eventDescription)
@@ -873,7 +873,7 @@ def batch_steps(index_list):
                         height = resultTask['height']
                         offset_x = resultTask['offset_x']
                         offset_y = resultTask['offset_y']
-                        eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
+                        eventPosition=getPositionViewport(width,height,offset_x,offset_y)
                         text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
                         eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
                         if tag == 'SELECT':
@@ -913,7 +913,7 @@ def batch_steps(index_list):
                                 height = resultTask['height']
                                 offset_x = resultTask['offset_x']
                                 offset_y = resultTask['offset_y']
-                                eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
+                                eventPosition=getPositionViewport(width,height,offset_x,offset_y)
                                 interaction_context = resultTask['interaction_context']
                                 description = "Click " + eventPosition
                                 try:
@@ -1046,7 +1046,7 @@ def batch_steps(index_list):
                                   'interaction_context', resultTask['interaction_context'],
                                   'event_source', resultTask['event_source'],
                                   'x_path',resultTask['x_path'])
-                        eventPosition=getPositionViewport(int(width),int(height),int(offset_x),int(offset_y))
+                        eventPosition=getPositionViewport(width,height,offset_x,offset_y)
                         text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
                         eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
                         if eventDescription!="No description":
@@ -1117,41 +1117,44 @@ def getTextbyEvent(event_type, text_content, eventPosition):
 
 
 def getPositionViewport(screen_width, screen_height, offset_x, offset_y):
-    if screen_width and screen_height and offset_x and offset_y:
-        screen_width = int(screen_width)
-        screen_height = int(screen_height)
-        offset_x = int(offset_x)
-        offset_y = int(offset_y)
-        horizontal_threshold = screen_width / 4
-        upper_vertical_threshold = screen_height / 4
-        lower_vertical_threshold = screen_height - screen_height / 4
+    try:
+        if screen_width and screen_height and offset_x and offset_y:
+            screen_width = int(screen_width)
+            screen_height = int(screen_height)
+            offset_x = int(offset_x)
+            offset_y = int(offset_y)
+            horizontal_threshold = screen_width / 4
+            upper_vertical_threshold = screen_height / 4
+            lower_vertical_threshold = screen_height - screen_height / 4
 
-        if offset_y < upper_vertical_threshold:
-            vertical_position = 'top'
-        elif offset_y > lower_vertical_threshold:
-            vertical_position = 'bottom'
+            if offset_y < upper_vertical_threshold:
+                vertical_position = 'top'
+            elif offset_y > lower_vertical_threshold:
+                vertical_position = 'bottom'
+            else:
+                vertical_position = 'center'
+                # vertical_position = 'bottom'
+
+            if offset_x < horizontal_threshold:
+                horizontal_position = 'left'
+            elif offset_x > screen_width - horizontal_threshold:
+                horizontal_position = 'right'
+            else:
+                horizontal_position = 'center'
+                # horizontal_position = 'right'
+
+            # Determine final position
+            if vertical_position == 'center' and horizontal_position == 'center':
+                return 'center'
+            elif vertical_position == 'center' and horizontal_position != 'center':
+                return f"{horizontal_position}"
+            elif vertical_position != 'center' and horizontal_position == 'center':
+                return f"{vertical_position}"
+            elif vertical_position != 'center' and horizontal_position != 'center':
+                return f"{vertical_position} {horizontal_position}"
         else:
-            vertical_position = 'center'
-            # vertical_position = 'bottom'
-
-        if offset_x < horizontal_threshold:
-            horizontal_position = 'left'
-        elif offset_x > screen_width - horizontal_threshold:
-            horizontal_position = 'right'
-        else:
-            horizontal_position = 'center'
-            # horizontal_position = 'right'
-
-        # Determine final position
-        if vertical_position == 'center' and horizontal_position == 'center':
-            return 'center'
-        elif vertical_position == 'center' and horizontal_position != 'center':
-            return f"{horizontal_position}"
-        elif vertical_position != 'center' and horizontal_position == 'center':
-            return f"{vertical_position}"
-        elif vertical_position != 'center' and horizontal_position != 'center':
-            return f"{vertical_position} {horizontal_position}"
-    else:
+            return 'N/A'
+    except Exception as e:
         return 'N/A'
 
 
