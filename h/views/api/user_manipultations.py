@@ -762,6 +762,31 @@ def batch_steps(index_list):
                                     "height": height,
                                     "description" : description,
                                     "image": last_click['image']})
+                            else:
+                                interaction_context = resultTask['interaction_context']
+                                description = 'Type '
+                                try:
+                                    interaction_context = json.loads(interaction_context)
+                                except json.JSONDecodeError:
+                                    pass
+                                else:
+                                    name = interaction_context.get('name', None)
+                                    value = interaction_context.get('value', None)
+                                    if name and value:
+                                        description = "Type \"" + value
+
+                                eventlist.append({
+                                    "type": "keyup",
+                                    "url" : resultTask['url'],
+                                    "xpath" : resultTask['x_path'],
+                                    "text" : resultTask.get('text_content',''),
+                                    "position": str(eventPosition),
+                                    "title": resultTask['title'],
+                                    "width": width,
+                                    "height": height,
+                                    "description" : description,
+                                    "image": resultTask['image'] if 'image' in resultTask else None
+                                })
                     elif tag.lower() == 'text' or tag.lower() == 'textarea': # last keyup
                         if last_keyup and xpath == last_keyup['xpath']:
                             print("keyup")
