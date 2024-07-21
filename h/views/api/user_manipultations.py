@@ -736,7 +736,7 @@ def batch_steps(index_list):
                             eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
 
                             interaction_context = resultTask['interaction_context']
-                            description = 'Tick the checkbox'
+                            description = 'Check the checkbox'
                             try:
                                 interaction_context = json.loads(interaction_context)
                             except json.JSONDecodeError:
@@ -747,7 +747,11 @@ def batch_steps(index_list):
                                 if name and value:
                                     if value.isdigit():
                                         value = 'off' if int(value) == 0 else 'on'
-                                    description = "Turn " + value + " the \"" + name +"\""
+                                        description = "Turn " + value + " the \"" + name +"\""
+                                    if value.lower() == 'false':
+                                        description = "Uncheck the \"" + name + "\" checkbox"
+                                    if value.lower() == 'true':
+                                        description = "Check the \"" + name + "\" checkbox"
 
                             eventlist.append({
                                 "type": last_click['type'],
