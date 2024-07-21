@@ -137,12 +137,17 @@ def update(context, request):
     data = request.json_body
     action = data["action"]
     if action == "finish":
-        session = finish_user_event_record(context.pk, data["endstamp"])
-        results = batch_steps([session,])
         dc = None
-        if len(results):
-            dc_1 = data_commics_process(results)
-            dc = create_images_DC(dc_1) if dc_1 else None
+        results = []
+        try:
+            session = finish_user_event_record(context.pk, data["endstamp"])
+            results = batch_steps([session,])
+        except Exception as e:
+            pass
+        else:
+            if len(results):
+                dc_1 = data_commics_process(results)
+                dc = create_images_DC(dc_1) if dc_1 else None
 
         # Steve: create process model after Shareflow recording completes
         try:
