@@ -725,68 +725,68 @@ def batch_steps(index_list):
                                 if last_keyup['value'] != value:
                                     last_keyup['value'] = value
 
-                        if last_click and xpath == last_click['xpath']:
-                            if input_type == 'checkbox': # Edit Mode
-                                width = last_click['width']
-                                height = last_click['height']
-                                offset_x = last_click['offset_x']
-                                offset_y = last_click['offset_y']
-                                eventPosition=getPositionViewport(width,height,offset_x,offset_y)
-                                text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
-                                eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
+                        # if last_click and xpath == last_click['xpath']:
+                        if input_type == 'checkbox': # Edit Mode
+                            width = last_click['width']
+                            height = last_click['height']
+                            offset_x = last_click['offset_x']
+                            offset_y = last_click['offset_y']
+                            eventPosition=getPositionViewport(width,height,offset_x,offset_y)
+                            text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
+                            eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
 
-                                interaction_context = resultTask['interaction_context']
-                                description = 'Tick the checkbox'
-                                try:
-                                    interaction_context = json.loads(interaction_context)
-                                except json.JSONDecodeError:
-                                    pass
-                                else:
-                                    name = interaction_context.get('name', None)
-                                    value = interaction_context.get('value', None)
-                                    if name and value:
-                                        if value.isdigit():
-                                            value = 'off' if int(value) == 0 else 'on'
-                                        description = "Turn " + value + " the \"" + name +"\""
-
-                                eventlist.append({
-                                    "type": last_click['type'],
-                                    "url" : last_click['url'],
-                                    "xpath" : last_click['xpath'],
-                                    "text" : text_content,
-                                    "offsetX": offset_x,
-                                    "offsetY": offset_y,
-                                    "position": eventPosition,
-                                    "title": last_click['title'],
-                                    "width": width,
-                                    "height": height,
-                                    "description" : description,
-                                    "image": last_click['image']})
+                            interaction_context = resultTask['interaction_context']
+                            description = 'Tick the checkbox'
+                            try:
+                                interaction_context = json.loads(interaction_context)
+                            except json.JSONDecodeError:
+                                pass
                             else:
-                                interaction_context = resultTask['interaction_context']
-                                description = 'Type '
-                                try:
-                                    interaction_context = json.loads(interaction_context)
-                                except json.JSONDecodeError:
-                                    pass
-                                else:
-                                    name = interaction_context.get('name', None)
-                                    value = interaction_context.get('value', None)
-                                    if name and value:
-                                        description = "Type \"" + value
+                                name = interaction_context.get('name', None)
+                                value = interaction_context.get('value', None)
+                                if name and value:
+                                    if value.isdigit():
+                                        value = 'off' if int(value) == 0 else 'on'
+                                    description = "Turn " + value + " the \"" + name +"\""
 
-                                eventlist.append({
-                                    "type": "keyup",
-                                    "url" : resultTask.get('url', ''),
-                                    "xpath" : resultTask['x_path'],
-                                    "text" : resultTask.get('text_content',''),
-                                    "position": str(eventPosition),
-                                    "title": resultTask['title'],
-                                    "width": width,
-                                    "height": height,
-                                    "description" : description,
-                                    "image": resultTask['image'] if 'image' in resultTask else None
-                                })
+                            eventlist.append({
+                                "type": last_click['type'],
+                                "url" : last_click['url'],
+                                "xpath" : last_click['xpath'],
+                                "text" : text_content,
+                                "offsetX": offset_x,
+                                "offsetY": offset_y,
+                                "position": eventPosition,
+                                "title": last_click['title'],
+                                "width": width,
+                                "height": height,
+                                "description" : description,
+                                "image": last_click['image']})
+                        else:
+                            interaction_context = resultTask['interaction_context']
+                            description = 'Type '
+                            try:
+                                interaction_context = json.loads(interaction_context)
+                            except json.JSONDecodeError:
+                                pass
+                            else:
+                                name = interaction_context.get('name', None)
+                                value = interaction_context.get('value', None)
+                                if name and value:
+                                    description = "Type \"" + value
+
+                            eventlist.append({
+                                "type": "keyup",
+                                "url" : resultTask.get('url', ''),
+                                "xpath" : resultTask['x_path'],
+                                "text" : resultTask.get('text_content',''),
+                                "position": str(eventPosition),
+                                "title": resultTask['title'],
+                                "width": width,
+                                "height": height,
+                                "description" : description,
+                                "image": resultTask['image'] if 'image' in resultTask else None
+                            })
                     elif tag.lower() == 'text' or tag.lower() == 'textarea': # last keyup
                         value = resultTask.get('text_content', '')
                         interaction_context = resultTask.get('interaction_context', '')
