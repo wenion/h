@@ -254,7 +254,7 @@ def create_images_DC(data):
             elif event['type'].lower() == 'submit':
                 event['image']=createBasicImage('Click',event['description'],1,code_process)
             elif event['type']=='Scroll':
-                event['image']=createBasicImage(event['type'],event['text'],1,code_process)
+                event['image']=createBasicImage(event['type'],event.get('text', '').capitalize(),1,code_process)
             elif event['type']=='Select':
                 event['image']=createBasicImage(event['type'],event['description'],1,code_process)
             elif event['type']=='Type':
