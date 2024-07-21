@@ -743,6 +743,8 @@ def batch_steps(index_list):
                                     if value.isdigit():
                                         value = 'off' if int(value) == 0 else 'on'
                                         description = "Turn " + value + " the \"" + name +"\""
+                                    if value.lower() == 'off' or value.lower() == 'on':
+                                        description = "Turn " + value + " the \"" + name +"\""
                                     if value.lower() == 'false':
                                         description = "Uncheck the \"" + name + "\" checkbox"
                                     if value.lower() == 'true':
