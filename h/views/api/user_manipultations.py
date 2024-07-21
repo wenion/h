@@ -745,7 +745,7 @@ def batch_steps(index_list):
                                         description = "Check the \"" + name + "\" checkbox"
 
                                 eventlist.append({
-                                    "type": resultTask['event_type'],
+                                    "type": 'click',
                                     "url" : resultTask['base_url'],
                                     "xpath" : resultTask['x_path'],
                                     "text" : text_content,
@@ -772,7 +772,7 @@ def batch_steps(index_list):
 
                             eventlist.append({
                                 "type": "keyup",
-                                "url" : resultTask.get('url', ''),
+                                "url" : resultTask.get('base_url', ''),
                                 "xpath" : resultTask['x_path'],
                                 "text" : resultTask.get('text_content',''),
                                 "position": str(eventPosition),
