@@ -499,6 +499,7 @@ def batch_steps(index_list):
         textKeydown=""
         last_click = None
         last_keyup = None
+        last_change = None
         last_navigate = None
         last_scroll = None
         flagScroll=True
@@ -572,6 +573,9 @@ def batch_steps(index_list):
                     #     last_keyup = None
                     eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": 0, "offsetY": 0, "position": "N/A", "title":resultTask['title'], "description" : resultTask['tag_name'] + ' to ', "image": resultTask['image']})
                 elif event_type == "getfocus":
+                    if last_change:
+                        eventlist.append(last_change)
+                        last_change = None
                     title = resultTask['title']
                     if not resultTask['title']:
                         title = urlparse(resultTask['base_url']).netloc
@@ -782,7 +786,7 @@ def batch_steps(index_list):
                                 "description" : description,
                                 "image": resultTask['image'] if 'image' in resultTask else None
                             })
-                    elif tag.lower() == 'text' or tag.lower() == 'textarea': # last keyup
+                    elif tag.lower() == 'textarea': # last keyup
                         value = resultTask.get('text_content', '')
                         interaction_context = resultTask.get('interaction_context', '')
                         description = 'Type '
@@ -792,19 +796,32 @@ def batch_steps(index_list):
                             pass
                         else:
                             value = interaction_context.get('value')
-                            description = "Type \"" + value
-                        eventlist.append({
-                            "type": "keyup",
-                            "url" : resultTask.get('url', ''),
-                            "xpath" : resultTask['x_path'],
-                            "text" : resultTask.get('text_content',''),
-                            "position": str(eventPosition),
-                            "title": resultTask['title'],
-                            "width": width,
-                            "height": height,
-                            "description" : description,
-                            "image": resultTask['image'] if 'image' in resultTask else None
-                        })
+                            if value:
+                                description = "Type \"" + value
+                                # eventlist.append({
+                                #     "type": "keyup",
+                                #     "url" : resultTask.get('url', ''),
+                                #     "xpath" : resultTask['x_path'],
+                                #     "text" : resultTask.get('text_content',''),
+                                #     "position": str(eventPosition),
+                                #     "title": resultTask['title'],
+                                #     "width": width,
+                                #     "height": height,
+                                #     "description" : description,
+                                #     "image": resultTask['image'] if 'image' in resultTask else None
+                                # })
+                                last_change = {
+                                    "type": "keyup",
+                                    "url" : resultTask.get('url', ''),
+                                    "xpath" : resultTask['x_path'],
+                                    "text" : resultTask.get('text_content',''),
+                                    "position": str(eventPosition),
+                                    "title": resultTask['title'],
+                                    "width": width,
+                                    "height": height,
+                                    "description" : description,
+                                    "image": resultTask['image'] if 'image' in resultTask else None
+                                }
                     elif tag.lower() == 'select': # last click
                         print("lask click select>>>")
                         if last_click['xpath'] == xpath:
@@ -860,11 +877,9 @@ def batch_steps(index_list):
                           'interaction_context', resultTask['interaction_context'],
                           'event_source', resultTask['event_source'],
                           'x_path',resultTask['x_path'])
-                    # if last_keyup:
-                    #     print('click>>>', last_keyup)
-                    #     # eventlist.append(last_keyup)
-                    #     eventlist.append(createKeyupEvent(**last_keyup))
-                    #     last_keyup = None
+                    if last_change:
+                        eventlist.append(last_change)
+                        last_change = None
                     tag = resultTask['tag_name']
                     if tag == "SIDEBAR-TAB" or tag == "HYPOTHESIS-SIDEBAR":
                         pass
@@ -1005,11 +1020,9 @@ def batch_steps(index_list):
                           'interaction_context', resultTask['interaction_context'],
                           'event_source', resultTask['event_source'],
                           'x_path',resultTask['x_path'])
-                    # if last_keyup:
-                    #     print("submit >>>")
-                    #     # eventlist.append(last_keyup)
-                    #     eventlist.append(createKeyupEvent(**last_keyup))
-                    #     last_keyup = None
+                    if last_change:
+                        eventlist.append(last_change)
+                        last_change = None
                     value = resultTask.get('text_content')
                     description = 'Click the \"' + value + '\" to submit'
                     eventlist.append({
@@ -1027,11 +1040,9 @@ def batch_steps(index_list):
                         "image": resultTask['image'] if 'image' in resultTask else None})
                 else:
                     if str(resultTask['text_content']) != "" and str(resultTask['tag_name']) != "SIDEBAR-TAB" and str(resultTask['tag_name']) != "HYPOTHESIS-SIDEBAR":
-                        # if last_keyup:
-                        #     print('print else>>>', resultTask['event_type'], resultTask['interaction_context'], ">>>>\n\n")
-                        #     # eventlist.append(last_keyup)
-                        #     eventlist.append(createKeyupEvent(**last_keyup))
-                        #     last_keyup = None
+                        if last_change:
+                            eventlist.append(last_change)
+                            last_change = None
                         width = resultTask['width']
                         height = resultTask['height']
                         offset_x = resultTask['offset_x']
