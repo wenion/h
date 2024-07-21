@@ -706,31 +706,22 @@ def batch_steps(index_list):
                     tag = resultTask['tag_name']
                     interaction_context = resultTask['text_content']
                     xpath = resultTask['x_path']
-                    if tag.lower() == 'input':# 'checkbox':
-                        if last_keyup and xpath == last_keyup['xpath']:
-                            interaction_context = resultTask.get('interaction_context', '')
-                            input_type = None
-                            try:
-                                interaction_context = json.loads(interaction_context)
-                            except json.JSONDecodeError:
-                                pass
-                            else:
-                                name = interaction_context.get('name')
-                                value = interaction_context.get('value')
-                                input_type = interaction_context.get('type')
+                    if tag.lower() == 'input':
+                        # 'checkbox'
+                        interaction_context = resultTask['interaction_context']
+                        input_type = None
+                        try:
+                            interaction_context = json.loads(interaction_context)
+                        except json.JSONDecodeError:
+                            pass
+                        else:
+                            input_type = interaction_context.get('type', None)
 
-                                if not last_keyup['name'] or last_keyup['name'] != name:
-                                    last_keyup['name'] = name
-
-                                if last_keyup['value'] != value:
-                                    last_keyup['value'] = value
-
-                        # if last_click and xpath == last_click['xpath']:
                         if input_type == 'checkbox': # Edit Mode
-                            width = last_click['width']
-                            height = last_click['height']
-                            offset_x = last_click['offset_x']
-                            offset_y = last_click['offset_y']
+                            width = resultTask['width']
+                            height = resultTask['height']
+                            offset_x = resultTask['offset_x']
+                            offset_y = resultTask['offset_y']
                             eventPosition=getPositionViewport(width,height,offset_x,offset_y)
                             text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
                             eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
@@ -753,19 +744,19 @@ def batch_steps(index_list):
                                     if value.lower() == 'true':
                                         description = "Check the \"" + name + "\" checkbox"
 
-                            eventlist.append({
-                                "type": last_click['type'],
-                                "url" : last_click['url'],
-                                "xpath" : last_click['xpath'],
-                                "text" : text_content,
-                                "offsetX": offset_x,
-                                "offsetY": offset_y,
-                                "position": eventPosition,
-                                "title": last_click['title'],
-                                "width": width,
-                                "height": height,
-                                "description" : description,
-                                "image": last_click['image']})
+                                eventlist.append({
+                                    "type": resultTask['type'],
+                                    "url" : resultTask['url'],
+                                    "xpath" : resultTask['xpath'],
+                                    "text" : text_content,
+                                    "offsetX": offset_x,
+                                    "offsetY": offset_y,
+                                    "position": eventPosition,
+                                    "title": resultTask['title'],
+                                    "width": width,
+                                    "height": height,
+                                    "description" : description,
+                                    "image": resultTask['image']})
                         else:
                             interaction_context = resultTask['interaction_context']
                             description = 'Type '
