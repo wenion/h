@@ -726,6 +726,15 @@ def batch_steps(index_list):
                             height = resultTask['height']
                             offset_x = resultTask['offset_x']
                             offset_y = resultTask['offset_y']
+                            title = resultTask['title']
+                            image = resultTask['image']
+                            if last_click and last_click['xpath'] == resultTask['x_path']:
+                                width = last_click['width']
+                                height = last_click['height']
+                                offset_x = last_click['offset_x']
+                                offset_y = last_click['offset_y']
+                                title = last_click['text']
+                                image = last_click['image']
                             eventPosition=getPositionViewport(width,height,offset_x,offset_y)
                             text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
                             eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
@@ -758,11 +767,11 @@ def batch_steps(index_list):
                                     "offsetX": offset_x,
                                     "offsetY": offset_y,
                                     "position": eventPosition,
-                                    "title": resultTask['title'],
+                                    "title": title,
                                     "width": width,
                                     "height": height,
                                     "description" : description,
-                                    "image": resultTask['image']})
+                                    "image": image})
                         else:
                             interaction_context = resultTask['interaction_context']
                             description = 'Type '
