@@ -164,6 +164,7 @@ class RegisterSchema(CSRFSchema):
             values = (
                 ("", "- Select -"),
                 ('Information Technology', 'Information Technology'),
+                ('Public Health and Preventive Medicine', 'Public Health and Preventive Medicine'),
                 ('Education', 'Education'),
                 ('Law', 'Law'),
                 ('Others', 'Others'),
@@ -202,6 +203,7 @@ class RegisterSchema(CSRFSchema):
                 ('Parkville', 'Parkville campus'),
                 ('Law Chambers', 'Law Chambers'),
                 ('750 Collins Street', '750 Collins Street'),
+                ('553 St. Kilda Rd', '553 St. Kilda Rd'),
                 ('Malaysia campus', 'Malaysia campus'),
                 ('Indonesia campus', 'Indonesia campus'),
                 ('Monash Suzhou, China', 'Monash Suzhou, China'),
