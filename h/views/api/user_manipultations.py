@@ -20,6 +20,7 @@ import json
 import os
 import openai
 import html2text
+import logging
 import re
 import requests
 import shutil
@@ -37,6 +38,8 @@ from h.models_redis import fetch_user_event_by_timestamp, batch_user_event_recor
 from h.models_redis import add_push_record, delete_push_record, fetch_push_record, stop_pushing, same_as_previous
 from h.services import OrganisationEventPushLogService
 
+
+log = logging.getLogger(__name__)
 
 text_maker = html2text.HTML2Text()
 text_maker.ignore_links = True
@@ -66,6 +69,25 @@ def remove_url_parameters(url):
     url_without_params = urlunparse(parsed_url._replace(query=""))
 
     return url_without_params
+
+
+def markdown2plain(content):
+    plain_text = re.sub(r'(^|\s)#{1,6}\s', '', content)
+    # Remove bold and italic formatting
+    plain_text = re.sub(r'(\*\*|__)(.*?)\1', r'\2', plain_text)
+    plain_text = re.sub(r'(\*|_)(.*?)\1', r'\2', plain_text)
+
+    # Remove links and images
+    plain_text = re.sub(r'!\[.*?\]\(.*?\)', '', plain_text)
+    plain_text = re.sub(r'\[.*?\]\(.*?\)', '', plain_text)
+
+    # Remove lists
+    plain_text = re.sub(r'^\s*[-*]\s+', '', plain_text, flags=re.MULTILINE)
+
+    # Clean up extra spaces and newlines
+    plain_text = re.sub(r'\s+', ' ', plain_text).strip()
+
+    return plain_text
 
 
 @api_config(
@@ -98,7 +120,7 @@ def upload(request):
         os.mkdir(root_dir)
 
     if filetype == "html":
-        print("meta", meta)
+        # print("meta", meta)
         parsed_url = urlparse(meta["link"])
         host_name = parsed_url.netloc
         name = meta["name"]
@@ -122,14 +144,52 @@ def upload(request):
 
         relavtive_path = os.path.relpath(filepath, settings.get("user_root"))
         create_user_event("server-record", "UPLOAD RESPONSE SUCC", name, request.url, userid)
-        return {"succ": {
-            "depth": 0,
-            "id": root_dir,
-            "link": os.path.join(settings.get("user_root_url"), "static", relavtive_path),
-            "name": name,
-            "path": filepath,
-            "type": "file"
-        }}
+
+        content = meta.get("content", "")
+        page_url = meta.get('link')
+        if page_url and page_url != '':
+            plain_text = ''
+            try:
+                # plain_text = html2text.html2text(content)
+                parser = html2text.HTML2Text()
+                parser.ignore_links = True
+                parser.ignore_images = True
+                markdown_text = parser.handle(content)
+                plain_text = markdown2plain(markdown_text)
+            except Exception as e:
+                print("error",e)
+                log.error("html2text", e)
+                plain_text = ''
+
+            url = urljoin(request.registry.settings.get("query_url"), "upload")
+
+            data = {
+                'content': plain_text,
+                'title': name,
+                'url': page_url,
+                'repository': 'user-uploaded'#request.authenticated_userid
+            }
+
+            try:
+                create_user_event("server-record", "INGEST REQUEST", plain_text[0:30], page_url,userid)
+                response = requests.post(url, data=data)
+            except Exception as e:
+                create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + repr(e), page_url, userid)
+                return {"error": repr(e)}
+            else:
+                if response.status_code != 200:
+                    create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:TA B proxy error", url, userid)
+                    return {"error": "TA B proxy error"}
+                return {"succ": {
+                    "depth": 0,
+                    "id": root_dir,
+                    "link": os.path.join(settings.get("user_root_url"), "static", relavtive_path),
+                    "name": name,
+                    "path": filepath,
+                    "type": "file"
+                }}
+        else:
+            return {"error": "invaild link or content"}
 
     if filetype == "google":
         name = meta["name"]
