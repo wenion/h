@@ -868,6 +868,7 @@ def batch_steps(index_list):
                         else:
                             value = interaction_context.get('value')
                             if value:
+                                value = text_maker.handle(value)
                                 description = "Type \"" + value
                                 # eventlist.append({
                                 #     "type": "keyup",
