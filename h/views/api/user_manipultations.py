@@ -809,6 +809,9 @@ def batch_steps(index_list):
                                 name = interaction_context.get('name', None)
                                 value = interaction_context.get('value', None)
                                 if name and value:
+                                    if type(value) == bool:
+                                        value = 'off' if value == False else 'on'
+                                        description = "Turn " + value + " the \"" + name +"\""
                                     if type(value) == int and value.isdigit():
                                         value = 'off' if int(value) == 0 else 'on'
                                         description = "Turn " + value + " the \"" + name +"\""
