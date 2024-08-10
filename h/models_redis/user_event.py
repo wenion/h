@@ -82,33 +82,37 @@ def add_user_event(
 
 
 def get_user_event(pk):
-    user_event = UserEvent.get(pk)
-    return {
-        'pk': user_event.pk,
-        'userid': user_event.userid,
-        'event_type': user_event.event_type,
-        'timestamp': user_event.timestamp,
-        # 'time': datetime.utcfromtimestamp(user_event.timestamp/1000).strftime('%Y-%m-%d %H:%M:%S UTC'),
-        'time': datetime.utcfromtimestamp(user_event.timestamp/1000).replace(tzinfo=pytz.utc).astimezone(pytz.timezone("Australia/Sydney")).strftime('%Y-%m-%d %H:%M:%S %Z'),
-        'tag_name': user_event.tag_name,
-        'text_content': user_event.text_content,
-        'base_url': user_event.base_url,
-        'ip_address': user_event.ip_address,
-        'interaction_context': user_event.interaction_context,
-        'event_source': user_event.event_source,
-        'x_path': user_event.x_path,
-        'offset_x': user_event.offset_x,
-        'offset_y': user_event.offset_y,
-        'doc_id': user_event.doc_id,
-        'system_time': user_event.system_time.replace(tzinfo=pytz.utc).astimezone(pytz.timezone("Australia/Sydney")) if user_event.system_time else None,
-        'region': user_event.region,
-        'session_id': user_event.session_id,
-        'task_name': user_event.task_name,
-        'width': user_event.width,
-        'height': user_event.height,
-        'image': user_event.image,
-        'title': user_event.title,
-    }
+    try:
+        user_event = UserEvent.get(pk)
+    except NotFoundError:
+        return None
+    else:
+        return {
+            'pk': user_event.pk,
+            'userid': user_event.userid,
+            'event_type': user_event.event_type,
+            'timestamp': user_event.timestamp,
+            # 'time': datetime.utcfromtimestamp(user_event.timestamp/1000).strftime('%Y-%m-%d %H:%M:%S UTC'),
+            'time': datetime.utcfromtimestamp(user_event.timestamp/1000).replace(tzinfo=pytz.utc).astimezone(pytz.timezone("Australia/Sydney")).strftime('%Y-%m-%d %H:%M:%S %Z'),
+            'tag_name': user_event.tag_name,
+            'text_content': user_event.text_content,
+            'base_url': user_event.base_url,
+            'ip_address': user_event.ip_address,
+            'interaction_context': user_event.interaction_context,
+            'event_source': user_event.event_source,
+            'x_path': user_event.x_path,
+            'offset_x': user_event.offset_x,
+            'offset_y': user_event.offset_y,
+            'doc_id': user_event.doc_id,
+            'system_time': user_event.system_time.replace(tzinfo=pytz.utc).astimezone(pytz.timezone("Australia/Sydney")) if user_event.system_time else None,
+            'region': user_event.region,
+            'session_id': user_event.session_id,
+            'task_name': user_event.task_name,
+            'width': user_event.width,
+            'height': user_event.height,
+            'image': user_event.image,
+            'title': user_event.title,
+        }
 
 
 def update_user_event(pk, update): #TODO {field1: value, field2: value}

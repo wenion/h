@@ -157,6 +157,13 @@ def includeme(config):  # pylint: disable=too-many-statements
         traverse="/{id}",
     )
 
+    config.add_route(
+        "api.image",
+        "/api/image/{id:[A-Za-z0-9_-]{26,30}}.jpg",
+        factory="h.traversal:UserEventRoot",
+        traverse="/{id}",
+    )
+
     config.add_route("api.bulk.action", "/api/bulk", request_method="POST")
     config.add_route(
         "api.bulk.annotation", "/api/bulk/annotation", request_method="POST"
