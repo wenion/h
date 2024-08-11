@@ -33,6 +33,21 @@ _ = i18n.TranslationStringFactory(__package__)
 
 @api_config(
     versions=["v1", "v2"],
+    route_name="api.trackings",
+    request_method="POST",
+    link_name="tracking",
+    description="tracking",
+)
+def trackings(request):
+    data = request.json_body
+    # trackings
+    request.session.pop_flash("tracking")
+    request.session.flash(data, "tracking")
+    return {'succ': True}
+
+
+@api_config(
+    versions=["v1", "v2"],
     route_name="api.batch",
     link_name="batch",
     description="batch",
