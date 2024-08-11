@@ -129,6 +129,8 @@ def includeme(config):  # pylint: disable=too-many-statements
         traverse="/{id}",
     )
     config.add_route("api.batch", "/api/batch")
+    config.add_route("api.info", "/api/info")
+
     config.add_route(
         "api.recordings", "/api/recordings", factory="h.traversal:UserEventRecordRoot"
     )

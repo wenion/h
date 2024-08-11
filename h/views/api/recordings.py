@@ -39,11 +39,76 @@ _ = i18n.TranslationStringFactory(__package__)
     description="tracking",
 )
 def trackings(request):
+    raw_body = request.body.decode('utf-8').strip()
+    # post not in the shareflow tab
+    if not raw_body:
+        request.session.pop_flash("tracking")
+        return {'succ': raw_body}
+    # post in the shareflow tab
     data = request.json_body
     # trackings
     request.session.pop_flash("tracking")
     request.session.flash(data, "tracking")
-    return {'succ': True}
+    return {'succ': data}
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.info",
+    link_name="info",
+    description="info",
+)
+def info(request):
+    # TODO if authenticated userid is none
+    session = request.session
+    prev_comic_list= session.peek_flash('tracking')
+    prev_comic = None
+    comic_session_id = None
+    if len(prev_comic_list):
+        prev_comic = prev_comic_list[0]
+        comic_session_id = prev_comic['sessionId']
+
+    page_url = request.params.get('target_uri')
+    index_list = batch_user_event_record(request.authenticated_userid)
+    results = []
+    for record in index_list:
+        # miss dc and steps
+        dc = None
+        steps = None
+        if prev_comic and record.session_id == prev_comic['sessionId'] and record.userid == prev_comic['userid']:
+            target = batch_steps([record, ])
+            if len(target):
+                shareflow = target[0]
+                steps = shareflow["steps"]
+
+            dc_result = fetch_comic(prev_comic['sessionId'], prev_comic['userid'])
+            if dc_result:
+                # decode dc
+                dc = json.loads(dc_result.content)
+            else:
+                dc_1 = data_commics_process(target)
+                dc = create_images_DC(dc_1) if dc_1 else None
+                # save it
+                create_comic(prev_comic['sessionId'], prev_comic['userid'], json.dumps(dc))
+            if 'KM_Process' in dc and dc['KM_Process']:
+                index = 1
+                for k in dc['KM_Process']:
+                    print('code_', index, ": ", k['code'])
+                    index += 1
+
+        results.append({
+            "dc": dc,
+            "taskName": record.task_name,
+            'sessionId': record.session_id,
+            "timestamp": record.startstamp,
+            "steps": steps,
+            "task_name": record.task_name,
+            "session_id": record.session_id,
+            "userid": record.userid,
+            "groupid": record.groupid,
+            "shared": record.shared
+            })
+    return {"sessionId": comic_session_id, "recording": results}
 
 
 @api_config(
