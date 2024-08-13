@@ -36,6 +36,7 @@ from h.models_redis import get_user_status_by_userid, set_user_status
 from h.models_redis import get_user_event, update_user_event, fetch_all_user_events_by_session
 from h.models_redis import fetch_user_event_by_timestamp, batch_user_event_record, is_task_page
 from h.models_redis import add_push_record, delete_push_record, fetch_push_record, stop_pushing, same_as_previous
+from h.models_redis import MessageCache, create_message_cache, fetch_message_cache_by_user_id
 from h.services import OrganisationEventPushLogService
 
 
@@ -1349,12 +1350,13 @@ def message(request):
         tad_result = tad_response.json()
         print('tad_result', tad_result)
         rep_interval = tad_result["interval"] if "interval" in tad_result else defalut_interval
+        now = datetime.now()
         message = make_message(
             "instant_message",
-            datetime.now().strftime("%S%M%H%d%m%Y") + "_" + split_user(userid)["username"],
+            now.strftime("%S%M%H%d%m%Y") + "_" + split_user(userid)["username"],
             "Need help with this task?",
             tad_result["message"],
-            datetime.now().strftime("%s%f"),
+            now.strftime("%s%f"),
             tad_result['show_flag'],
             True,
             tad_result['show_flag'],
@@ -1363,6 +1365,21 @@ def message(request):
         message["interval"] = rep_interval
         message["should_next"] = True if rep_interval != -1 else False
         response.append(message)
+        create_message_cache(
+            "instant_message",
+            now.strftime("%S%M%H%d%m%Y") + "_" + split_user(userid)["username"],
+            "Need help with this task?",
+            tad_result["message"],
+            now.strftime("%s%f"),
+            tad_result['show_flag'],
+            True,
+            tad_result['show_flag'],
+            tad_result['task_details'],
+            tad_url,
+            userid,
+            int(datetime.now().timestamp()),# timestamp,
+            ""
+            )
     except Exception as e:
         # create_user_event("server-record", "TAD RESPONSE", "fail", url, userid)
         response.append(
@@ -1397,6 +1414,20 @@ def message(request):
         response.append(make_message(request_type, item.pubid, item.event_name, item.text,
                                      item.date.replace(tzinfo=timezone.utc).astimezone().strftime("%s%f"), show_flag,
                                      unread_flag))
+
+    caches = fetch_message_cache_by_user_id(userid)
+    for cache in caches:
+        response.append(make_message(
+            cache["type"],
+            cache["id"],
+            cache["title"],
+            cache["message"],
+            cache["date"],
+            False,
+            cache["unread_flag"],
+            True,
+            cache["extra"],
+        ))
     return response
 
 

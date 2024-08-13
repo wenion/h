@@ -20,6 +20,7 @@ from h.models_redis.process_model import ProcessModel, fetch_all_process_model, 
 from h.models_redis.task_page import TaskPage, is_task_page, fetch_all_task_pages, fetch_task_page_name_id, add_task_page, delete_task_page, delete_task_page_name_id
 from h.models_redis.push_record import PushRecord, add_push_record, fetch_push_record, delete_push_record, stop_pushing, same_as_previous
 from h.models_redis.data_comic import DataComic, get_comic, create_comic, update_comic, delete_comic, fetch_comic
+from h.models_redis.message_cache import MessageCache, create_message_cache, fetch_message_cache_by_user_id
 
 __all__ = (
     "UserRole",
@@ -67,6 +68,10 @@ __all__ = (
     "same_as_previous",
     "DataComic",
     "fetch_comic",
+    "MessageCache",
+    "get_message_cache",
+    "create_message_cache",
+    "fetch_message_cache_by_user_id",
 )
 
 
