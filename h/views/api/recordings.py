@@ -45,6 +45,10 @@ def trackings(request):
         request.session.pop_flash("tracking")
         return {'succ': raw_body}
     # post in the shareflow tab
+    # json_body
+    # sessionId
+    # userid
+    # step
     data = request.json_body
     # trackings
     request.session.pop_flash("tracking")
@@ -64,9 +68,11 @@ def info(request):
     prev_comic_list= session.peek_flash('tracking')
     prev_comic = None
     comic_session_id = None
+    step = 0
     if len(prev_comic_list):
         prev_comic = prev_comic_list[0]
         comic_session_id = prev_comic['sessionId']
+        step = prev_comic.get('step', 0)
 
     page_url = request.params.get('target_uri')
     index_list = batch_user_event_record(request.authenticated_userid)
@@ -108,7 +114,7 @@ def info(request):
             "groupid": record.groupid,
             "shared": record.shared
             })
-    return {"sessionId": comic_session_id, "recording": results}
+    return {"sessionId": comic_session_id, "step": step, "recording": results}
 
 
 @api_config(
