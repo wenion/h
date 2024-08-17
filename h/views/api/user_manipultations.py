@@ -1100,7 +1100,7 @@ def batch_steps(index_list):
                         eventlist.append(last_change)
                         last_change = None
                     value = resultTask.get('text_content')
-                    description = 'Click the \"' + value + '\" to submit'
+                    description = 'Click on \"' + value + '\" to submit'
                     eventlist.append({
                         "type": event_type,
                         "url" : resultTask['base_url'],
@@ -1191,10 +1191,13 @@ def getTextbyEvent(event_type, text_content, eventPosition):
         # print("Text CONTENT: "+ text_content)
     if event_type == "click":
         if not text_content or text_content == '':
-            return 'Click at ' + eventPosition
-        return 'Click on "' + text_content.replace("  ", " ").replace("\n", " ") + '" at ' + eventPosition
+            return 'Click the ' + eventPosition
+        if eventPosition == "center":
+            return 'Click on "' + text_content.replace("  ", " ").replace("\n", " ") + '" in the ' + eventPosition
+        else:
+            return 'Click on "' + text_content.replace("  ", " ").replace("\n", " ") + '" on the ' + eventPosition
     elif event_type == "scroll":
-        return text_content.lower().capitalize() + " on the web page"
+        return text_content.lower().capitalize() + " the web page"
     elif event_type == "select":
         return 'Select  "' + text_content + '" at ' + eventPosition
     elif event_type == "keydown":

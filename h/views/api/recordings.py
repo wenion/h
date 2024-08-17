@@ -185,8 +185,8 @@ def read(context, request):
             # decode dc
             dc = json.loads(dc_result.content)
         else:
-            dc_1 = data_commics_process(results)
-            dc = create_images_DC(dc_1) if dc_1 else None
+            dc = data_commics_process(results)
+            # dc = create_images_DC(dc_1) if dc_1 else None
             # save it
             create_comic(shareflow['session_id'], shareflow['userid'], json.dumps(dc))
         if 'KM_Process' in dc and dc['KM_Process']:
@@ -232,8 +232,8 @@ def update(context, request):
             pass
         else:
             if len(results):
-                dc_1 = data_commics_process(results)
-                dc = create_images_DC(dc_1) if dc_1 else None
+                dc = data_commics_process(results)
+                # dc = create_images_DC(dc_1) if dc_1 else None
 
         # Steve: create process model after Shareflow recording completes
         try:
