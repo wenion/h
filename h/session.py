@@ -110,7 +110,7 @@ def includeme(config):  # pragma: no cover
         httponly=True,
         secure=secure,
         serializer=JSONSerializer(),
-        timeout=3600,
+        timeout=6000,
     )
     config.set_session_factory(factory)
     config.set_csrf_storage_policy(SessionCSRFStoragePolicy())
