@@ -92,8 +92,8 @@ def info(request):
                 # decode dc
                 dc = json.loads(dc_result.content)
             else:
-                dc_1 = data_commics_process(target)
-                dc = create_images_DC(dc_1) if dc_1 else None
+                dc = data_commics_process(target)
+                # dc = create_images_DC(dc_1) if dc_1 else None
                 # save it
                 create_comic(prev_comic['sessionId'], prev_comic['userid'], json.dumps(dc))
             if 'KM_Process' in dc and dc['KM_Process']:
