@@ -783,6 +783,7 @@ def batch_steps(index_list):
                             input_type = interaction_context.get('type', None)
 
                         if input_type == 'checkbox': # Edit Mode
+                            changed_type = "click"
                             width = resultTask['width']
                             height = resultTask['height']
                             offset_x = resultTask['offset_x']
@@ -819,12 +820,14 @@ def batch_steps(index_list):
                                     if value.lower() == 'off' or value.lower() == 'on':
                                         description = "Turn " + value + " the \"" + name +"\""
                                     if value.lower() == 'false':
+                                        changed_type = "select"
                                         description = "Uncheck the \"" + name + "\" checkbox"
                                     if value.lower() == 'true':
+                                        changed_type = "select"
                                         description = "Check the \"" + name + "\" checkbox"
 
                                 eventlist.append({
-                                    "type": 'click',
+                                    "type": changed_type,
                                     "url" : resultTask['base_url'],
                                     "xpath" : resultTask['x_path'],
                                     "text" : text_content,
@@ -999,14 +1002,9 @@ def batch_steps(index_list):
                                 pass
                             elif input_type == 'submit':
                                 pass
-                            elif input_type == 'text':
-                                width = resultTask['width']
-                                height = resultTask['height']
-                                offset_x = resultTask['offset_x']
-                                offset_y = resultTask['offset_y']
-                                eventPosition=getPositionViewport(width,height,offset_x,offset_y)
+                            elif input_type == "radio":
                                 interaction_context = resultTask['interaction_context']
-                                description = "Click " + eventPosition
+                                description = "Select the option shown in the image"
                                 try:
                                     interaction_context = json.loads(interaction_context)
                                 except json.JSONDecodeError:
@@ -1014,7 +1012,37 @@ def batch_steps(index_list):
                                 else:
                                     name = interaction_context.get('name')
                                     if name:
-                                        description = 'Click on "' + name + '" at ' + eventPosition
+                                        description = 'Select "' + name
+
+                                eventlist.append({
+                                    "type": "select",
+                                    "url" : resultTask['base_url'],
+                                    "xpath" : resultTask['x_path'],
+                                    "text" : '',
+                                    "offsetX": offset_x,
+                                    "offsetY": offset_y,
+                                    "position": eventPosition,
+                                    "title": resultTask['title'],
+                                    "width": width,
+                                    "height": height,
+                                    "description" : description,
+                                    "image": resultTask['image']})
+                            elif input_type == 'text':
+                                width = resultTask['width']
+                                height = resultTask['height']
+                                offset_x = resultTask['offset_x']
+                                offset_y = resultTask['offset_y']
+                                eventPosition=getPositionViewport(width,height,offset_x,offset_y)
+                                interaction_context = resultTask['interaction_context']
+                                description = "Click"
+                                try:
+                                    interaction_context = json.loads(interaction_context)
+                                except json.JSONDecodeError:
+                                    pass
+                                else:
+                                    name = interaction_context.get('name')
+                                    if name:
+                                        description = 'Click on "' + name + '"'
 
                                 eventlist.append({
                                     "type": resultTask['event_type'],
@@ -1199,7 +1227,7 @@ def getTextbyEvent(event_type, text_content, eventPosition):
     elif event_type == "scroll":
         return text_content.lower().capitalize() + " the web page"
     elif event_type == "select":
-        return 'Select  "' + text_content + '" at ' + eventPosition
+        return 'Select the word "' + text_content + '"'
     elif event_type == "keydown":
         return 'Type "' + text_content + '"'
     else:
