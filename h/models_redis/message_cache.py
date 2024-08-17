@@ -87,10 +87,10 @@ def fetch_message_cache_by_user_id(userid):
 
 
 def fetch_recent_message_cache(userid):
-    now = int(datetime.now().timestamp())
+    diff = int(datetime.now().timestamp()) - 300
     result = MessageCache.find(
         (MessageCache.userid == userid) &
-        (now - MessageCache.timestamp <= 300)
+        (MessageCache.timestamp > diff)
     ).sort_by("-timestamp").all()
     total=[]
     for item in result:
