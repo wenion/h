@@ -36,7 +36,7 @@ from h.models_redis import get_user_status_by_userid, set_user_status
 from h.models_redis import get_user_event, update_user_event, fetch_all_user_events_by_session
 from h.models_redis import fetch_user_event_by_timestamp, batch_user_event_record, is_task_page
 from h.models_redis import add_push_record, delete_push_record, fetch_push_record, stop_pushing, same_as_previous
-from h.models_redis import MessageCache, create_message_cache, fetch_message_cache_by_user_id
+from h.models_redis import MessageCache, create_message_cache, fetch_recent_message_cache
 from h.services import OrganisationEventPushLogService
 
 
@@ -1377,7 +1377,7 @@ def message(request):
             tad_result['task_details'],
             tad_url,
             userid,
-            int(datetime.now().timestamp()),# timestamp,
+            int(now.timestamp()),# timestamp,
             ""
             )
     except Exception as e:
@@ -1415,7 +1415,7 @@ def message(request):
                                      item.date.replace(tzinfo=timezone.utc).astimezone().strftime("%s%f"), show_flag,
                                      unread_flag))
 
-    caches = fetch_message_cache_by_user_id(userid)
+    caches = fetch_recent_message_cache(userid)
     for cache in caches:
         response.append(make_message(
             cache["type"],

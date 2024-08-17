@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from redis_om import Field, JsonModel
 from redis_om.model import NotFoundError
@@ -71,13 +72,25 @@ def create_message_cache(
         groupid = groupid,
     )
     message_cache.save()
-    message_cache.expire(10*60)
+    # message_cache.expire(10*60)
     return message_cache
 
 
 def fetch_message_cache_by_user_id(userid):
     result = MessageCache.find(
         MessageCache.userid == userid
+    ).sort_by("-timestamp").all()
+    total=[]
+    for item in result:
+        total.append(get_message_cache(item.pk))
+    return total
+
+
+def fetch_recent_message_cache(userid):
+    now = int(datetime.now().timestamp())
+    result = MessageCache.find(
+        (MessageCache.userid == userid) &
+        (now - MessageCache.timestamp <= 300)
     ).sort_by("-timestamp").all()
     total=[]
     for item in result:
