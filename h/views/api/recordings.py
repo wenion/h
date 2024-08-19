@@ -82,7 +82,7 @@ def info(request):
         dc = None
         steps = None
         if prev_comic and record.session_id == prev_comic['sessionId'] and record.userid == prev_comic['userid']:
-            target = batch_steps([record, ])
+            target = batch_steps([record, ], request.registry.settings.get("homepage_url"))
             if len(target):
                 shareflow = target[0]
                 steps = shareflow["steps"]
@@ -177,7 +177,7 @@ def create(request):
 )
 def read(context, request):
     record = context.user_event_record
-    results = batch_steps([record, ])
+    results = batch_steps([record, ], request.registry.settings.get("homepage_url"))
     if len(results):
         shareflow = results[0]
         dc_result = fetch_comic(shareflow['session_id'], shareflow['userid'])
@@ -227,7 +227,7 @@ def update(context, request):
         results = []
         try:
             session = finish_user_event_record(context.pk, data["endstamp"])
-            results = batch_steps([session,])
+            results = batch_steps([session,], request.registry.settings.get("homepage_url"))
         except Exception as e:
             pass
         else:

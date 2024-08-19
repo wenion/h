@@ -27,7 +27,7 @@ _ = i18n.TranslationStringFactory(__package__)
 @view_config(
     route_name="api.image",
     request_method="GET",
-    permission=Permission.Annotation.CREATE,
+    # permission=Permission.Annotation.CREATE,
 )
 def read(context, request):
     # print("context", context)
