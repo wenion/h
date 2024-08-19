@@ -275,7 +275,7 @@ def reformat_to_nested(data):
     for (userid, sessionId, taskName, seq_counter), processes in users.items():
         for name, steps in processes.items():
             metadata = {
-                "image": get_last_non_empty_image(steps), #new Field S.S TODO
+                "image": "", #new Field S.S TODO
                 "name": name.split(" ", 1)[1],
                 "code" : name.split(" ", 1)[0], #new Field S.S
                 "title" : get_first_non_empty_title(steps), #new Field S.S
