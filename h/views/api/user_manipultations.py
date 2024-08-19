@@ -594,7 +594,7 @@ def batch_steps(index_list):
                                 "height":resultTask['height'],
                                 "title": resultTask.get('title', resultTask['event_source']),
                                 "description" : str(eventDescription),
-                                "image": resultTask['image']
+                                "image": resultTask.get('image')
                                 }
                             eventlist.append(last_scroll)
                             flagScroll = False
@@ -612,7 +612,7 @@ def batch_steps(index_list):
                             "height":resultTask['height'],
                             "title": resultTask.get('title', resultTask['event_source']),
                             "description" : str(eventDescription),
-                            "image": resultTask['image']
+                            "image": resultTask.get('image')
                             }
                         eventlist.append(last_scroll)
                         flagScroll = False
@@ -668,7 +668,7 @@ def batch_steps(index_list):
                         "position": "N/A",
                         "title":resultTask['title'],
                         "description" : resultTask['tag_name'] + ' to ',
-                        "image": resultTask['image']
+                        "image": resultTask.get('image')
                         })
                 elif event_type == "getfocus":
                     if last_change:
@@ -687,7 +687,7 @@ def batch_steps(index_list):
                         "position": "N/A",
                         "title": title,
                         "description" : resultTask['tag_name'] + ' to the ' + title,
-                        "image": resultTask['image']
+                        "image": resultTask.get('image')
                     })
                 elif event_type =="keyup":
                     interaction_context = resultTask.get('interaction_context', '')
@@ -826,7 +826,7 @@ def batch_steps(index_list):
                             offset_x = resultTask['offset_x']
                             offset_y = resultTask['offset_y']
                             title = resultTask['title']
-                            image = resultTask['image']
+                            image = resultTask.get('image')
                             if last_click and last_click['xpath'] == resultTask['x_path']:
                                 width = last_click['width']
                                 height = last_click['height']
@@ -899,7 +899,7 @@ def batch_steps(index_list):
                                 "width": width,
                                 "height": height,
                                 "description" : description,
-                                "image": resultTask['image'] if 'image' in resultTask else None
+                                "image": resultTask.get('image')
                             })
                     elif tag.lower() == 'textarea': # last keyup
                         value = resultTask.get('text_content', '')
@@ -924,7 +924,7 @@ def batch_steps(index_list):
                                 #     "width": width,
                                 #     "height": height,
                                 #     "description" : description,
-                                #     "image": resultTask['image'] if 'image' in resultTask else None
+                                #     "image": resultTask.get('image')
                                 # })
                                 last_change = {
                                     "type": "keyup",
@@ -936,7 +936,7 @@ def batch_steps(index_list):
                                     "width": width,
                                     "height": height,
                                     "description" : description,
-                                    "image": resultTask['image'] if 'image' in resultTask else None
+                                    "image": resultTask.get('image')
                                 }
                     elif tag.lower() == 'select': # last click
                         print("lask click select>>>")
@@ -976,7 +976,7 @@ def batch_steps(index_list):
                                 "width": width,
                                 "height": height,
                                 "description" : description,
-                                "image": resultTask['image'] if 'image' in resultTask else None
+                                "image": resultTask.get('image')
                             })
                 elif event_type =="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
@@ -994,7 +994,7 @@ def batch_steps(index_list):
                                 "position": "N/A",
                                 "title": resultTask.get('title', resultTask['event_source']),
                                 "description" : str(eventDescription),
-                                "image": resultTask['image']
+                                "image": resultTask.get('image')
                                 })
                     flagScroll=True
                 elif event_type == 'click' or event_type == 'pointerdown': #CLICK
@@ -1032,7 +1032,7 @@ def batch_steps(index_list):
                                 "width": width,
                                 "height": height,
                                 "description" : description,
-                                "image": resultTask['image']
+                                "image": resultTask.get('image')
                                 })
                         elif tag == 'INPUT':
                             interaction_context = resultTask['interaction_context']
@@ -1074,7 +1074,7 @@ def batch_steps(index_list):
                                     "width": width,
                                     "height": height,
                                     "description" : description,
-                                    "image": resultTask['image']
+                                    "image": resultTask.get('image')
                                     })
                             elif input_type == 'text':
                                 width = resultTask['width']
@@ -1105,7 +1105,8 @@ def batch_steps(index_list):
                                     "width": width,
                                     "height": height,
                                     "description" : description,
-                                    "image": resultTask['image']})
+                                    "image": resultTask.get('image')
+                                    })
                             else:
                                 eventlist.append({
                                     "type": event_type,
@@ -1119,7 +1120,8 @@ def batch_steps(index_list):
                                     "width":resultTask['width'],
                                     "height":resultTask['height'],
                                     "description" : str(eventDescription),
-                                    "image": resultTask['image'] if 'image' in resultTask else None})
+                                    "image": resultTask.get('image')
+                                    })
                         elif tag == 'SPAN':
                             text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
                             eventlist.append({
@@ -1134,7 +1136,8 @@ def batch_steps(index_list):
                                 "width":resultTask['width'],
                                 "height":resultTask['height'],
                                 "description" : getTextbyEvent(event_type, text_content, eventPosition),
-                                "image": resultTask['image'] if 'image' in resultTask else None})
+                                "image": resultTask.get('image')
+                                })
                         else:
                             print("here 3", tag)
                             eventlist.append({
@@ -1149,7 +1152,8 @@ def batch_steps(index_list):
                                 "width":resultTask['width'],
                                 "height":resultTask['height'],
                                 "description" : str(eventDescription),
-                                "image": resultTask['image'] if 'image' in resultTask else None})
+                                "image": resultTask.get('image')
+                                })
                     last_click =  {
                             'type': event_type,
                             'url': resultTask['base_url'],
@@ -1190,7 +1194,7 @@ def batch_steps(index_list):
                         "width":resultTask['width'],
                         "height":resultTask['height'],
                         "description" : description,
-                        "image": resultTask['image'] if 'image' in resultTask else None
+                        "image": resultTask.get('image')
                         })
                 else:
                     if resultTask['text_content'] != "" and resultTask['tag_name'] != "SIDEBAR-TAB" and resultTask['tag_name'] != "HYPOTHESIS-SIDEBAR":
@@ -1226,7 +1230,7 @@ def batch_steps(index_list):
                                 "width":resultTask['width'],
                                 "height":resultTask['height'],
                                 "description" : str(eventDescription),
-                                "image": resultTask['image'] if 'image' in resultTask else None
+                                "image": resultTask.get('image')
                                 })
                     flagScroll=True
         if lenResult< len(fetch_result) and textKeydown!="":
@@ -1241,7 +1245,8 @@ def batch_steps(index_list):
                 "position": "N/A", "width":resultTask['width'],
                 "height":resultTask['height'],
                 "title":fetch_result[lenResult].get('title', fetch_result[lenResult]['event_source']),
-                "description" : str(eventDescription), "image": resultTask['image']
+                "description" : str(eventDescription),
+                "image": resultTask.get('image')
                 })
         if resultSesions.task_name is None: task_name="test API"
         else: task_name= str(resultSesions.task_name)
