@@ -578,12 +578,12 @@ def batch_steps(index_list):
                 str(resultTask['event_source'])!="MESSAGE" and \
                 str(resultTask['event_source'])!="SIDERBAR" and \
                 str(resultTask['event_source'])!="RECORDING":
-                if str(resultTask['event_type'])=="scroll":
+                if event_type =="scroll":
                     if last_scroll and flagScroll:
                         eventDescription=getTextbyEvent("scroll",str(resultTask['text_content']).split(":")[0],"")
                         if last_scroll["description"] != eventDescription:
                             last_scroll = {
-                                "type": str(resultTask['event_type']),
+                                "type": event_type,
                                 "url" : str(resultTask['base_url']),
                                 "xpath" : str(resultTask['x_path']),
                                 "text" : str(resultTask['text_content']),
@@ -601,7 +601,7 @@ def batch_steps(index_list):
                     elif not last_scroll:
                         eventDescription=getTextbyEvent("scroll",str(resultTask['text_content']).split(":")[0],"")
                         last_scroll = {
-                            "type": str(resultTask['event_type']),
+                            "type": event_type,
                             "url" : str(resultTask['base_url']),
                             "xpath" : str(resultTask['x_path']),
                             "text" : str(resultTask['text_content']),
@@ -616,7 +616,7 @@ def batch_steps(index_list):
                             }
                         eventlist.append(last_scroll)
                         flagScroll = False
-                elif resultTask['event_type'] == 'navigate':
+                elif event_type == 'navigate':
                     # if last_keyup:
                     #     print('print navigate>>>', resultTask['interaction_context'])
                     #     eventlist.append(createKeyupEvent(**last_keyup))
@@ -626,7 +626,7 @@ def batch_steps(index_list):
                         resultTask['title'] = parese_url.netloc
                     if not last_navigate:
                         last_navigate = {
-                        "type": resultTask['event_type'],
+                        "type": event_type,
                         "url": resultTask['base_url'],
                         "xpath": '',
                         "text": '',
@@ -640,7 +640,7 @@ def batch_steps(index_list):
 
                     if last_navigate.get("title") != resultTask['title'] and remove_url_parameters(last_navigate['url']) != remove_url_parameters(resultTask['base_url']):
                         last_navigate = {
-                            "type": resultTask['event_type'],
+                            "type": event_type,
                             "url" : resultTask['base_url'],
                             "xpath" : '',
                             "text" : '',
@@ -652,14 +652,14 @@ def batch_steps(index_list):
                             }
                         eventlist.append(last_navigate)
                     flagScroll=False
-                elif str(resultTask['event_type'])=="recording":
+                elif event_type =="recording":
                     # if last_keyup:
                     #     print('print recording>>>')
                     #     # eventlist.append(last_keyup)
                     #     eventlist.append(createKeyupEvent(**last_keyup))
                     #     last_keyup = None
                     eventlist.append({
-                        "type": resultTask['event_type'],
+                        "type": event_type,
                         "url" : resultTask['base_url'],
                         "xpath" : '',
                         "text" : '',
@@ -678,7 +678,7 @@ def batch_steps(index_list):
                     if not resultTask['title']:
                         title = urlparse(resultTask['base_url']).netloc
                     eventlist.append({
-                        "type": resultTask['event_type'],
+                        "type": event_type,
                         "url" : resultTask['base_url'],
                         "xpath" : '',
                         "text" : '',
@@ -689,7 +689,7 @@ def batch_steps(index_list):
                         "description" : resultTask['tag_name'] + ' to the ' + title,
                         "image": resultTask['image']
                     })
-                elif event_type=="keyup":
+                elif event_type =="keyup":
                     interaction_context = resultTask.get('interaction_context', '')
                     xpath = resultTask.get('x_path', None)
                     key = None
@@ -732,7 +732,7 @@ def batch_steps(index_list):
                                 last_keyup_value += key
 
                             # last_keyup = {
-                            #     'type': resultTask['event_type'],
+                            #     'type': event_type,
                             #     'url': resultTask['base_url'],
                             #     "xpath" : resultTask.get('x_path'),
                             #     "title": resultTask.get('title', resultTask['event_source']),
@@ -740,7 +740,7 @@ def batch_steps(index_list):
                             #     "interaction_context": {'key': key, 'value': last_keyup_value, 'name': name},
                             #     }
                             last_keyup = {
-                                'event_type': resultTask['event_type'],
+                                'event_type': event_type,
                                 'url': resultTask['base_url'],
                                 "xpath" : resultTask.get('x_path'),
                                 "title": resultTask.get('title', resultTask['event_source']),
@@ -764,7 +764,7 @@ def batch_steps(index_list):
                             else:
                                 pass
                             # last_keyup = {
-                            #     'type': resultTask['event_type'],
+                            #     'type': event_type,
                             #     'url': resultTask['base_url'],
                             #     "xpath" : resultTask.get('x_path'),
                             #     "title": resultTask.get('title', resultTask['event_source']),
@@ -772,7 +772,7 @@ def batch_steps(index_list):
                             #     "interaction_context": {'key': key, 'value': key, 'name': name},
                             #     }
                             last_keyup = {
-                                'event_type': resultTask['event_type'],
+                                'event_type': event_type,
                                 'url': resultTask['base_url'],
                                 "xpath" : resultTask.get('x_path'),
                                 "title": resultTask.get('title', resultTask['event_source']),
@@ -782,7 +782,7 @@ def batch_steps(index_list):
                             }
                     else:
                         # last_keyup = {
-                        #     'type': resultTask['event_type'],
+                        #     'type': event_type,
                         #     'url': resultTask['base_url'],
                         #     "xpath" : resultTask.get('x_path'),
                         #     "title": resultTask.get('title', resultTask['event_source']),
@@ -790,7 +790,7 @@ def batch_steps(index_list):
                         #     "interaction_context": {'key': key, 'value': value, 'name': name},
                         #     }
                         last_keyup = {
-                            'event_type': resultTask['event_type'],
+                            'event_type': event_type,
                             'url': resultTask['base_url'],
                             "xpath" : resultTask.get('x_path'),
                             "title": resultTask.get('title', resultTask['event_source']),
@@ -978,14 +978,14 @@ def batch_steps(index_list):
                                 "description" : description,
                                 "image": resultTask['image'] if 'image' in resultTask else None
                             })
-                elif str(resultTask['event_type'])=="keydown":# keyboard Events
+                elif event_type =="keydown":# keyboard Events
                     textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
                     if i<lenResult:
                         if i+1 < len(fetch_result) and str(fetch_result[i+1]['event_type'])!="keydown": #Is last keydownEvent
                             eventDescription=getTextbyEvent("keydown",textKeydown,"")
                             textKeydown=""
                             eventlist.append({
-                                "type": str(resultTask['event_type']),
+                                "type": event_type,
                                 "url" : str(resultTask['base_url']),
                                 "xpath" : str(resultTask['x_path']),
                                 "text" : str(resultTask['text_content']),
@@ -1021,7 +1021,7 @@ def batch_steps(index_list):
                         if tag == 'SELECT':
                             description = "Click to select"
                             eventlist.append({
-                                "type": resultTask['event_type'],
+                                "type": event_type,
                                 "url" : resultTask['base_url'],
                                 "xpath" : resultTask['x_path'],
                                 "text" : '',
@@ -1094,7 +1094,7 @@ def batch_steps(index_list):
                                         description = 'Click on "' + name + '"'
 
                                 eventlist.append({
-                                    "type": resultTask['event_type'],
+                                    "type": event_type,
                                     "url" : resultTask['base_url'],
                                     "xpath" : resultTask['x_path'],
                                     "text" : '',
@@ -1201,7 +1201,6 @@ def batch_steps(index_list):
                         height = resultTask['height']
                         offset_x = resultTask['offset_x']
                         offset_y = resultTask['offset_y']
-                        event_type = resultTask['event_type']
                         if event_type == 'pointerdown':
                             event_type = 'click'
                         if event_type == 'pointerdown' or event_type == 'click':
