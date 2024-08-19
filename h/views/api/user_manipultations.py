@@ -986,7 +986,7 @@ def batch_steps(index_list):
                             textKeydown=""
                             eventlist.append({
                                 "type": event_type,
-                                "url" : str(resultTask['base_url']),
+                                "url" : resultTask['base_url'],
                                 "xpath" : str(resultTask['x_path']),
                                 "text" : str(resultTask['text_content']),
                                 "offsetX": resultTask['offset_x'],
@@ -1109,7 +1109,7 @@ def batch_steps(index_list):
                             else:
                                 eventlist.append({
                                     "type": event_type,
-                                    "url" : str(resultTask['base_url']),
+                                    "url" : resultTask['base_url'],
                                     "xpath" : str(resultTask['x_path']),
                                     "text" : text_content,
                                     "offsetX": resultTask['offset_x'],
@@ -1124,7 +1124,7 @@ def batch_steps(index_list):
                             text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
                             eventlist.append({
                                 "type": event_type,
-                                "url" : str(resultTask['base_url']),
+                                "url" : resultTask['base_url'],
                                 "xpath" : str(resultTask['x_path']),
                                 "text" : text_content,
                                 "offsetX": resultTask['offset_x'],
@@ -1139,7 +1139,7 @@ def batch_steps(index_list):
                             print("here 3", tag)
                             eventlist.append({
                                 "type": event_type,
-                                "url" : str(resultTask['base_url']),
+                                "url" : resultTask['base_url'],
                                 "xpath" : str(resultTask['x_path']),
                                 "text" : text_content,
                                 "offsetX": resultTask['offset_x'],
@@ -1193,7 +1193,7 @@ def batch_steps(index_list):
                         "image": resultTask['image'] if 'image' in resultTask else None
                         })
                 else:
-                    if str(resultTask['text_content']) != "" and str(resultTask['tag_name']) != "SIDEBAR-TAB" and str(resultTask['tag_name']) != "HYPOTHESIS-SIDEBAR":
+                    if resultTask['text_content'] != "" and resultTask['tag_name'] != "SIDEBAR-TAB" and resultTask['tag_name'] != "HYPOTHESIS-SIDEBAR":
                         if last_change:
                             eventlist.append(last_change)
                             last_change = None
@@ -1216,7 +1216,7 @@ def batch_steps(index_list):
                         if eventDescription!="No description":
                             eventlist.append({
                                 "type": event_type,
-                                "url" : str(resultTask['base_url']),
+                                "url" : resultTask['base_url'],
                                 "xpath" : str(resultTask['x_path']),
                                 "text" : text_content,
                                 "offsetX": resultTask['offset_x'],
