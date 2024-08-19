@@ -582,12 +582,38 @@ def batch_steps(index_list):
                     if last_scroll and flagScroll:
                         eventDescription=getTextbyEvent("scroll",str(resultTask['text_content']).split(":")[0],"")
                         if last_scroll["description"] != eventDescription:
-                            last_scroll = {"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title": resultTask.get('title', resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']}
+                            last_scroll = {
+                                "type": str(resultTask['event_type']),
+                                "url" : str(resultTask['base_url']),
+                                "xpath" : str(resultTask['x_path']),
+                                "text" : str(resultTask['text_content']),
+                                "offsetX": resultTask['offset_x'],
+                                "offsetY": resultTask['offset_y'],
+                                "position": "N/A",
+                                "width":resultTask['width'],
+                                "height":resultTask['height'],
+                                "title": resultTask.get('title', resultTask['event_source']),
+                                "description" : str(eventDescription),
+                                "image": resultTask['image']
+                                }
                             eventlist.append(last_scroll)
                             flagScroll = False
                     elif not last_scroll:
                         eventDescription=getTextbyEvent("scroll",str(resultTask['text_content']).split(":")[0],"")
-                        last_scroll = {"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title": resultTask.get('title', resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']}
+                        last_scroll = {
+                            "type": str(resultTask['event_type']),
+                            "url" : str(resultTask['base_url']),
+                            "xpath" : str(resultTask['x_path']),
+                            "text" : str(resultTask['text_content']),
+                            "offsetX": resultTask['offset_x'],
+                            "offsetY": resultTask['offset_y'],
+                            "position": "N/A",
+                            "width":resultTask['width'],
+                            "height":resultTask['height'],
+                            "title": resultTask.get('title', resultTask['event_source']),
+                            "description" : str(eventDescription),
+                            "image": resultTask['image']
+                            }
                         eventlist.append(last_scroll)
                         flagScroll = False
                 elif resultTask['event_type'] == 'navigate':
@@ -632,7 +658,18 @@ def batch_steps(index_list):
                     #     # eventlist.append(last_keyup)
                     #     eventlist.append(createKeyupEvent(**last_keyup))
                     #     last_keyup = None
-                    eventlist.append({"type": resultTask['event_type'], "url" : resultTask['base_url'], "xpath" : '',"text" : '', "offsetX": 0, "offsetY": 0, "position": "N/A", "title":resultTask['title'], "description" : resultTask['tag_name'] + ' to ', "image": resultTask['image']})
+                    eventlist.append({
+                        "type": resultTask['event_type'],
+                        "url" : resultTask['base_url'],
+                        "xpath" : '',
+                        "text" : '',
+                        "offsetX": 0,
+                        "offsetY": 0,
+                        "position": "N/A",
+                        "title":resultTask['title'],
+                        "description" : resultTask['tag_name'] + ' to ',
+                        "image": resultTask['image']
+                        })
                 elif event_type == "getfocus":
                     if last_change:
                         eventlist.append(last_change)
@@ -947,7 +984,18 @@ def batch_steps(index_list):
                         if i+1 < len(fetch_result) and str(fetch_result[i+1]['event_type'])!="keydown": #Is last keydownEvent
                             eventDescription=getTextbyEvent("keydown",textKeydown,"")
                             textKeydown=""
-                            eventlist.append({"type": str(resultTask['event_type']), "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : str(resultTask['text_content']), "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": "N/A", "title": resultTask.get('title', resultTask['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
+                            eventlist.append({
+                                "type": str(resultTask['event_type']),
+                                "url" : str(resultTask['base_url']),
+                                "xpath" : str(resultTask['x_path']),
+                                "text" : str(resultTask['text_content']),
+                                "offsetX": resultTask['offset_x'],
+                                "offsetY": resultTask['offset_y'],
+                                "position": "N/A",
+                                "title": resultTask.get('title', resultTask['event_source']),
+                                "description" : str(eventDescription),
+                                "image": resultTask['image']
+                                })
                     flagScroll=True
                 elif event_type == 'click' or event_type == 'pointerdown': #CLICK
                     print("click event", event_type,
@@ -1026,7 +1074,8 @@ def batch_steps(index_list):
                                     "width": width,
                                     "height": height,
                                     "description" : description,
-                                    "image": resultTask['image']})
+                                    "image": resultTask['image']
+                                    })
                             elif input_type == 'text':
                                 width = resultTask['width']
                                 height = resultTask['height']
@@ -1141,7 +1190,8 @@ def batch_steps(index_list):
                         "width":resultTask['width'],
                         "height":resultTask['height'],
                         "description" : description,
-                        "image": resultTask['image'] if 'image' in resultTask else None})
+                        "image": resultTask['image'] if 'image' in resultTask else None
+                        })
                 else:
                     if str(resultTask['text_content']) != "" and str(resultTask['tag_name']) != "SIDEBAR-TAB" and str(resultTask['tag_name']) != "HYPOTHESIS-SIDEBAR":
                         if last_change:
@@ -1165,11 +1215,35 @@ def batch_steps(index_list):
                         text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
                         eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
                         if eventDescription!="No description":
-                            eventlist.append({"type": event_type, "url" : str(resultTask['base_url']), "xpath" : str(resultTask['x_path']),"text" : text_content, "offsetX": resultTask['offset_x'], "offsetY": resultTask['offset_y'], "position": str(eventPosition), "title": resultTask.get('title', resultTask['event_source']), "width":resultTask['width'], "height":resultTask['height'], "description" : str(eventDescription), "image": resultTask['image'] if 'image' in resultTask else None})
+                            eventlist.append({
+                                "type": event_type,
+                                "url" : str(resultTask['base_url']),
+                                "xpath" : str(resultTask['x_path']),
+                                "text" : text_content,
+                                "offsetX": resultTask['offset_x'],
+                                "offsetY": resultTask['offset_y'],
+                                "position": str(eventPosition),
+                                "title": resultTask.get('title', resultTask['event_source']),
+                                "width":resultTask['width'],
+                                "height":resultTask['height'],
+                                "description" : str(eventDescription),
+                                "image": resultTask['image'] if 'image' in resultTask else None
+                                })
                     flagScroll=True
         if lenResult< len(fetch_result) and textKeydown!="":
             eventDescription=getTextbyEvent("keydown",textKeydown,"")
-            eventlist.append({"type": str(fetch_result[lenResult]['event_type']), "url" : str(fetch_result[lenResult]['base_url']), "xpath" : str(fetch_result[lenResult]['x_path']),"text" : str(fetch_result[lenResult]['text_content']), "offsetX": fetch_result[lenResult]['offset_x'], "offsetY": fetch_result[lenResult]['offset_y'], "position": "N/A", "width":resultTask['width'], "height":resultTask['height'], "title":fetch_result[lenResult].get('title', fetch_result[lenResult]['event_source']), "description" : str(eventDescription), "image": resultTask['image']})
+            eventlist.append({
+                "type": str(fetch_result[lenResult]['event_type']),
+                "url" : str(fetch_result[lenResult]['base_url']),
+                "xpath" : str(fetch_result[lenResult]['x_path']),
+                "text" : str(fetch_result[lenResult]['text_content']),
+                "offsetX": fetch_result[lenResult]['offset_x'],
+                "offsetY": fetch_result[lenResult]['offset_y'],
+                "position": "N/A", "width":resultTask['width'],
+                "height":resultTask['height'],
+                "title":fetch_result[lenResult].get('title', fetch_result[lenResult]['event_source']),
+                "description" : str(eventDescription), "image": resultTask['image']
+                })
         if resultSesions.task_name is None: task_name="test API"
         else: task_name= str(resultSesions.task_name)
         auxDict.append({
