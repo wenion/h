@@ -23,8 +23,6 @@ RUN apk add --no-cache \
     libffi \
     libpq \
     nginx \
-    mesa-gl \
-    mesa-dri-gallium \
     git
 
 # Create the hypothesis user, group, home directory and package directory.
