@@ -894,7 +894,7 @@ def batch_steps(index_list, base_url):
                                 name = interaction_context.get('name', None)
                                 value = interaction_context.get('value', None)
                                 if name and value:
-                                    description = "Type \"" + value
+                                    description = "Type \"" + value + "\""
 
                             eventlist.append({
                                 "type": "keyup",
@@ -920,7 +920,7 @@ def batch_steps(index_list, base_url):
                             value = interaction_context.get('value')
                             if value:
                                 value = text_maker.handle(value)
-                                description = "Type \"" + value
+                                description = "Type \"" + value + "\""
                                 # eventlist.append({
                                 #     "type": "keyup",
                                 #     "url" : resultTask.get('url', ''),
