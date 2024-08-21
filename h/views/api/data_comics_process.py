@@ -73,11 +73,12 @@ process_map = {
         'AP1.9a Navigate': ['Click', 'Click', 'Click', 'Type'],
         'AP1.9b Navigate': ['Click', 'Click', 'Click', 'Select'],
 
+        'AP1.3 Navigate': ['Navigation', 'Click', 'Click'],
         'AP1.3 Navigate': ['Navigation', 'Click'],
         # 'AP1.1c Navigate': ['Navigation',],
         'AP1.4 Navigate': ['Scroll',],
-        'AP1.5 Navigate': ['Select',],
-        'AP1.6 Navigate': ['Type',],
+        'AP1.5 Filling information': ['Select',],
+        'AP1.6 Filling information': ['Type',],
         'SP3.8 Filling information': ['Submit',],
 
         'AP1.8a Navigate': ['Click', 'Click', 'Type'],
@@ -87,6 +88,8 @@ process_map = {
 
         'AP1.10 Navigate': [ 'Click', 'Click', 'Click', 'Click'],
         'AP1.9 Navigate': ['Click', 'Click', 'Click'],
+        'AP1.8a Navigate': ['Click', 'Click', 'Type'],
+        'AP1.8b Navigate': ['Click', 'Click', 'Select'],
         'AP1.8 Navigate': ['Click', 'Click',],
 
         # 'SP3.7a Filling information': ['Type', 'Click'],
