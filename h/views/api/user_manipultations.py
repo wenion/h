@@ -1026,7 +1026,7 @@ def batch_steps(index_list, base_url):
                         text_content = resultTask.get('text_content','').replace('\n', ' ').replace('\t', ' ').replace('\r', ' ').strip()
                         eventDescription=getTextbyEvent(event_type,text_content,eventPosition)
                         if tag == 'SELECT':
-                            description = "Click to select"
+                            description = "Click to choose the selection"
                             eventlist.append({
                                 "type": event_type,
                                 "url" : resultTask['base_url'],
