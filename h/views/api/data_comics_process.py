@@ -53,6 +53,10 @@ action_mapping = {
 
 
 process_map = {
+    # Access    AP
+    # Store     SP
+    # Share     ShP
+    # Apply     ApP
         'AP1. Navigate': ['Navigation', 'Scroll', 'Click', 'Navigation'],
         'AP2. Search': ['Type', 'Query', 'Click_Search'],
         'SP1. Upload resources': ['Navigation', 'Click_Upload'],
@@ -66,31 +70,33 @@ process_map = {
         'AP1.1a Navigate': ['Navigation', 'Navigation', 'Navigation'],
         'AP1.1b Navigate': ['Navigation', 'Navigation'],
         # 'AP1.3a Navigate': ['Navigation', 'Click', 'Click'],
-        'AP1.3a Navigate': ['Navigation', 'Click', 'Type'],
-        'AP1.3b Navigate': ['Navigation', 'Click', 'Select'],
-        'AP1.10a Navigate': [ 'Click', 'Click', 'Click', 'Click', 'Type'],
-        'AP1.10b Navigate': [ 'Click', 'Click', 'Click', 'Click', 'Select'],
-        'AP1.9a Navigate': ['Click', 'Click', 'Click', 'Type'],
-        'AP1.9b Navigate': ['Click', 'Click', 'Click', 'Select'],
+        'SP3.1a Navigate': ['Navigation', 'Click', 'Type'],
+        'SP3.2a Navigate': ['Navigation', 'Click', 'Select'],
+        'SP3.1b Navigate': [ 'Click', 'Click', 'Click', 'Click', 'Type'],
+        'SP3.2b Navigate': [ 'Click', 'Click', 'Click', 'Click', 'Select'],
+        'SP3.1c Navigate': ['Click', 'Click', 'Click', 'Type'],
+        'SP3.2c Navigate': ['Click', 'Click', 'Click', 'Select'],
 
-        'AP1.3 Navigate': ['Navigation', 'Click', 'Click'],
-        'AP1.3 Navigate': ['Navigation', 'Click'],
+        # 'AP1.1c Navigate': ['Navigation', 'Click', 'Click'],
+        'AP1.4a Navigate': ['Navigation', 'Click'],
         # 'AP1.1c Navigate': ['Navigation',],
-        'AP1.4 Navigate': ['Scroll',],
-        'AP1.5 Filling information': ['Select',],
-        'AP1.6 Filling information': ['Type',],
-        'SP3.8 Filling information': ['Submit',],
+        'AP1.2 Navigate': ['Scroll',],
+        'SP3.2 Filling information': ['Select',],
+        'SP3.1 Filling information': ['Type',],
+        'ShP1.1 Filling information': ['Submit',],
+        'SP3.1f Navigate': ['Click', 'Click', 'Type'],
+        'SP3.2f Navigate': ['Click', 'Click', 'Select'],
 
-        'AP1.8a Navigate': ['Click', 'Click', 'Type'],
-        'AP1.8b Navigate': ['Click', 'Click', 'Select'],
-        'SP3.7b Filling information': ['Click', 'Type'],
-        'SP3.7b Filling information': ['Click', 'Select'],
+        'SP3.1d Navigate': ['Click', 'Click', 'Type'],
+        'SP3.2d Navigate': ['Click', 'Click', 'Select'],
+        'SP3.1e Filling information': ['Click', 'Type'],
+        'SP3.2e Filling information': ['Click', 'Select'],
 
-        'AP1.10 Navigate': [ 'Click', 'Click', 'Click', 'Click'],
-        'AP1.9 Navigate': ['Click', 'Click', 'Click'],
-        'AP1.8a Navigate': ['Click', 'Click', 'Type'],
-        'AP1.8b Navigate': ['Click', 'Click', 'Select'],
-        'AP1.8 Navigate': ['Click', 'Click',],
+        'AP1.3a Navigate': [ 'Click', 'Click', 'Click', 'Click'], # AP1.10
+        'AP1.3b Navigate': ['Click', 'Click', 'Click'], # AP1.10
+        'AP1.3c Navigate': ['Click', 'Click',], # AP1.10
+
+        'AP1.1h Navigate': ['Navigation',],
 
         # 'SP3.7a Filling information': ['Type', 'Click'],
         # 'SP3.7a Filling information': ['Click', 'Click', 'Type', 'Click'],
@@ -192,6 +198,15 @@ def action_mapper(data):
     return mapped_action_list
 
 
+def get_primary_process(s):
+    result = s.split(" ")
+    index = result[0]
+    name = result[1]
+    if index[-1].isalpha():
+        return index[:-1] + " " + name
+    return s
+
+
 def process_labeller (action_list):
     
     """
@@ -211,6 +226,7 @@ def process_labeller (action_list):
 
     # Iterate through the list to check for pattern matches
     i = 0
+    prev_pattern = None
     while i < len(action_list):
         match_found = False
         for pattern_key, pattern_value in zip(pattern_keys, pattern_values):
@@ -218,12 +234,14 @@ def process_labeller (action_list):
             if i + pattern_length <= len(action_list):
                 if all(action_list[i + j]['type'] == pattern_value[j] for j in range(pattern_length)):
                     for k in range(pattern_length):
-                        action_list[i + k]['KM_Process'] = pattern_key
+                        action_list[i + k]['KM_Process'] = get_primary_process(pattern_key)
                     i += pattern_length - 1
                     match_found = True
+                    if match_found:
+                        prev_pattern = get_primary_process(pattern_key)
                     break
         if not match_found:
-            action_list[i]['KM_Process'] = "NO MATCH"
+            action_list[i]['KM_Process'] = prev_pattern if prev_pattern else "NO MATCH"
         i += 1                
                         
     return action_list
