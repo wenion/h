@@ -70,7 +70,7 @@ process_map = {
         'AP1.3d Navigate': ['Navigation', 'Click', 'Select'],
         'AP1.3c Navigate': ['Navigation', 'Click'],
         'AP1.9a Navigate': ['Click', 'Click', 'Click', 'Type'],
-        'AP1.9b Navigate': ['Click', 'Click', 'Click', 'Type'],
+        'AP1.9b Navigate': ['Click', 'Click', 'Click', 'Select'],
         'AP1.4 Navigate': ['Scroll',],
         'AP1.5 Navigate': ['Select',],
 
