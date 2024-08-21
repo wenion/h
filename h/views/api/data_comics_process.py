@@ -44,6 +44,7 @@ action_mapping = {
         'annotate': 'Annotate',
         'upload': 'Upload',
         'drag_and_drop': 'Drag and Drop',
+        'submit': 'Submit',
 
         #Additional
         'keyup': 'Type',
@@ -62,15 +63,26 @@ process_map = {
 
         # Additional Generic
         'AP1.1a Navigate': ['Navigation', 'Navigation', 'Navigation'],
-        'AP1.3a Navigate': ['Navigation', 'Click', 'Click'],
-        'AP1.3b Navigate': ['Navigation', 'Click'],
-        'AP1.9a Navigate': [ 'Click', 'Click', 'Click'],
-        'AP1.9b Navigate': [ 'Click', 'Click', 'Click', 'Click'],
+        'AP1.1b Navigate': ['Navigation', 'Navigation'],
+        'AP1.1c Navigate': ['Navigation',],
+        # 'AP1.3a Navigate': ['Navigation', 'Click', 'Click'],
+        'AP1.3b Navigate': ['Navigation', 'Click', 'Type'],
+        'AP1.3d Navigate': ['Navigation', 'Click', 'Select'],
+        'AP1.3c Navigate': ['Navigation', 'Click'],
+        'AP1.9a Navigate': ['Click', 'Click', 'Click', 'Type'],
+        'AP1.9b Navigate': ['Click', 'Click', 'Click', 'Type'],
+        'AP1.4 Navigate': ['Scroll',],
+        'AP1.5 Navigate': ['Select',],
+
+        'AP1.9 Navigate': ['Click', 'Click', 'Click'],
+        # 'AP1.9b Navigate': [ 'Click', 'Click', 'Click', 'Click'],
 
         # 'SP3.7a Filling information': ['Type', 'Click'],
-        'SP3.7a Filling information': ['Click', 'Click', 'Type', 'Click'],
+        # 'SP3.7a Filling information': ['Click', 'Click', 'Type', 'Click'],
         'SP3.7b Filling information': ['Click', 'Type'],
-        'SP3.7c Filling information': ['Click', 'Click', 'Type'],
+        'SP3.7b Filling information': ['Click', 'Select'],
+        'SP3.8 Filling information': ['Submit',],
+        # 'SP3.7c Filling information': ['Click', 'Click', 'Type'],
         'SP3.9a Filling information': ['Type', 'Type', 'Type', 'Type'],
         'SP3.10a Filling information': ['Click', 'Type', 'Type'],
         'SP3.10b Filling information': ['Click', 'Type', 'Type', 'Type', 'Click'],
