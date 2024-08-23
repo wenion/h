@@ -26,7 +26,6 @@ from h.views.api.user_manipultations import batch_steps
 from h.views.api.data_comics_process import data_commics_process
 from h.security import Permission
 from h.views.api.config import api_config
-from h.views.api.data_comics import create_images_DC
 
 _ = i18n.TranslationStringFactory(__package__)
 
@@ -93,7 +92,6 @@ def info(request):
                 dc = json.loads(dc_result.content)
             else:
                 dc = data_commics_process(target)
-                # dc = create_images_DC(dc_1) if dc_1 else None
                 # save it
                 create_comic(prev_comic['sessionId'], prev_comic['userid'], json.dumps(dc))
             if 'KM_Process' in dc and dc['KM_Process']:
@@ -186,7 +184,6 @@ def read(context, request):
             dc = json.loads(dc_result.content)
         else:
             dc = data_commics_process(results)
-            # dc = create_images_DC(dc_1) if dc_1 else None
             # save it
             create_comic(shareflow['session_id'], shareflow['userid'], json.dumps(dc))
         if 'KM_Process' in dc and dc['KM_Process']:
@@ -233,7 +230,6 @@ def update(context, request):
         else:
             if len(results):
                 dc = data_commics_process(results)
-                # dc = create_images_DC(dc_1) if dc_1 else None
 
         # Steve: create process model after Shareflow recording completes
         try:
