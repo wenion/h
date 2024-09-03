@@ -1532,17 +1532,18 @@ def message(request):
                                      unread_flag))
 
     caches = fetch_message_cache_by_user_id(userid)
+    print("caches", caches)
     for cache in caches:
         response.append(make_message(
-            cache["type"],
-            cache["id"],
-            cache["title"],
-            cache["message"],
-            cache["date"],
+            cache.type,
+            cache.id,
+            cache.title,
+            cache.message,
+            cache.date,
             False,
-            cache["unread_flag"],
+            cache.unread_flag,
             True,
-            cache["extra"],
+            cache.extra,
         ))
     return response
 

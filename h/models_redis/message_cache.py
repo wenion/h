@@ -79,7 +79,8 @@ def fetch_message_cache_by_user_id(userid):
     result = MessageCache.find(
         MessageCache.userid == userid
     ).sort_by("-timestamp").all()
-    total=[]
-    for item in result:
-        total.append(get_message_cache(item.pk))
-    return total
+    return result
+    # total=[]
+    # for item in result:
+    #     total.append(get_message_cache(item.pk))
+    # return total
