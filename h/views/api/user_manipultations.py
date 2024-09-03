@@ -1481,21 +1481,21 @@ def message(request):
         message["interval"] = rep_interval
         message["should_next"] = True if rep_interval != -1 else False
         response.append(message)
-        # create_message_cache(
-        #     "instant_message",
-        #     now.strftime("%S%M%H%d%m%Y") + "_" + split_user(userid)["username"],
-        #     "Need help with this task?",
-        #     tad_result["message"],
-        #     now.strftime("%s%f"),
-        #     tad_result['show_flag'],
-        #     True,
-        #     tad_result['show_flag'],
-        #     tad_result['task_details'],
-        #     tad_url,
-        #     userid,
-        #     int(datetime.now().timestamp()),# timestamp,
-        #     ""
-        #     )
+        create_message_cache(
+            "instant_message",
+            now.strftime("%S%M%H%d%m%Y") + "_" + split_user(userid)["username"],
+            "Need help with this task?",
+            tad_result["message"],
+            now.strftime("%s%f"),
+            tad_result['show_flag'],
+            True,
+            tad_result['show_flag'],
+            tad_result['task_details'],
+            tad_url,
+            userid,
+            int(datetime.now().timestamp()),# timestamp,
+            ""
+            )
     except Exception as e:
         # create_user_event("server-record", "TAD RESPONSE", "fail", url, userid)
         response.append(
@@ -1531,19 +1531,19 @@ def message(request):
                                      item.date.replace(tzinfo=timezone.utc).astimezone().strftime("%s%f"), show_flag,
                                      unread_flag))
 
-    # caches = fetch_message_cache_by_user_id(userid)
-    # for cache in caches:
-    #     response.append(make_message(
-    #         cache["type"],
-    #         cache["id"],
-    #         cache["title"],
-    #         cache["message"],
-    #         cache["date"],
-    #         False,
-    #         cache["unread_flag"],
-    #         True,
-    #         cache["extra"],
-    #     ))
+    caches = fetch_message_cache_by_user_id(userid)
+    for cache in caches:
+        response.append(make_message(
+            cache["type"],
+            cache["id"],
+            cache["title"],
+            cache["message"],
+            cache["date"],
+            False,
+            cache["unread_flag"],
+            True,
+            cache["extra"],
+        ))
     return response
 
 
