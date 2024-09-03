@@ -10,7 +10,8 @@ from ws4py.websocket import WebSocket as _WebSocket
 
 from h.streamer.filter import FILTER_SCHEMA, SocketFilter
 from h.streamer.page_request import handle_web_page
-from h.models_redis import add_user_event
+from h.tasks import user_events
+
 
 log = logging.getLogger(__name__)
 
@@ -159,28 +160,7 @@ def handle_user_trace_message(message, session=None):
         )
         return
     event = message.payload
-    add_user_event(
-        userid=message.socket.identity.user.userid,
-        event_type=event["type"],
-        timestamp=event["timestamp"],
-        tag_name=event["tagName"],
-        text_content=event.get("textContent", ""),
-        base_url=event["url"],
-        ip_address=event["ip_address"],
-        interaction_context=event.get("interactionContext"),
-        event_source=event["eventSource"],
-        x_path=event.get("xpath"),
-        offset_x=event.get("clientX"),
-        offset_y=event.get("clientY"),
-        doc_id=event.get("doc_id"),
-        region="",
-        session_id=event.get("session_id"),
-        task_name=event.get("task_name"),
-        width=event.get("width"),
-        height=event.get("height"),
-        image=event.get('image'),
-        title=event.get('title'),
-        )
+    user_events.add_event.delay(message.socket.identity.user.userid, event)
 
 
 def handle_client_id_message(message, session=None):  # pylint: disable=unused-argument
