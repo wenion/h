@@ -21,7 +21,6 @@ import json
 
 from h.models_redis import start_user_event_record, finish_user_event_record
 from h.models_redis import batch_user_event_record, update_user_event_record, delete_user_event_record
-from h.models_redis import fetch_comic, create_comic
 from h.views.api.user_manipultations import batch_steps
 from h.views.api.data_comics_process import data_commics_process
 from h.security import Permission
@@ -86,19 +85,7 @@ def info(request):
                 shareflow = target[0]
                 steps = shareflow["steps"]
 
-            dc_result = fetch_comic(prev_comic['sessionId'], prev_comic['userid'])
-            if dc_result:
-                # decode dc
-                dc = json.loads(dc_result.content)
-            else:
-                dc = data_commics_process(target)
-                # save it
-                create_comic(prev_comic['sessionId'], prev_comic['userid'], json.dumps(dc))
-            if 'KM_Process' in dc and dc['KM_Process']:
-                index = 1
-                for k in dc['KM_Process']:
-                    print('code_', index, ": ", k['code'])
-                    index += 1
+            dc = data_commics_process(target)
 
         results.append({
             "dc": dc,
@@ -178,19 +165,7 @@ def read(context, request):
     results = batch_steps([record, ], request.registry.settings.get("homepage_url"))
     if len(results):
         shareflow = results[0]
-        dc_result = fetch_comic(shareflow['session_id'], shareflow['userid'])
-        if dc_result:
-            # decode dc
-            dc = json.loads(dc_result.content)
-        else:
-            dc = data_commics_process(results)
-            # save it
-            create_comic(shareflow['session_id'], shareflow['userid'], json.dumps(dc))
-        if 'KM_Process' in dc and dc['KM_Process']:
-            index = 1
-            for k in dc['KM_Process']:
-                print('code_', index, ": ", k['code'])
-                index += 1
+        dc = data_commics_process(results)
         return {**shareflow, "dc": dc}
     else:
         return {
