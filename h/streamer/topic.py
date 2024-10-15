@@ -95,6 +95,9 @@ def handle_message(message, registry, session):
             continue
         # TODO
         with request_context(registry) as request:
-            print("message from tad", message.payload, socket.client_id)
+            userid = None
+            if socket.identity:
+                userid = socket.identity.user.userid
+            print("message from tad", message.payload, socket.client_id, userid)
 
             # socket.send_json(reply)
