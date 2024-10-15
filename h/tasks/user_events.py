@@ -5,11 +5,11 @@ log = get_task_logger(__name__)
 
 
 @celery.task
-def add_event(userid, event):
+def add_event(event):
     """Task to add the new UserEvent table."""
     # pylint:disable=no-member
     add_user_event(
-        userid=userid,
+        userid=event["userid"],
         event_type=event["type"],
         timestamp=event["timestamp"],
         tag_name=event["tagName"],

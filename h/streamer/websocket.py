@@ -10,8 +10,8 @@ from ws4py.websocket import WebSocket as _WebSocket
 
 from h.streamer.filter import FILTER_SCHEMA, SocketFilter
 from h.streamer.page_request import handle_web_page
+from h.streamer.topic_meta import TraceTopicPub
 from h.tasks import user_events
-
 
 log = logging.getLogger(__name__)
 
@@ -61,8 +61,8 @@ class WebSocket(_WebSocket):
             heartbeat_freq=30.0,
         )
 
+        self.pub = TraceTopicPub(environ["h.ws.settings"])
         self.debug = environ["h.ws.debug"]
-        # self.debug = True
         self.identity = environ["h.ws.identity"]
 
         self._work_queue = environ["h.ws.streamer_work_queue"]
@@ -85,7 +85,19 @@ class WebSocket(_WebSocket):
             return
 
         try:
-            self._work_queue.put(Message(socket=self, payload=payload), timeout=0.1)
+            if "messageType" in payload and "type" in payload:
+                # complete more details
+                payload['userid'] = self.identity.user.userid
+
+                # send to RabbitMQ topic exchange
+                self.pub.send_trace(payload)
+
+                # TODO Multithreading issues
+                user_events.add_event.delay(payload)
+            elif "messageType" in payload and payload["messageType"] == "PageData":
+                self.pub.send_page(payload)
+            else:
+                self._work_queue.put(Message(socket=self, payload=payload), timeout=0.1)
         except Full:  # pragma: no cover
             log.warning(
                 "Streamer work queue full! Unable to queue message from "
@@ -96,6 +108,7 @@ class WebSocket(_WebSocket):
         if self.debug:
             log.info("Closed connection code=%s reason=%s", code, reason)
         try:
+            self.pub.release()
             self.instances.remove(self)
         except KeyError:
             pass
@@ -126,7 +139,6 @@ def handle_message(message, registry=None, session=None):
 
     payload = message.payload
     type_ = payload.get("type")
-    message_type_ = payload.get("messageType")
 
     # FIXME: This code is here to tolerate old and deprecated message formats.
     if type_ is None:  # pragma: no cover
@@ -135,32 +147,10 @@ def handle_message(message, registry=None, session=None):
         if "filter" in payload:
             type_ = "filter"
 
-    if message_type_ == "TraceData":
-        handle_user_trace_message(message)
-        return
-    if message_type_ == "PageData":
-        # handle_web_page(message, registry)
-        return
-
     # N.B. MESSAGE_HANDLERS[None] handles both incorrect and missing message
     # types.
     handler = MESSAGE_HANDLERS.get(type_, MESSAGE_HANDLERS[None])
     handler(message, session=session)
-
-
-def handle_user_trace_message(message, session=None):
-    if not message.socket.identity:
-        message.reply(
-            {
-                "type": "whoyouare",
-                "userid": message.socket.identity.user.userid if message.socket.identity else None,
-                "error": {"type": "invalid_connection", "description": '"userid" is missing'},
-            },
-            ok=False,
-        )
-        return
-    event = message.payload
-    user_events.add_event.delay(message.socket.identity.user.userid, event)
 
 
 def handle_client_id_message(message, session=None):  # pylint: disable=unused-argument

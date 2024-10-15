@@ -5,7 +5,7 @@ import sys
 import gevent
 from pyramid.events import ApplicationCreated, subscriber
 
-from h.streamer import db, messages, websocket
+from h.streamer import db, messages, topic, websocket
 from h.streamer.metrics import metrics_process
 
 log = logging.getLogger(__name__)
@@ -48,6 +48,12 @@ def start(event):  # pragma: no cover
         # Start greenlets to process messages from RabbitMQ
         gevent.spawn(messages.process_messages, settings, ANNOTATION_TOPIC, WORK_QUEUE),
         gevent.spawn(messages.process_messages, settings, USER_TOPIC, WORK_QUEUE),
+        # Receive tab and tad messages from RabbitMQ
+        gevent.spawn(topic.task_process_messages, settings, topic.TASK_TOPIC, WORK_QUEUE),
+
+        # Receive trace and tad messages from RabbitMQ
+        # gevent.spawn(topic.trace_process_messages, settings, TRACE_TOPIC),
+
         # And one to process the queued work
         gevent.spawn(process_work_queue, registry, WORK_QUEUE),
     ]
@@ -80,6 +86,8 @@ def process_work_queue(registry, queue):
                 messages.handle_message(msg, registry, session, TOPIC_HANDLERS)
             elif isinstance(msg, websocket.Message):
                 websocket.handle_message(msg, registry, session)
+            elif isinstance(msg, topic.Topic):
+                topic.handle_message(msg, registry, session)
             else:
                 raise UnknownMessageType(repr(msg))
 
