@@ -36,7 +36,6 @@ def get_message_cache(pk):
     message_dict["extra"] = extra
     return message_dict
 
-
 def create_message_cache(
         type,
         id,
@@ -74,12 +73,17 @@ def create_message_cache(
     message_cache.expire(10*60)
     return message_cache
 
-
 def fetch_message_cache_by_user_id(userid):
     result = MessageCache.find(
         MessageCache.userid == userid
     ).sort_by("-timestamp").all()
-    total=[]
-    for item in result:
-        total.append(get_message_cache(item.pk))
-    return total
+    # parse a JSON string (extra) and convert it into a dictionary
+    for r in result:
+        extra = []
+        if r.extra:
+            try:
+                extra = json.loads(r.extra)
+            except Exception as e:
+                extra = []
+        r.extra = extra
+    return result

@@ -11,9 +11,10 @@ log = logging.getLogger(__name__)
 TRACE_EXCHANGE = "trace"
 TASK_EXCHANGE = "process.task"
 TRACE_TOPIC = "request.user.event"
+PAGE_TOPIC = "request.user.page"
 TASK_TOPIC = "response.user.event"
 
-Topic = namedtuple("Topic", ["topic", "payload"])
+Topic = namedtuple("Topic", ["routing_key", "payload"])
 
 
 class TraceTopicPub(Pub):
@@ -21,7 +22,7 @@ class TraceTopicPub(Pub):
         super().__init__(settings, TRACE_EXCHANGE)
     
     def send_trace(self, payload):
-        self.publish(payload, "request.user.event")
+        self.publish(payload, TRACE_TOPIC)
     
     def send_page(self, payload):
-        self.publish(payload, "request.user.page")
+        self.publish(payload, PAGE_TOPIC)

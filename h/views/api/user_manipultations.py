@@ -24,20 +24,19 @@ import logging
 import re
 import requests
 import shutil
-from redis_om import get_redis_connection
 from urllib.parse import urljoin, urlparse, urlunparse, unquote
 
 from h.exceptions import InvalidUserId
 from h.security import Permission
+from h.services import OrganisationEventPushLogService
+from h.services import MessageService
 from h.views.api.config import api_config
-from h.models_redis import UserEvent, Rating
+from h.models_redis import Rating
 from h.models_redis import get_highlights_from_openai, create_user_event, add_user_event
 from h.models_redis import get_user_status_by_userid, set_user_status
-from h.models_redis import get_user_event, update_user_event, fetch_all_user_events_by_session
-from h.models_redis import fetch_user_event_by_timestamp, batch_user_event_record, is_task_page
-from h.models_redis import add_push_record, delete_push_record, fetch_push_record, stop_pushing, same_as_previous
-from h.models_redis import MessageCache, create_message_cache, fetch_message_cache_by_user_id
-from h.services import OrganisationEventPushLogService
+from h.models_redis import update_user_event, fetch_all_user_events_by_session
+from h.models_redis import fetch_user_event_by_timestamp, batch_user_event_record
+
 
 
 log = logging.getLogger(__name__)
@@ -1444,106 +1443,14 @@ def make_message(type, pubid, event_name, message, date, show_flag, unread_flag,
     description="Get the Message",
 )
 def message(request):
-    response = []
-    day_ahead = 3
-    defalut_interval = "30000"
     userid = request.authenticated_userid
     if not userid:
         return []
 
     request_type = request.GET.get("q")
-    interval = request.GET.get("interval") if request.GET.get("interval") else defalut_interval
     url = request.GET.get("url")
-    all = request.find_service(name="organisation_event").get_by_days(day_ahead)
 
-    tad_url = urljoin(request.registry.settings.get("tad_url"), "task_classification")
-    tad_response = None
-    # only request for TAD Shareflow push when users are on task pages and the current task page has received less than 3 Shareflow Pushes
-    try:
-        # create_user_event("server-record", "TAD REQUEST", url, url, userid)
-        tad_response = requests.get(tad_url, params={"userid": userid, "interval": int(interval), "url": unquote(url)})
-        # create_user_event("server-record", "TAD RESPONSE", "succ", url, userid)
-        tad_result = tad_response.json()
-        print('tad_result', tad_result)
-        rep_interval = tad_result["interval"] if "interval" in tad_result else defalut_interval
-        now = datetime.now()
-        message = make_message(
-            "instant_message",
-            now.strftime("%S%M%H%d%m%Y") + "_" + split_user(userid)["username"],
-            "Need help with this task?",
-            tad_result["message"],
-            now.strftime("%s%f"),
-            tad_result['show_flag'],
-            True,
-            tad_result['show_flag'],
-            tad_result["task_details"]
-            )
-        message["interval"] = rep_interval
-        message["should_next"] = True if rep_interval != -1 else False
-        response.append(message)
-        # create_message_cache(
-        #     "instant_message",
-        #     now.strftime("%S%M%H%d%m%Y") + "_" + split_user(userid)["username"],
-        #     "Need help with this task?",
-        #     tad_result["message"],
-        #     now.strftime("%s%f"),
-        #     tad_result['show_flag'],
-        #     True,
-        #     tad_result['show_flag'],
-        #     tad_result['task_details'],
-        #     tad_url,
-        #     userid,
-        #     int(datetime.now().timestamp()),# timestamp,
-        #     ""
-        #     )
-    except Exception as e:
-        # create_user_event("server-record", "TAD RESPONSE", "fail", url, userid)
-        response.append(
-            make_message(
-                "error_message",
-                "pubid",
-                "Error",
-                str(e) + "! status code: " + str(tad_response.status_code) if tad_response else str(e),
-                datetime.now().strftime("%s%f"),
-                False, True, False)
-        )
-
-    for item in all:
-        show_flag = False
-        unread_flag = False
-        if item.date.date() >= date.today():
-            ret = request.find_service(OrganisationEventPushLogService).fetch_by_userid_and_pubid(userid, item.pubid)
-            if len(ret):
-                ret = ret[0]
-            else:
-                ret = None
-            if not ret:
-                request.find_service(OrganisationEventPushLogService).create(userid, item.pubid)
-                show_flag = True
-                unread_flag = True
-            elif ret and ret.dismissed:
-                show_flag = True
-                unread_flag = False
-            else:
-                show_flag = False
-                unread_flag = False
-        response.append(make_message(request_type, item.pubid, item.event_name, item.text,
-                                     item.date.replace(tzinfo=timezone.utc).astimezone().strftime("%s%f"), show_flag,
-                                     unread_flag))
-
-    # caches = fetch_message_cache_by_user_id(userid)
-    # for cache in caches:
-    #     response.append(make_message(
-    #         cache["type"],
-    #         cache["id"],
-    #         cache["title"],
-    #         cache["message"],
-    #         cache["date"],
-    #         False,
-    #         cache["unread_flag"],
-    #         True,
-    #         cache["extra"],
-    #     ))
+    response = request.find_service(MessageService).read(userid)
     return response
 
 

@@ -2,9 +2,16 @@ import logging
 from collections import namedtuple
 
 from h.pubsub import Sub
+from h.services.message import MessageService
 from h.streamer import websocket
 from h.streamer.contexts import request_context
-from h.streamer.topic_meta import Topic, TASK_EXCHANGE, TASK_TOPIC, TRACE_EXCHANGE, TRACE_TOPIC
+from h.streamer.topic_meta import (
+    Topic,
+    TASK_EXCHANGE,
+    TASK_TOPIC,
+    TRACE_EXCHANGE,
+    TRACE_TOPIC
+)
 from h.tasks import user_events
 
 __all__ = (
@@ -62,7 +69,7 @@ def task_process_messages(settings, routing_key, work_queue, raise_error=True):
     """
 
     def callback(payload, message):
-        message = Topic(topic=routing_key, payload=payload)
+        message = Topic(routing_key=routing_key, payload=payload)
         try:
             work_queue.put(message, timeout=0.1)
         except Full:  # pragma: no cover
@@ -93,11 +100,19 @@ def handle_message(message, registry, session):
         if not hasattr(socket, "client_id") or \
             message.payload["client_id"] != socket.client_id:
             continue
+
         # TODO
         with request_context(registry) as request:
             userid = None
             if socket.identity:
                 userid = socket.identity.user.userid
-            print("message from tad", message.payload, socket.client_id, userid)
+            # save
+            m = request.find_service(
+                    MessageService
+                ).add_message_cache(
+                    message.payload,
+                    userid
+                )
 
-            # socket.send_json(reply)
+            # push to websocket
+            socket.send_json(m)
