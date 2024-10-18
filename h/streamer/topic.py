@@ -106,12 +106,14 @@ def handle_message(message, registry, session):
             userid = None
             if socket.identity:
                 userid = socket.identity.user.userid
-            # save
+
+            # TODO celery delay -> save
             m = request.find_service(
                     MessageService
                 ).add_message_cache(
                     message.payload,
-                    userid
+                    userid,
+                    socket.client_id if userid is None else None,
                 )
 
             # push to websocket

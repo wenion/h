@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import re
 
+from h import util
 from h.models_redis import (
     create_message_cache,
     fetch_message_cache_by_user_id,
@@ -97,15 +98,17 @@ class MessageService:
 
         return result
 
-    def add_message_cache(
-        self,
-        payload,
-        userid,
-        ):
+    def add_message_cache(self, payload, userid, identifier):
         now = datetime.now()
+        id = now.strftime("%S%M%H%d%m%Y") + "_"
+        if userid:
+            id = id + util.user.split_user(userid)["username"]
+        else:
+            id = id + identifier
+
         m = create_message_cache(
             "instant_message",
-            now.strftime("%S%M%H%d%m%Y") + "_" + self._split_user(userid)["username"],
+            id,
             payload['title'],
             payload['content'],
             now.strftime("%s%f"),
@@ -114,7 +117,7 @@ class MessageService:
             True,
             payload['extra'],
             payload['url'],
-            userid,
+            userid if userid else identifier,
             int(now.timestamp()),# timestamp,
             ""
         )
