@@ -142,6 +142,9 @@ def includeme(config):  # pragma: no cover
     config.register_service_factory(
         "h.services.url_migration.service_factory", name="url_migration"
     )
+    config.register_service_factory(
+        "h.services.analytics.analytics_service_factory", name="analytics"
+    )
 
     # KMASS services
     config.register_service_factory(
