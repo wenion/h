@@ -68,7 +68,7 @@ ENV PYTHONPATH /var/lib/hypothesis:$PYTHONPATH
 
 # Set bind-mounted volume
 RUN mkdir -p /var/lib/hypothesis/data
-RUN chown -R hypothesis:hypothesis /var/lib/hypothesis/data
+RUN chown -R 777 /var/lib/hypothesis/data
 
 RUN dos2unix bin/*
 
