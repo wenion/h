@@ -1,31 +1,13 @@
-from xml.etree import ElementTree
-
 import colander
-import re
-from datetime import datetime
-from deform.widget import TextAreaWidget, TextInputWidget, DateInputWidget, SelectWidget
+from deform.widget import TextAreaWidget, TextInputWidget, SelectWidget
 
 import h.i18n
 from h.models.organisation_event import OrganisationEvent
 from h.schemas import validators
 from h.schemas.base import CSRFSchema
+from h.schemas.forms.widgets import DateInputWidget
 
 _ = h.i18n.TranslationString
-
-
-def validate_date(node, value):
-    date_pattern = re.compile(r'^\d{2}/\d{2}/\d{4}$')
-    if not date_pattern.match(value):
-        raise colander.Invalid(
-            node, _("Invaild format"),
-        )
-    else:
-        try:
-            datetime.strptime(value, "%d/%m/%Y")
-        except ValueError:
-            raise colander.Invalid(
-                node, _("Invaild date"),
-            )
 
 
 @colander.deferred
@@ -49,9 +31,9 @@ def organisation_event_campus_select_widget(_node, kwargs):
 
 class OrganisationEventSchema(CSRFSchema):
     date = colander.SchemaNode(
-        colander.String(),
-        title=_("Date(dd/mm/yyyy)"),
-        validator=validate_date,
+        colander.Date(),
+        title=_("Date (dd/mm/yyyy)"),
+        widget=DateInputWidget(),
     )
 
     groupid = colander.SchemaNode(

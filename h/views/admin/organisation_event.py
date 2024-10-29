@@ -1,12 +1,9 @@
-from datetime import datetime, timezone
 from jinja2 import Markup
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config, view_defaults
-from pyramid.renderers import render
 from sqlalchemy import func
-from deform import Form
 
-from h import form, i18n, models, paginator
+from h import form, i18n, paginator
 from h.models.organisation_event import OrganisationEvent
 from h.models.organisation_event_push_log import OrganisationEventPushLog
 from h.schemas.forms.admin.organisation_event import OrganisationEventSchema
@@ -61,12 +58,11 @@ class OrganisationEventCreateController:
     @view_config(request_method="POST")
     def post(self):
         def on_success(appstruct):
-            date_str = appstruct["date"]
             groupid = appstruct["groupid"]
             event_name = appstruct["event_name"]
             campus = appstruct["campus"]
             text = appstruct["text"]
-            date_datetime = datetime.strptime(date_str, '%d/%m/%Y').astimezone(timezone.utc)
+            date_datetime = appstruct["date"]
             organization = OrganisationEvent(date=date_datetime, groupid=groupid, event_name=event_name, campus=campus, text=text)
 
             self.request.db.add(organization)
@@ -136,7 +132,7 @@ class OrganizationEditController:
         org = self.organization
 
         def on_success(appstruct):
-            org.date = datetime.strptime(appstruct["date"], '%d/%m/%Y').astimezone(timezone.utc)
+            org.date = appstruct["date"]
             org.event_name = appstruct["event_name"]
             org.groupid = appstruct["groupid"]
             org.campus = appstruct["campus"]
@@ -156,7 +152,7 @@ class OrganizationEditController:
     def _update_appstruct(self):
         org = self.organization
         self.form.set_appstruct(
-            {"date": org.date.replace(tzinfo=timezone.utc).astimezone().strftime('%d/%m/%Y'), "event_name": org.event_name, "campus": org.campus, "groupid": self.selected_group, "text": org.text}
+            {"date": org.date, "event_name": org.event_name, "campus": org.campus, "groupid": self.selected_group, "text": org.text}
         )
 
     def _template_context(self):
