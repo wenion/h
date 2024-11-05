@@ -21,6 +21,7 @@ import json
 
 from h.models_redis import start_user_event_record, finish_user_event_record
 from h.models_redis import batch_user_event_record, update_user_event_record, delete_user_event_record
+from h.models_redis import get_user_role_by_userid
 from h.views.api.user_manipultations import batch_steps
 from h.views.api.data_comics_process import data_commics_process
 from h.security import Permission
@@ -87,11 +88,14 @@ def info(request):
 
             dc = data_commics_process(target)
 
+        role = get_user_role_by_userid(request.authenticated_userid)
         results.append({
             "dc": dc,
             "taskName": record.task_name,
             'sessionId': record.session_id,
             "timestamp": record.startstamp,
+            "description": record.description,
+            "role": role.teaching_role if role else "",
             "steps": steps,
             "task_name": record.task_name,
             "session_id": record.session_id,
@@ -207,19 +211,19 @@ def update(context, request):
                 dc = data_commics_process(results)
 
         # Steve: create process model after Shareflow recording completes
-        try:
-            tad_url = urljoin(request.registry.settings.get("tad_url"), "create_process_model")
-            pm_data = {"user_id": context.user_event_record.userid,
-                       "shareflow_name": context.user_event_record.task_name,
-                       "session_id": context.user_event_record.session_id,
-                       "group_id": context.user_event_record.groupid}
-            headers = {"Content-Type": "application/json"}
-            pm_creation_response = requests.post(tad_url, json=pm_data, headers=headers)
-            if not pm_creation_response["created"]:
-                print("Unable to create process model due to", pm_creation_response["message"])
-        except Exception as e:
-            print("Process model not created due to error:", e)
-            pass
+        # try:
+        #     tad_url = urljoin(request.registry.settings.get("tad_url"), "create_process_model")
+        #     pm_data = {"user_id": context.user_event_record.userid,
+        #                "shareflow_name": context.user_event_record.task_name,
+        #                "session_id": context.user_event_record.session_id,
+        #                "group_id": context.user_event_record.groupid}
+        #     headers = {"Content-Type": "application/json"}
+        #     pm_creation_response = requests.post(tad_url, json=pm_data, headers=headers)
+        #     if not pm_creation_response["created"]:
+        #         print("Unable to create process model due to", pm_creation_response["message"])
+        # except Exception as e:
+        #     print("Process model not created due to error:", e)
+        #     pass
         return {**results[0], 'dc': dc} if len(results) > 0 else session.dict()
     elif action == "share":
         user_event_record = context.user_event_record.dict()
@@ -240,19 +244,16 @@ def update(context, request):
 )
 def delete(context, request):
     # Steve: delete process model when Shareflow gets deleted
-    try:
-        tad_url = urljoin(request.registry.settings.get("tad_url"), "delete_process_model")
-        pm_data = {"user_id": context.user_event_record.userid,
-                  "shareflow_name": context.user_event_record.task_name,
-                  "session_id": context.user_event_record.session_id}
-        headers = {"Content-Type": "application/json"}
-        pm_deletion_response = requests.post(tad_url, json=pm_data, headers=headers)
-        if not pm_deletion_response["created"]:
-            print("Unable to delete process model due to", pm_deletion_response["message"])
-    except Exception as e:
-        print("Process model not deleted due to error:", e)
-        pass
-
+    # try:
+    #     tad_url = urljoin(request.registry.settings.get("tad_url"), "delete_process_model")
+    #     pm_data = {"user_id": context.user_event_record.userid,
+    #               "shareflow_name": context.user_event_record.task_name,
+    #               "session_id": context.user_event_record.session_id}
+    #     headers = {"Content-Type": "application/json"}
+    #     pm_deletion_response = requests.post(tad_url, json=pm_data, headers=headers)
+    #     if not pm_deletion_response["created"]:
+    #         print("Unable to delete process model due to", pm_deletion_response["message"])
+    # except Exception as e:
+    #     print("Process model not deleted due to error:", e)
+    #     pass
     return context.session_id if delete_user_event_record(context.pk) else -1
-
-
