@@ -1,6 +1,8 @@
 import logging
 from collections import namedtuple
 
+from gevent.queue import Full
+
 from h.pubsub import Sub
 from h.services.message import MessageService
 from h.streamer import websocket
