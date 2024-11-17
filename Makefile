@@ -33,12 +33,13 @@ help:
 .PHONY: services
 services: args?=up -d --wait
 services: python
+	@docker network create dbs 2>/dev/null || true
 	@docker compose $(args)
 
 .PHONY: db
 db: args?=upgrade head
 db: python
-	@tox -qe dev --run-command 'python bin/make_db'
+	@tox -qe dev --run-command 'python3 -m h.scripts.init_db --create --stamp'
 	@tox -qe dev --run-command 'alembic $(args)'
 
 .PHONY: dev
@@ -55,11 +56,12 @@ devssl: build/manifest.json python
 
 .PHONY: devdata
 devdata: python
+	@tox -qe dev --run-command 'python3 -m h.scripts.init_db --create --stamp'
 	@tox -qe dev -- sh bin/hypothesis --dev devdata
 
 .PHONY: shell
 shell: python
-	@pyenv exec tox -qe dev --run-command 'pshell conf/development-app.ini'
+	@pyenv exec tox -qe dev --run-command 'pshell conf/development.ini'
 
 .PHONY: sql
 sql: python
@@ -75,6 +77,10 @@ backend-lint: python
 .PHONY: frontend-lint
 frontend-lint: node_modules/.uptodate
 	@yarn lint
+
+.PHONY: frontend-typecheck
+frontend-typecheck: node_modules/.uptodate
+	@yarn typecheck
 
 .PHONY: format
 format: backend-format frontend-format
@@ -163,7 +169,7 @@ requirements/lint.txt: requirements/tests.txt requirements/functests.txt
 requirements requirements/: $(foreach file,$(wildcard requirements/*.in),$(basename $(file)).txt)
 
 .PHONY: sure
-sure: checkformatting lint test coverage functests
+sure: checkformatting lint frontend-typecheck test coverage functests
 
 .PHONY: docker
 docker:

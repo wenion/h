@@ -5,6 +5,7 @@ import newrelic
 from celery import Task
 
 from h.celery import celery, get_task_logger
+from h.services import AnnotationSyncService
 
 log = get_task_logger(__name__)
 
@@ -21,30 +22,6 @@ def add_annotation(id_):
     search_index.add_annotation_by_id(id_)
 
 
-@celery.task
-def add_annotations_between_times(start_time, end_time, tag):
-    search_index = celery.request.find_service(name="search_index")
-    search_index._queue.add_between_times(  # pylint: disable=protected-access
-        start_time, end_time, tag
-    )
-
-
-@celery.task
-def add_users_annotations(userid, tag, force, schedule_in):
-    search_index = celery.request.find_service(name="search_index")
-    search_index._queue.add_by_user(  # pylint: disable=protected-access
-        userid, tag, force=force, schedule_in=schedule_in
-    )
-
-
-@celery.task
-def add_group_annotations(groupid, tag, force, schedule_in):
-    search_index = celery.request.find_service(name="search_index")
-    search_index._queue.add_by_group(  # pylint: disable=protected-access
-        groupid, tag, force=force, schedule_in=schedule_in
-    )
-
-
 @celery.task(base=_BaseTaskWithRetry, acks_late=True)
 def delete_annotation(id_):
     search_index = celery.request.find_service(name="search_index")
@@ -53,9 +30,9 @@ def delete_annotation(id_):
 
 @celery.task
 def sync_annotations(limit):
-    search_index = celery.request.find_service(name="search_index")
+    annotation_sync_service = celery.request.find_service(AnnotationSyncService)
 
-    counts = search_index.sync(limit)
+    counts = annotation_sync_service.sync(limit)
 
     log.info(dict(counts))
     newrelic.agent.record_custom_metrics(

@@ -2,7 +2,7 @@ from dateutil.parser import isoparse
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config, view_defaults
 
-from h import models
+from h import models, tasks
 from h.security import Permission
 
 
@@ -20,6 +20,7 @@ def not_found(exc, request):  # pragma: no cover
 class SearchAdminViews:
     def __init__(self, request):
         self.request = request
+        self.queue_service = request.find_service(name="queue_service")
 
     @view_config(request_method="GET", renderer="h:templates/admin/search.html.jinja2")
     def get(self):
@@ -35,8 +36,11 @@ class SearchAdminViews:
         start_time = isoparse(self.request.params["start"].strip())
         end_time = isoparse(self.request.params["end"].strip())
 
-        self.request.find_service(name="search_index").add_annotations_between_times(
-            start_time, end_time, tag="reindex_date"
+        tasks.job_queue.add_annotations_between_times.delay(
+            self.request.params["name"],
+            start_time,
+            end_time,
+            tag="reindex_date",
         )
         return self._notify_reindexing_started(
             f"Began reindexing from {start_time} to {end_time}"
@@ -58,8 +62,11 @@ class SearchAdminViews:
         if not user:
             raise NotFoundError(f"User {username} not found")
 
-        self.request.find_service(name="search_index").add_users_annotations(
-            user.userid, tag="reindex_user", force=force
+        tasks.job_queue.add_annotations_from_user.delay(
+            self.request.params["name"],
+            user.userid,
+            tag="reindex_user",
+            force=force,
         )
         return self._notify_reindexing_started(
             f"Began reindexing annotations by {user.userid}"
@@ -79,8 +86,11 @@ class SearchAdminViews:
         if not group:
             raise NotFoundError(f"Group {groupid} not found")
 
-        self.request.find_service(name="search_index").add_group_annotations(
-            groupid, tag="reindex_group", force=force
+        tasks.job_queue.add_annotations_from_group.delay(
+            self.request.params["name"],
+            groupid,
+            tag="reindex_group",
+            force=force,
         )
         return self._notify_reindexing_started(
             f"Began reindexing annotations in group {groupid} ({group.name})"

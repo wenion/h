@@ -6,7 +6,7 @@ import os
 from pyramid.config import Configurator
 from pyramid.settings import asbool, aslist
 
-from h.settings import SettingsManager, database_url
+from h.settings import SettingsManager
 from h.util.logging_filters import ExceptionFilter
 
 __all__ = ("configure",)
@@ -56,8 +56,9 @@ def configure(environ=None, settings=None):  # pylint: disable=too-many-statemen
     settings_manager.set("mail.default_sender", "MAIL_DEFAULT_SENDER")
     settings_manager.set("mail.host", "MAIL_HOST")
     settings_manager.set("mail.port", "MAIL_PORT", type_=int)
+    settings_manager.set("sqlalchemy.url", "DATABASE_URL", required=True)
     settings_manager.set(
-        "sqlalchemy.url", "DATABASE_URL", type_=database_url, required=True
+        "sqlalchemy.replica.url", "REPLICA_DATABASE_URL", required=False
     )
 
     # Configuration for User root directory
@@ -78,7 +79,9 @@ def configure(environ=None, settings=None):  # pylint: disable=too-many-statemen
     settings_manager.set("csp.enabled", "CSP_ENABLED", type_=asbool)
     settings_manager.set("csp.report_uri", "CSP_REPORT_URI")
     settings_manager.set("csp.report_only", "CSP_REPORT_ONLY")
-    settings_manager.set("ga_tracking_id", "GOOGLE_ANALYTICS_TRACKING_ID")
+    settings_manager.set(
+        "google_analytics_measurement_id", "GOOGLE_ANALYTICS_MEASUREMENT_ID"
+    )
     settings_manager.set("h.app_url", "APP_URL")
     settings_manager.set(
         "h.authority",
@@ -109,7 +112,6 @@ def configure(environ=None, settings=None):  # pylint: disable=too-many-statemen
     settings_manager.set("h.env", "ENV")
     # Where should logged-out users visiting the homepage be redirected?
     settings_manager.set("h.homepage_redirect_url", "HOMEPAGE_REDIRECT_URL")
-    settings_manager.set("h.proxy_auth", "PROXY_AUTH", type_=asbool)
 
     # Sentry DSNs for frontend code should be of the public kind, lacking the
     # password component in the DSN URI.
@@ -140,6 +142,20 @@ def configure(environ=None, settings=None):  # pylint: disable=too-many-statemen
         )
         settings_manager.set("mail.port", "MANDRILL_PORT", default=587)
         settings_manager.set("mail.tls", "MANDRILL_TLS", default=True)
+
+    settings_manager.set(
+        "h_api_auth_cookie_secret_key",
+        "H_API_AUTH_COOKIE_SECRET_KEY",
+        type_=_to_utf8,
+        required=True,
+    )
+    settings_manager.set(
+        "h_api_auth_cookie_salt",
+        "H_API_AUTH_COOKIE_SALT",
+        type_=_to_utf8,
+        default=DEFAULT_SALT,
+        # required=True,
+    )
 
     # Get resolved settings.
     settings = settings_manager.settings

@@ -4,7 +4,7 @@ from unittest.mock import sentinel
 import pytest
 from h_matchers import Any
 
-from h.models.group import Group
+from h.models.group import Group, GroupMembership
 from h.services.group_list import GroupListService, group_list_factory
 from h.services.group_scope import GroupScopeService
 
@@ -39,7 +39,7 @@ class TestAssociatedGroups:
 
     def test_it_returns_restricted_groups_if_user_is_member(self, svc, factories, user):
         restricted_group = factories.RestrictedGroup(
-            members=[user], authority=user.authority
+            memberships=[GroupMembership(user=user)], authority=user.authority
         )
         groups = svc.associated_groups(user)
 
@@ -63,9 +63,7 @@ class TestAssociatedGroups:
         # the creator of the group. That means that this private group is still associated
         # with this user in some form—but we want to make sure it does not appear
         # in these results.
-        private_group = factories.Group(
-            creator=user, authority=user.authority, members=[]
-        )
+        private_group = factories.Group(creator=user, authority=user.authority)
 
         groups = svc.associated_groups(user)
 
@@ -82,7 +80,9 @@ class TestAssociatedGroups:
         # This user is both a member of and a creator of this group; make sure it only
         # comes back once
         restricted_group = factories.RestrictedGroup(
-            members=[user], authority=user.authority, creator=user
+            memberships=[GroupMembership(user=user)],
+            authority=user.authority,
+            creator=user,
         )
 
         groups = svc_no_sample_groups.associated_groups(user)
@@ -156,9 +156,11 @@ class TestListGroupsRequestGroups:
 
 class TestUserGroups:
     def test_it_returns_all_user_groups_sorted_by_group_name(
-        self, svc, user, user_groups
+        self, db_session, svc, user, user_groups
     ):
-        user.groups = user_groups
+
+        with db_session.no_autoflush:
+            user.memberships = [GroupMembership(group=group) for group in user_groups]
 
         u_groups = svc.user_groups(user)
 
@@ -188,12 +190,16 @@ class TestPrivateGroups:
 
         svc.user_groups.assert_called_once_with(user)
 
-    def test_it_returns_only_private_groups(self, svc, user, factories):
+    def test_it_returns_only_private_groups(self, db_session, svc, user, factories):
         private_group = factories.Group()
         open_group = factories.OpenGroup()
         restricted_group = factories.RestrictedGroup()
 
-        user.groups = [private_group, open_group, restricted_group]
+        with db_session.no_autoflush:
+            user.memberships = [
+                GroupMembership(group=group)
+                for group in [private_group, open_group, restricted_group]
+            ]
 
         p_groups = svc.private_groups(user)
 
@@ -329,7 +335,7 @@ def document_uri():
 
 @pytest.fixture
 def sample_groups(factories, other_authority, document_uri, default_authority, user):
-    return {
+    sample_groups = {
         "open": factories.OpenGroup(
             name="sample open",
             authority=default_authority,
@@ -350,6 +356,11 @@ def sample_groups(factories, other_authority, document_uri, default_authority, u
         ),
         "private": factories.Group(creator=user),
     }
+
+    # Make `user` a member of sample_groups["private"].
+    sample_groups["private"].memberships.append(GroupMembership(user=user))
+
+    return sample_groups
 
 
 @pytest.fixture

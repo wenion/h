@@ -1,4 +1,4 @@
-import jinja2
+from markupsafe import Markup
 from pyramid import httpexceptions
 from pyramid.view import view_config
 
@@ -42,6 +42,23 @@ def users_index(request):
         if user is None:
             user = models.User.get_by_email(request.db, username, authority)
 
+    if (user is not None) and user.deleted:
+        # Don't show users that're marked as deleted on admin pages.
+        #
+        # Users that're marked as deleted can't login or authenticate requests
+        # in any way. They're in the process of being purged by a background
+        # task and will soon be really deleted from the DB.
+        #
+        # Showing these users on admin pages is confusing because admins may
+        # have already deleted a user (so the user has been marked as deleted
+        # and is now going to be purged) and then think that the user has not
+        # been deleted successfully because they still show up on the admin
+        # pages.
+        #
+        # Also we don't want admins to be able to do things like rename users
+        # who're marked as deleted and in the process of being purged.
+        user = None
+
     if user is not None:
         svc = request.find_service(name="annotation_stats")
         user_meta["annotations_count"] = svc.total_user_annotation_count(user.userid)
@@ -70,7 +87,7 @@ def users_activate(request):
 
     request.session.flash(
         # pylint:disable=consider-using-f-string
-        jinja2.Markup(_("User {name} has been activated!".format(name=user.username))),
+        Markup(_("User {name} has been activated!".format(name=user.username))),
         "success",
     )
 
@@ -134,7 +151,7 @@ def users_delete(request):
     user = _form_request_user(request)
     svc = request.find_service(name="user_delete")
 
-    svc.delete_user(user)
+    svc.delete_user(user, requested_by=request.user, tag=request.matched_route.name)
     request.session.flash(
         f"Successfully deleted user {user.username} with authority {user.authority}"
         "success",
@@ -144,8 +161,8 @@ def users_delete(request):
 
 
 @view_config(context=UserNotFoundError)
-def user_not_found(exc, request):  # pragma: no cover
-    request.session.flash(jinja2.Markup(_(exc.message)), "error")
+def user_not_found(exc, request):
+    request.session.flash(Markup(_(str(exc))), "error")
     return httpexceptions.HTTPFound(location=request.route_path("admin.users"))
 
 

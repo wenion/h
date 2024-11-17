@@ -9,7 +9,6 @@ from packaging.version import Version
 from sqlalchemy.orm import subqueryload
 
 from h import models, presenters
-from h.util.query import column_windows
 
 log = logging.getLogger(__name__)
 
@@ -17,9 +16,9 @@ PG_WINDOW_SIZE = 2500
 
 
 class BatchIndexer:
-    """A convenience class for reindexing all annotations from the database to the search index."""
+    """A convenience class for reindexing annotations from the database to the search index."""
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self, session, es_client, request, target_index=None, op_type="index"
     ):
         self.session = session
@@ -33,24 +32,17 @@ class BatchIndexer:
         else:
             self._target_index = target_index
 
-    def index(self, annotation_ids=None, windowsize=PG_WINDOW_SIZE):
+    def index(self, annotation_ids: list, windowsize: int = PG_WINDOW_SIZE):
         """
         Reindex annotations.
 
         :param annotation_ids: a list of ids to reindex, reindexes all when `None`.
-        :type annotation_ids: collection
         :param windowsize: the number of annotations to index in between progress log statements
-        :type windowsize: integer
 
         :returns: a set of errored ids
         :rtype: set
         """
-        if annotation_ids is None:
-            annotations = _all_annotations(session=self.session, windowsize=windowsize)
-        else:
-            annotations = _filtered_annotations(
-                session=self.session, ids=annotation_ids
-            )
+        annotations = _filtered_annotations(session=self.session, ids=annotation_ids)
 
         # Report indexing status as we go
         annotations = _log_status(annotations, log_every=windowsize)
@@ -74,12 +66,56 @@ class BatchIndexer:
                 errored.add(status["_id"])
         return errored
 
+    def delete(self, annotation_ids: list[str]) -> None:
+        """Delete `annotation_ids` from Elasticsearch."""
+
+        # Delete the given annotations from Elasticsearch by sending them to
+        # Elasticsearch's bulk API in chunks.
+        #
+        # Use streaming_bulk() rather than bulk() because of this comment in
+        # the Elasticsearch docs:
+        #
+        # > When errors are being collected original document data is included
+        # > in the error dictionary which can lead to an extra high memory
+        # > usage. If you need to process a lot of data and want to
+        # > ignore/collect errors please consider using the streaming_bulk()
+        # > helper which will just return the errors and not store them in
+        # > memory.
+        # >
+        # > https://elasticsearch-py.readthedocs.io/en/6.8.2/helpers.html#elasticsearch.helpers.bulk
+
+        include_type = self._include_mapping_type()
+
+        def delete_action(annotation_id):
+            action = {
+                "_index": self._target_index,
+                "_id": annotation_id,
+                "doc": {"deleted": True},
+            }
+            if include_type:  # pragma: no cover
+                action["_type"] = self.es_client.mapping_type
+            return action
+
+        results = es_helpers.streaming_bulk(
+            client=self.es_client.conn,
+            actions=[delete_action(annotation_id) for annotation_id in annotation_ids],
+            chunk_size=2500,
+            raise_on_error=False,
+        )
+
+        for _ok, _item in results:
+            # We aren't doing anything with the results yet
+            # (but we still need this loop here to consume the `results`
+            # generator, otherwise the requests don't actually get sent to
+            # Elasticsearch).
+            pass
+
     def _prepare(self, annotation):
         operation = {
             "_index": self._target_index,
             "_id": annotation.id,
         }
-        if self.es_client.server_version < Version("7.0.0"):  # pragma: no cover
+        if self._include_mapping_type():  # pragma: no cover
             operation["_type"] = self.es_client.mapping_type
 
         data = presenters.AnnotationSearchIndexPresenter(
@@ -88,22 +124,9 @@ class BatchIndexer:
 
         return {self.op_type: operation}, data
 
-
-def _all_annotations(session, windowsize=2000):
-    # This is using a windowed query for loading all annotations in batches.
-    # It is the most performant way of loading a big set of records from
-    # the database while still supporting eagerloading of associated
-    # document data.
-    windows = column_windows(
-        session=session,
-        column=models.Annotation.updated,  # implicit ASC
-        windowsize=windowsize,
-        where=_annotation_filter(),
-    )
-    query = _eager_loaded_annotations(session).filter(_annotation_filter())
-
-    for window in windows:
-        yield from query.filter(window)
+    def _include_mapping_type(self):
+        """Return True if the `_type` field should be included in request payloads."""
+        return self.es_client.server_version < Version("7.0.0")
 
 
 def _filtered_annotations(session, ids):
@@ -129,7 +152,7 @@ def _eager_loaded_annotations(session):
         ),
         subqueryload(models.Annotation.document).subqueryload(models.Document.meta),
         subqueryload(models.Annotation.moderation),
-        subqueryload(models.Annotation.thread).load_only("id"),
+        subqueryload(models.Annotation.thread).load_only(models.Annotation.id),
     )
 
 

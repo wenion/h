@@ -4,9 +4,10 @@ Configure deform to use custom templates.
 Sets up the form handling and rendering library, deform, to use our own custom
 form templates in preference to the defaults.
 """
+
 import deform
-import jinja2
 import pyramid_jinja2
+from markupsafe import Markup
 from pyramid import httpexceptions
 from pyramid.path import AssetResolver
 
@@ -45,7 +46,7 @@ class Jinja2Renderer:
         context = self._system.copy()
         context.update(kwargs)
 
-        return jinja2.Markup(template.render(context))
+        return Markup(template.render(context))
 
 
 def create_environment(base):
@@ -86,7 +87,7 @@ def configure_environment(config):  # pragma: no cover
     config.registry[ENVIRONMENT_KEY] = create_environment(base)
 
 
-def handle_form_submission(request, form, on_success, on_failure):
+def handle_form_submission(request, form, on_success, on_failure, flash_success=True):
     """
     Handle the submission of the given form in a standard way.
 
@@ -113,6 +114,11 @@ def handle_form_submission(request, form, on_success, on_failure):
         not an XHR request.
     :type on_failure: callable
 
+    :param flash_success:
+        Whether to show a "success" flash message if handling the form succeeds.
+        Applies to non-XHR form submissions only.
+    :type flash_success: bool
+
     """
     try:
         appstruct = form.validate(request.POST.items())
@@ -125,7 +131,7 @@ def handle_form_submission(request, form, on_success, on_failure):
         if result is None:
             result = httpexceptions.HTTPFound(location=request.url)
 
-        if not request.is_xhr:  # pragma: no cover
+        if (not request.is_xhr) and flash_success:
             request.session.flash(_("Success. We've saved your changes."), "success")
 
     return to_xhr_response(request, result, form)

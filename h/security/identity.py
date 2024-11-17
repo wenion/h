@@ -1,7 +1,7 @@
 """Data classes used to represent authenticated users."""
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Self
 
 from h.models import AuthClient, Group, User
 
@@ -90,7 +90,15 @@ class Identity:
 
         return Identity(
             user=LongLivedUser.from_model(user) if user else None,
-            auth_client=LongLivedAuthClient.from_model(auth_client)
-            if auth_client
-            else None,
+            auth_client=(
+                LongLivedAuthClient.from_model(auth_client) if auth_client else None
+            ),
         )
+
+    @staticmethod
+    def authenticated_userid(identity: Self | None) -> str | None:
+        """Return the authenticated_userid from the given identity."""
+        if identity and identity.user:
+            return identity.user.userid
+
+        return None

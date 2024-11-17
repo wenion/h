@@ -27,19 +27,40 @@ This home-grown job queue differs from our Celery task queue in a few ways:
    Celery should be the default task queue for almost all tasks, and only jobs
    that really need Postgres transactionality should use this custom job queue.
 """
-from sqlalchemy import Column, DateTime, Integer, Sequence, UnicodeText, func, text
+
+from enum import Enum
+
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Index,
+    Integer,
+    Sequence,
+    UnicodeText,
+    func,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 
 from h.db import Base
+from h.models import helpers
 
 
 class Job(Base):
     """A job in the job queue."""
 
+    class JobName(str, Enum):
+        SYNC_ANNOTATION = "sync_annotation"
+        ANNOTATION_SLIM = "annotation_slim"
+        PURGE_USER = "purge_user"
+
     __tablename__ = "job"
+
+    __table_args__ = (Index("ix__job_priority_enqueued_at", "priority", "enqueued_at"),)
 
     id = Column(Integer, Sequence("job_id_seq", cycle=True), primary_key=True)
     name = Column(UnicodeText, nullable=False)
+    # pylint:disable=not-callable
     enqueued_at = Column(DateTime, nullable=False, server_default=func.now())
     scheduled_at = Column(DateTime, nullable=False, server_default=func.now())
     expires_at = Column(
@@ -52,3 +73,18 @@ class Job(Base):
         server_default=text("'{}'::jsonb"),
         nullable=False,
     )
+
+    def __repr__(self):
+        return helpers.repr_(
+            self,
+            [
+                "id",
+                "name",
+                "enqueued_at",
+                "scheduled_at",
+                "expires_at",
+                "priority",
+                "tag",
+                "kwargs",
+            ],
+        )

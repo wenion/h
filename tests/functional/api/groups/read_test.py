@@ -2,6 +2,7 @@ import base64
 
 import pytest
 
+from h.models import GroupMembership
 from h.models.auth_client import GrantType
 
 
@@ -20,8 +21,8 @@ class TestReadGroups:
         self, app, factories, db_session, user_with_token, token_auth_header
     ):
         user, _ = user_with_token
-        group1 = factories.Group(creator=user)
-        group2 = factories.Group(creator=user)
+        group1 = factories.Group(memberships=[GroupMembership(user=user)])
+        group2 = factories.Group(memberships=[GroupMembership(user=user)])
         db_session.commit()
 
         res = app.get("/api/groups", headers=token_auth_header)
@@ -35,8 +36,9 @@ class TestReadGroups:
         self, app, factories, db_session, user_with_token, token_auth_header
     ):
         user, _ = user_with_token
-        # This group will be created with the user's authority
-        group1 = factories.Group(creator=user)
+        group1 = factories.Group(
+            authority=user.authority, memberships=[GroupMembership(user=user)]
+        )
         db_session.commit()
 
         res = app.get("/api/groups?authority=whatever.com", headers=token_auth_header)
@@ -91,7 +93,7 @@ class TestReadGroup:
         self, app, user_with_token, token_auth_header, factories, db_session
     ):
         user, _ = user_with_token
-        group = factories.Group(creator=user)
+        group = factories.Group(creator=user, memberships=[GroupMembership(user=user)])
         db_session.commit()
 
         res = app.get(
@@ -105,7 +107,7 @@ class TestReadGroup:
     ):
         user, _ = user_with_token
         group = factories.Group()
-        group.members.append(user)
+        group.memberships.append(GroupMembership(user=user))
         db_session.commit()
 
         res = app.get(
@@ -176,7 +178,7 @@ def auth_client_header(auth_client):
 @pytest.fixture
 def user_with_token(db_session, factories):
     user = factories.User()
-    token = factories.DeveloperToken(userid=user.userid)
+    token = factories.DeveloperToken(user=user)
     db_session.add(token)
     db_session.commit()
     return (user, token)

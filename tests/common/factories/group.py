@@ -20,7 +20,6 @@ class Group(ModelFactory):
     joinable_by = JoinableBy.authority
     readable_by = ReadableBy.members
     writeable_by = WriteableBy.members
-    members = factory.LazyAttribute(lambda obj: [obj.creator])
     authority_provided_id = Faker("hexify", text="^" * 30)
     enforce_scope = True
 
@@ -40,7 +39,6 @@ class OpenGroup(Group):
     joinable_by = None
     readable_by = ReadableBy.world
     writeable_by = WriteableBy.authority
-    members = []
 
 
 class RestrictedGroup(Group):

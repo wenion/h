@@ -3,7 +3,7 @@ import logging
 import requests
 from urllib.parse import urljoin
 
-from h.models_redis import is_task_page, create_user_event
+from h.models_redis import create_user_event
 
 log = logging.getLogger(__name__)
 
@@ -37,9 +37,6 @@ def handle_web_page(message, registry=None):
         'userid': message.socket.identity.user.userid,
         'content': plain_text,
     }
-
-    if is_task_page(page_url):
-        return
 
     create_user_event("server-record", "Additional REQUEST", plain_text[0:30], page_url, message.socket.identity.user.userid)
     response = requests.post(url, data=data)

@@ -1,149 +1,125 @@
-from unittest import mock
+from unittest.mock import create_autospec, sentinel
 
 import pytest
-from h_matchers import Any
 from pyramid.httpexceptions import HTTPMovedPermanently
 
+from h.assets import Environment
 from h.traversal.group import GroupContext
 from h.views import groups as views
 
 
-@pytest.mark.usefixtures("group_create_service", "handle_form_submission", "routes")
-class TestGroupCreateController:
-    def test_get_renders_form(self, controller):
-        controller.form = form_validating_to({})
+@pytest.mark.usefixtures("annotation_stats_service")
+class TestGroupCreateEditController:
+    @pytest.mark.parametrize("group_type_flag", [True, False])
+    def test_create(self, pyramid_request, assets_env, mocker, group_type_flag):
+        pyramid_request.feature.flags["group_type"] = group_type_flag
 
-        result = controller.get()
+        mocker.spy(views, "get_csrf_token")
 
-        assert result == {"form": "valid form"}
+        controller = views.GroupCreateEditController(sentinel.context, pyramid_request)
 
-    def test_post_calls_handle_form_submission(
-        self, controller, handle_form_submission
-    ):
-        controller.post()
+        result = controller.create()
 
-        handle_form_submission.assert_called_once_with(
-            controller.request, controller.form, Any.function(), Any.function()
+        assets_env.urls.assert_called_once_with("group_forms_css")
+        views.get_csrf_token.assert_called_once_with(  # pylint:disable=no-member
+            pyramid_request
         )
-
-    def test_post_returns_handle_form_submission(
-        self, controller, handle_form_submission
-    ):
-        assert controller.post() == handle_form_submission.return_value
-
-    def test_post_creates_new_group_if_form_valid(
-        self, controller, group_create_service, handle_form_submission, pyramid_config
-    ):
-        pyramid_config.testing_securitypolicy("ariadna")
-
-        # If the form submission is valid then handle_form_submission() should
-        # call on_success() with the appstruct.
-        def call_on_success(  # pylint: disable=unused-argument
-            request, form, on_success, on_failure
-        ):
-            on_success({"name": "my_new_group", "description": "foobar"})
-
-        handle_form_submission.side_effect = call_on_success
-
-        controller.post()
-
-        assert group_create_service.create_private_group.call_args_list == [
-            mock.call(name="my_new_group", userid="ariadna", description="foobar")
-        ]
-
-    def test_post_redirects_if_form_valid(
-        self,
-        controller,
-        handle_form_submission,
-        matchers,
-        group_create_service,
-        factories,
-    ):
-        group = factories.Group()
-        group_create_service.create_private_group.return_value = group
-
-        # If the form submission is valid then handle_form_submission() should
-        # return the redirect that on_success() returns.
-        def return_on_success(  # pylint: disable=unused-argument
-            request, form, on_success, on_failure
-        ):
-            return on_success({"name": "my_new_group"})
-
-        handle_form_submission.side_effect = return_on_success
-
-        response = controller.post()
-
-        assert response == matchers.Redirect303To(f"/g/{group.pubid}/{group.slug}")
-
-    def test_post_does_not_create_group_if_form_invalid(
-        self, controller, group_create_service, handle_form_submission
-    ):
-        # If the form submission is invalid then handle_form_submission() should
-        # call on_failure().
-        def call_on_failure(  # pylint: disable=unused-argument
-            request, form, on_success, on_failure
-        ):
-            on_failure()
-
-        handle_form_submission.side_effect = call_on_failure
-
-        controller.post()
-
-        assert not group_create_service.create_private_group.called
-
-    def test_post_returns_template_data_if_form_invalid(
-        self, controller, handle_form_submission
-    ):
-        # If the form submission is invalid then handle_form_submission() should
-        # return the template data that on_failure() returns.
-        def return_on_failure(  # pylint: disable=unused-argument
-            request, form, on_success, on_failure
-        ):
-            return on_failure()
-
-        handle_form_submission.side_effect = return_on_failure
-
-        assert controller.post() == {"form": controller.form.render.return_value}
-
-    @pytest.fixture
-    def controller(self, pyramid_request):
-        return views.GroupCreateController(pyramid_request)
-
-    @pytest.fixture
-    def handle_form_submission(self, patch):
-        return patch("h.views.groups.form.handle_form_submission")
-
-
-@pytest.mark.usefixtures("routes")
-class TestGroupEditController:
-    def test_get_reads_group_properties(self, pyramid_request, group):
-        pyramid_request.create_form.return_value = FakeForm()
-
-        result = views.GroupEditController(GroupContext(group), pyramid_request).get()
-
         assert result == {
-            "form": {
-                "name": group.name,
-                "description": group.description,
+            "page_title": (
+                "Create a new group"
+                if group_type_flag
+                else "Create a new private group"
+            ),
+            "js_config": {
+                "styles": assets_env.urls.return_value,
+                "api": {
+                    "createGroup": {
+                        "method": "POST",
+                        "url": pyramid_request.route_url("api.groups"),
+                        "headers": {
+                            "X-CSRF-Token": views.get_csrf_token.spy_return  # pylint:disable=no-member
+                        },
+                    }
+                },
+                "context": {"group": None},
+                "features": {
+                    "group_type": group_type_flag,
+                    "group_members": pyramid_request.feature.flags["group_members"],
+                },
             },
-            "group_path": f"/g/{group.pubid}/{group.slug}",
         }
 
-    def test_post_sets_group_properties(
-        self, form_validating_to, pyramid_request, group
+    @pytest.mark.usefixtures("routes")
+    def test_edit(
+        self, factories, pyramid_request, assets_env, mocker, annotation_stats_service
     ):
-        controller = views.GroupEditController(GroupContext(group), pyramid_request)
-        controller.form = form_validating_to(
-            {"name": "New name", "description": "New description"}
-        )
-        controller.post()
+        mocker.spy(views, "get_csrf_token")
+        group = factories.Group()
+        context = GroupContext(group)
+        controller = views.GroupCreateEditController(context, pyramid_request)
 
-        assert group.name == "New name"
-        assert group.description == "New description"
+        result = controller.edit()
+
+        assets_env.urls.assert_called_once_with("group_forms_css")
+        views.get_csrf_token.assert_called_once_with(  # pylint:disable=no-member
+            pyramid_request
+        )
+        annotation_stats_service.total_group_annotation_count.assert_called_once_with(
+            group.pubid, unshared=False
+        )
+        assert result == {
+            "page_title": "Edit group",
+            "js_config": {
+                "styles": assets_env.urls.return_value,
+                "api": {
+                    "createGroup": {
+                        "method": "POST",
+                        "url": pyramid_request.route_url("api.groups"),
+                        "headers": {
+                            "X-CSRF-Token": views.get_csrf_token.spy_return  # pylint:disable=no-member
+                        },
+                    },
+                    "updateGroup": {
+                        "method": "PATCH",
+                        "url": pyramid_request.route_url("api.group", id=group.pubid),
+                        "headers": {
+                            "X-CSRF-Token": views.get_csrf_token.spy_return  # pylint:disable=no-member
+                        },
+                    },
+                },
+                "context": {
+                    "group": {
+                        "pubid": group.pubid,
+                        "name": group.name,
+                        "description": group.description,
+                        "type": group.type,
+                        "link": pyramid_request.route_url(
+                            "group_read", pubid=group.pubid, slug=group.slug
+                        ),
+                        "num_annotations": annotation_stats_service.total_group_annotation_count.return_value,
+                    }
+                },
+                "features": {
+                    "group_type": pyramid_request.feature.flags["group_type"],
+                    "group_members": pyramid_request.feature.flags["group_members"],
+                },
+            },
+        }
 
     @pytest.fixture
-    def group(self, factories):
-        return factories.Group(description="DESCRIPTION")
+    def assets_env(self):
+        return create_autospec(Environment, instance=True, spec_set=True)
+
+    @pytest.fixture(autouse=True)
+    def pyramid_config(self, pyramid_config, assets_env):
+        pyramid_config.registry["assets_env"] = assets_env
+        return pyramid_config
+
+    @pytest.fixture(autouse=True)
+    def pyramid_request(self, pyramid_request):
+        pyramid_request.feature.flags["group_type"] = True
+        pyramid_request.feature.flags["group_members"] = True
+        return pyramid_request
 
 
 @pytest.mark.usefixtures("routes")
@@ -156,21 +132,8 @@ def test_read_noslug_redirects(pyramid_request, factories):
     assert exc.value.location == f"/g/{group.pubid}/{group.slug}"
 
 
-class FakeForm:
-    def set_appstruct(self, appstruct):
-        self.appstruct = appstruct  # pylint:disable=attribute-defined-outside-init
-
-    def render(self):
-        return self.appstruct
-
-
-def form_validating_to(appstruct):
-    form = mock.Mock()
-    form.validate.return_value = appstruct
-    form.render.return_value = "valid form"
-    return form
-
-
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def routes(pyramid_config):
     pyramid_config.add_route("group_read", "/g/{pubid}/{slug}")
+    pyramid_config.add_route("api.group", "/api/group/{id}")
+    pyramid_config.add_route("api.groups", "/api/groups")

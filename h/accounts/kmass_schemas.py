@@ -1,10 +1,12 @@
 import codecs
 import logging
+from datetime import datetime, timedelta
 from functools import lru_cache
 
 import colander
 import deform
-from jinja2 import Markup
+from markupsafe import Markup
+from sqlalchemy import select
 
 from h import i18n, models
 from h.models.user import (
@@ -15,11 +17,11 @@ from h.models.user import (
 )
 from h.schemas import validators
 from h.schemas.base import CSRFSchema
+from h.schemas.forms.accounts.util import PASSWORD_MIN_LENGTH
+from h.util.user import format_userid
 
 _ = i18n.TranslationString
 log = logging.getLogger(__name__)
-
-PASSWORD_MIN_LENGTH = 2  # FIXME: this is ridiculous
 
 
 @lru_cache(maxsize=None)
@@ -27,10 +29,10 @@ def get_blacklist():
     # Try to load the blacklist file from disk. If, for whatever reason, we
     # can't load the file, then don't crash out, just log a warning about
     # the problem.
-    try:  # pylint: disable=too-many-try-statements
+    try:
         with codecs.open("h/accounts/blacklist", encoding="utf-8") as handle:
             blacklist = handle.readlines()
-    except (IOError, ValueError):
+    except (IOError, ValueError):  # pragma: no cover
         log.exception("unable to load blacklist")
         blacklist = []
     return set(line.strip().lower() for line in blacklist)
@@ -47,11 +49,27 @@ def unique_email(node, value):
 
 def unique_username(node, value):
     """Colander validator that ensures the username does not exist."""
+    exc = colander.Invalid(node, _("This username is already taken."))
     request = node.bindings["request"]
     user = models.User.get_by_username(request.db, value, request.default_authority)
-    if user:
-        msg = _("This username is already taken.")
-        raise colander.Invalid(node, msg)
+    if user:  # pragma: no cover
+        raise exc
+
+    # Don't allow recently-deleted usernames to be re-used.
+    # This is to make sure that there's time for the user's data to be expunged
+    # from all systems (for example: Elasticsearch) before we allow a new
+    # account with the same username to be registered.
+    # Otherwise new accounts could inherit dating belonging to deleted accounts.
+    if request.db.scalars(
+        select(models.UserDeletion.id).where(
+            models.UserDeletion.userid
+            == format_userid(value, request.default_authority)
+        )
+        # 31 days is an arbitrary time delta that should be more than enough
+        # time for all the previous user's data to be expunged.
+        .where(models.UserDeletion.requested_at > datetime.now() - timedelta(days=31))
+    ).first():
+        raise exc
 
 
 def email_node(**kwargs):
@@ -113,7 +131,7 @@ def _privacy_accepted_message():
     terms_links = {
         # pylint:disable=consider-using-f-string
         "privacy_policy": '<a class="link" href="{href}">{text}</a>'.format(
-            href="hhttps://colam.kmass.cloud.edu.au/privacy/", text=_("privacy policy")
+            href="https://colam.kmass.cloud.edu.au/privacy/", text=_("privacy policy")
         ),
         "terms_of_service": '<a class="link" href="{href}">{text}</a>'.format(
             href="https://web.hypothes.is/terms-of-service/", text=_("terms of service")
@@ -284,7 +302,7 @@ class PasswordChangeSchema(CSRFSchema):
         hide_until_form_active=True,
     )
 
-    def validator(self, node, value):
+    def validator(self, node, value):  # pragma: no cover
         super().validator(node, value)
         exc = colander.Invalid(node)
         request = node.bindings["request"]
@@ -310,5 +328,5 @@ class NotificationsSchema(CSRFSchema):
     )
 
 
-def includeme(_config):
+def includeme(_config):  # pragma: no cover
     pass

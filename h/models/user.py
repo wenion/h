@@ -1,5 +1,6 @@
 import datetime
 import re
+from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declared_attr
@@ -7,7 +8,11 @@ from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 
 from h.db import Base
 from h.exceptions import InvalidUserId
-from h.util.user import split_user
+from h.util.user import format_userid, split_user
+
+if TYPE_CHECKING:
+    from models.group import Group
+
 
 USERNAME_MIN_LENGTH = 3
 USERNAME_MAX_LENGTH = 30
@@ -22,7 +27,9 @@ def _normalise_username(username):
     return sa.func.lower(sa.func.replace(username, sa.text("'.'"), sa.text("''")))
 
 
-class UsernameComparator(Comparator):  # pylint: disable=abstract-method
+class UsernameComparator(
+    Comparator
+):  # pylint: disable=abstract-method,too-many-ancestors
     """
     Custom comparator for :py:attr:`~h.models.user.User.username`.
 
@@ -49,7 +56,9 @@ class UsernameComparator(Comparator):  # pylint: disable=abstract-method
         return _normalise_username(self.__clause_element__()).in_(usernames)
 
 
-class UserIDComparator(Comparator):  # pylint: disable=abstract-method
+class UserIDComparator(
+    Comparator
+):  # pylint: disable=abstract-method,too-many-ancestors
     """
     Custom comparator for :py:attr:`~h.models.user.User.userid`.
 
@@ -143,7 +152,7 @@ class User(Base):
             sa.Index(
                 "ix__user__nipsa", cls.nipsa, postgresql_where=cls.nipsa.is_(True)
             ),
-            sa.Index("ix__user__email", sa.func.lower("email")),
+            sa.Index("ix__user__email", sa.func.lower(cls.email)),
         )
 
     id = sa.Column(sa.Integer, autoincrement=True, primary_key=True)
@@ -227,7 +236,7 @@ class User(Base):
 
     @hybrid_property
     def userid(self):
-        return f"acct:{self.username}@{self.authority}"
+        return format_userid(self.username, self.authority)
 
     @userid.comparator
     def userid(cls):  # pylint: disable=no-self-argument
@@ -239,7 +248,7 @@ class User(Base):
     registered_date = sa.Column(
         sa.TIMESTAMP(timezone=False),
         default=datetime.datetime.utcnow,
-        server_default=sa.func.now(),
+        server_default=sa.func.now(),  # pylint:disable=not-callable
         nullable=False,
     )
     activation_date = sa.Column(sa.TIMESTAMP(timezone=False), nullable=True)
@@ -275,6 +284,42 @@ class User(Base):
     #: which were, sadly, double-salted. As users log in, we are slowly
     #: upgrading their passwords and setting this column to None.
     salt = sa.Column(sa.UnicodeText(), nullable=True)
+
+    #: Has this user been marked for deletion?
+    deleted = sa.Column(
+        sa.Boolean,
+        default=False,
+        nullable=False,
+        server_default=sa.sql.expression.false(),
+    )
+
+    tokens = sa.orm.relationship("Token", back_populates="user")
+
+    memberships = sa.orm.relationship("GroupMembership", back_populates="user")
+
+    @property
+    def groups(self) -> tuple["Group", ...]:
+        """
+        Return a tuple of this user's groups.
+
+        This is a convenience property for when you want to access a user's
+        groups (Group objects) rather than its memberships (GroupMembership
+        objects).
+
+        This is not an SQLAlchemy relationship! SQLAlchemy emits a warning if
+        you try to have both User.memberships and a User.groups relationships
+        at the same time because it can result in reads returning conflicting
+        data and in writes causing integrity errors or unexpected inserts or
+        deletes. See:
+
+        https://docs.sqlalchemy.org/en/20/orm/basic_relationships.html#combining-association-object-with-many-to-many-access-patterns
+
+        Since this is just a normal Python property setting or mutating it
+        (e.g. `user.groups = [...]` or `user.groups.append(...)`) wouldn't
+        be registered with SQLAlchemy and the changes wouldn't be saved to the
+        DB. So this is a read-only property that returns an immutable tuple.
+        """
+        return tuple(membership.group for membership in self.memberships)
 
     @sa.orm.validates("email")
     def validate_email(self, _key, email):

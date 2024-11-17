@@ -4,7 +4,6 @@ import pytest
 
 from h.services.group import GroupService
 from h.services.search_index import SearchIndexService
-from h.services.search_index._queue import Queue
 
 
 @pytest.fixture
@@ -47,14 +46,15 @@ def index_annotations(es_client, search_index):
 
 @pytest.fixture
 def search_index(  # pylint:disable=unused-argument
-    es_client, pyramid_request, moderation_service, annotation_read_service
+    es_client,
+    pyramid_request,
+    moderation_service,
+    annotation_read_service,
 ):
     return SearchIndexService(
         pyramid_request,
-        es_client,
-        session=pyramid_request.db,
+        es=es_client,
         settings={},
-        queue=mock.create_autospec(Queue, spec_set=True, instance=True),
         annotation_read_service=annotation_read_service,
     )
 

@@ -4,6 +4,7 @@ import pytest
 from h_matchers import Any
 
 from h.jinja_extensions.navbar_data import navbar_data
+from h.models import GroupMembership
 
 
 class TestNavbarData:
@@ -50,6 +51,25 @@ class TestNavbarData:
             "username_url": f"http://example.com/users/{user.username}",
         }
 
+    def test_it_with_a_group_with_no_creator(
+        self, pyramid_request, user, factories, group_list_service
+    ):
+        group = factories.Group(creator=None)
+        group_list_service.associated_groups.return_value = [group]
+        user.memberships = [GroupMembership(group=group, user=user)]
+        pyramid_request.user = user
+
+        result = navbar_data(pyramid_request)
+
+        assert result["groups_suggestions"] == [
+            {
+                "name": group.name,
+                "pubid": group.pubid,
+                "relationship": None,
+            }
+            for group in user.groups
+        ]
+
     def test_it_with_no_user(self, pyramid_request, group_list_service):
         pyramid_request.user = None
         group_list_service.associated_groups.return_value = []
@@ -92,9 +112,15 @@ class TestNavbarData:
         assert result["search_url"] == search_url
 
     @pytest.fixture
-    def user(self, factories):
+    def user(self, db_session, factories):
         user = factories.User()
-        user.groups = [factories.Group(creator=user), factories.Group()]
+
+        with db_session.no_autoflush:
+            user.memberships = [
+                GroupMembership(group=group)
+                for group in [factories.Group(creator=user), factories.Group()]
+            ]
+
         return user
 
     @pytest.fixture(autouse=True)

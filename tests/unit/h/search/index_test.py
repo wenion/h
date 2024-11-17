@@ -1,9 +1,8 @@
 import logging
-from unittest import mock
 from unittest.mock import sentinel
 
-import elasticsearch
 import pytest
+from elasticsearch.exceptions import NotFoundError
 
 from h.search.index import BatchIndexer
 
@@ -15,17 +14,6 @@ pytestmark = [
 
 @pytest.mark.usefixtures("nipsa_service")
 class TestBatchIndexer:
-    def test_it_indexes_all_annotations(
-        self, batch_indexer, factories, get_indexed_ann
-    ):
-        annotations = factories.Annotation.create_batch(3)
-        ids = [a.id for a in annotations]
-
-        batch_indexer.index()
-
-        for _id in ids:
-            assert get_indexed_ann(_id) is not None
-
     @pytest.mark.parametrize("target_index", (None, "custom_index"))
     def test_it_accepts_different_indexes(self, target_index, es_client):
         indexer = BatchIndexer(
@@ -55,7 +43,7 @@ class TestBatchIndexer:
             assert get_indexed_ann(_id) is not None
 
         for _id in ids_not_to_index:
-            with pytest.raises(elasticsearch.exceptions.NotFoundError):
+            with pytest.raises(NotFoundError):
                 get_indexed_ann(_id)
 
     def test_it_does_not_index_deleted_annotations(
@@ -65,11 +53,11 @@ class TestBatchIndexer:
         # create deleted annotations
         ann_del = factories.Annotation(deleted=True)
 
-        batch_indexer.index()
+        batch_indexer.index([ann.id, ann_del.id])
 
         assert get_indexed_ann(ann.id) is not None
 
-        with pytest.raises(elasticsearch.exceptions.NotFoundError):
+        with pytest.raises(NotFoundError):
             get_indexed_ann(ann_del.id)
 
     def test_it_logs_indexing_status(self, caplog, batch_indexer, factories):
@@ -93,7 +81,7 @@ class TestBatchIndexer:
     ):
         annotations = factories.Annotation.create_batch(2, groupid="group_a")
 
-        batch_indexer.index()
+        batch_indexer.index([annotation.id for annotation in annotations])
 
         for ann in annotations:
             result = get_indexed_ann(ann.id)
@@ -102,29 +90,29 @@ class TestBatchIndexer:
             assert result.get("user") == ann.userid
             assert result.get("uri") == ann.target_uri
 
-    def test_it_returns_errored_annotation_ids(self, batch_indexer, factories):
+    def test_it_returns_errored_annotation_ids(
+        self, batch_indexer, factories, es_helpers
+    ):
         annotations = factories.Annotation.create_batch(3)
         expected_errored_ids = {annotations[0].id, annotations[2].id}
 
-        elasticsearch.helpers.streaming_bulk = mock.Mock()
-        elasticsearch.helpers.streaming_bulk.return_value = [
+        es_helpers.streaming_bulk.return_value = [
             (False, {"index": {"error": "some error", "_id": annotations[0].id}}),
             (True, {}),
             (False, {"index": {"error": "some error", "_id": annotations[2].id}}),
         ]
 
-        errored = batch_indexer.index()
+        errored = batch_indexer.index([annotation.id for annotation in annotations])
 
         assert errored == expected_errored_ids
 
     def test_it_does_not_error_if_annotations_already_indexed(
-        self, db_session, es_client, factories, pyramid_request
+        self, db_session, es_client, factories, pyramid_request, es_helpers
     ):
         annotations = factories.Annotation.create_batch(3)
         expected_errored_ids = {annotations[1].id}
 
-        elasticsearch.helpers.streaming_bulk = mock.Mock()
-        elasticsearch.helpers.streaming_bulk.return_value = [
+        es_helpers.streaming_bulk.return_value = [
             (True, {}),
             (False, {"create": {"error": "some error", "_id": annotations[1].id}}),
             (
@@ -140,9 +128,18 @@ class TestBatchIndexer:
 
         errored = BatchIndexer(
             db_session, es_client, pyramid_request, es_client.index, "create"
-        ).index()
+        ).index([annotation.id for annotation in annotations])
 
         assert errored == expected_errored_ids
+
+    def test_delete(self, batch_indexer, factories, get_indexed_ann):
+        annotations = factories.Annotation.create_batch(2)
+        batch_indexer.index([annotation.id for annotation in annotations])
+
+        batch_indexer.delete([annotation.id for annotation in annotations])
+
+        for annotation in annotations:
+            assert get_indexed_ann(annotation.id) == {"doc": {"deleted": True}}
 
 
 @pytest.fixture
@@ -165,3 +162,8 @@ def get_indexed_ann(es_client):
         )["_source"]
 
     return _get
+
+
+@pytest.fixture
+def es_helpers(patch):
+    return patch("h.search.index.es_helpers")

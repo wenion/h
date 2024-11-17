@@ -1,7 +1,13 @@
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from h import models
-from h.models.group import AUTHORITY_PROVIDED_ID_MAX_LENGTH, ReadableBy, WriteableBy
+from h.models.group import (
+    AUTHORITY_PROVIDED_ID_MAX_LENGTH,
+    GROUP_TYPE_FLAGS,
+    ReadableBy,
+    WriteableBy,
+)
 
 
 def test_init_sets_given_attributes():
@@ -153,11 +159,21 @@ def test_type_raises_for_unknown_type_of_group(factories):
         _ = group.type
 
 
-def test_you_cannot_set_type(factories):
-    group = factories.Group()
+@pytest.mark.parametrize("original_type", ["private", "restricted", "open"])
+@pytest.mark.parametrize("new_type", ["private", "restricted", "open"])
+def test_you_can_set_type(factories, original_type, new_type):
+    group = factories.Group(**GROUP_TYPE_FLAGS[original_type]._asdict())
 
-    with pytest.raises(AttributeError, match="can't set attribute"):
-        group.type = "open"
+    group.type = new_type
+
+    assert group.type == new_type
+    for index, flag in enumerate(GROUP_TYPE_FLAGS[new_type]._fields):
+        assert getattr(group, flag) == GROUP_TYPE_FLAGS[new_type][index]
+
+
+def test_you_cant_set_type_to_an_invalid_value(factories):
+    with pytest.raises(ValueError):
+        factories.Group().type = "invalid"
 
 
 def test_repr(db_session, factories, organization):
@@ -191,30 +207,6 @@ def test_group_organization(db_session):
     assert group.organization_id == org.id
 
 
-def test_created_by(db_session, factories, organization):
-    name_1 = "My first group"
-    name_2 = "My second group"
-    user = factories.User()
-
-    group_1 = models.Group(
-        name=name_1,
-        authority="foobar.com",
-        creator=user,
-        organization=organization,
-    )
-    group_2 = models.Group(
-        name=name_2,
-        authority="foobar.com",
-        creator=user,
-        organization=organization,
-    )
-
-    db_session.add_all([group_1, group_2])
-    db_session.flush()
-
-    assert models.Group.created_by(db_session, user).all() == [group_1, group_2]
-
-
 def test_public_group():
     group = models.Group(readable_by=ReadableBy.world)
 
@@ -225,6 +217,123 @@ def test_non_public_group():
     group = models.Group(readable_by=ReadableBy.members)
 
     assert not group.is_public
+
+
+def test_members(factories):
+    users = factories.User.build_batch(size=2)
+    group = factories.Group.build(
+        memberships=[
+            models.GroupMembership(user=users[0]),
+            models.GroupMembership(user=users[1]),
+        ]
+    )
+
+    assert group.members == tuple(users)
+
+
+def test_members_is_readonly(factories):
+    group = factories.Group.build()
+    new_members = (factories.User.build(),)
+
+    with pytest.raises(
+        AttributeError, match="^property 'members' of 'Group' object has no setter$"
+    ):
+        group.members = new_members
+
+
+def test_members_is_immutable(factories):
+    group = factories.Group.build()
+    new_member = factories.User.build()
+
+    with pytest.raises(
+        AttributeError, match="^'tuple' object has no attribute 'append'$"
+    ):
+        group.members.append(new_member)
+
+
+def test_get_members(factories):
+    group = factories.Group()
+    owners = factories.User.create_batch(2)
+    admins = factories.User.create_batch(2)
+    moderators = factories.User.create_batch(2)
+    members = factories.User.create_batch(2)
+    group.memberships.extend(
+        models.GroupMembership(user=owner, roles=["owner"]) for owner in owners
+    )
+    group.memberships.extend(
+        models.GroupMembership(user=admin, roles=["admin"]) for admin in admins
+    )
+    group.memberships.extend(
+        models.GroupMembership(user=moderator, roles=["moderator"])
+        for moderator in moderators
+    )
+    group.memberships.extend(
+        models.GroupMembership(user=member, roles=["member"]) for member in members
+    )
+
+    assert group.get_members(role="owner") == (*owners,)
+    assert group.get_members(role="admin") == (*admins,)
+    assert group.get_members(role="moderator") == (*moderators,)
+    assert group.get_members(role="member") == (*members,)
+    assert group.get_members() == (*owners, *admins, *moderators, *members)
+
+
+class TestGroupMembership:
+    def test_defaults(self, db_session, user, group):
+        membership = models.GroupMembership(user_id=user.id, group_id=group.id)
+        db_session.add(membership)
+
+        db_session.flush()
+        assert membership.id
+        assert membership.user_id == user.id
+        assert membership.group_id == group.id
+        assert membership.roles == ["member"]
+
+    @pytest.mark.parametrize(
+        "roles",
+        (
+            ["member"],
+            ["moderator"],
+            ["admin"],
+            ["owner"],
+        ),
+    )
+    def test_custom_roles(self, db_session, user, group, roles):
+        membership = models.GroupMembership(
+            user_id=user.id, group_id=group.id, roles=roles
+        )
+        db_session.add(membership)
+
+        db_session.flush()
+        assert membership.roles == roles
+
+    @pytest.mark.parametrize(
+        "roles",
+        (
+            ["unknown_role"],
+            ["moderator", "admin"],  # Two valid roles, only one role is allowed.
+            [],  # Every membership must have at least one role.
+        ),
+    )
+    def test_invalid_roles(self, db_session, user, group, roles):
+        membership = models.GroupMembership(
+            user_id=user.id, group_id=group.id, roles=roles
+        )
+        db_session.add(membership)
+
+        with pytest.raises(
+            IntegrityError,
+            match='new row for relation "user_group" violates check constraint "ck__user_group__validate_role_strings"',
+        ):
+            db_session.flush()
+
+    @pytest.fixture
+    def user(self, factories):
+        return factories.User()
+
+    @pytest.fixture
+    def group(self, factories):
+        return factories.Group()
 
 
 @pytest.fixture()

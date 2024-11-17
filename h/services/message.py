@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import re
 
 from h import util
+from h.exceptions import InvalidUserId
 from h.models_redis import (
     create_message_cache,
     fetch_message_cache_by_user_id,

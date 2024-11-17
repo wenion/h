@@ -16,6 +16,7 @@ key to. So for convenience the test module can instead just do
 ``from h import models`` and have all ORM classes be defined.
 
 """
+
 from h.models.activation import Activation
 from h.models.annotation import Annotation
 from h.models.annotation_metadata import AnnotationMetadata
@@ -27,9 +28,9 @@ from h.models.authz_code import AuthzCode
 from h.models.blocklist import Blocklist
 from h.models.document import Document, DocumentMeta, DocumentURI
 from h.models.feature import Feature
-from h.models.feature_cohort import FeatureCohort
+from h.models.feature_cohort import FeatureCohort, FeatureCohortUser
 from h.models.flag import Flag
-from h.models.group import Group, GroupMembership
+from h.models.group import Group, GroupMembership, GroupMembershipRoles
 from h.models.group_scope import GroupScope
 from h.models.job import Job
 from h.models.organization import Organization
@@ -37,6 +38,7 @@ from h.models.setting import Setting
 from h.models.subscriptions import Subscriptions
 from h.models.token import Token
 from h.models.user import User
+from h.models.user_deletion import UserDeletion
 from h.models.user_identity import UserIdentity
 from h.models.organisation_event import OrganisationEvent
 from h.models.organisation_event_push_log import OrganisationEventPushLog
@@ -65,6 +67,7 @@ __all__ = (
     "Subscriptions",
     "Token",
     "User",
+    "UserDeletion",
     "UserIdentity",
     "OrganisationEvent",
     "OrganisationEventPushLog",

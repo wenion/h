@@ -1,12 +1,8 @@
 from functools import partial
 
 from h import session
-from h.models import Group, GroupScope
-from h.models.group import (
-    OPEN_GROUP_TYPE_FLAGS,
-    PRIVATE_GROUP_TYPE_FLAGS,
-    RESTRICTED_GROUP_TYPE_FLAGS,
-)
+from h.models import Group, GroupMembership, GroupScope
+from h.models.group import GROUP_TYPE_FLAGS
 
 
 class GroupCreateService:
@@ -38,9 +34,8 @@ class GroupCreateService:
         return self._create(
             name=name,
             userid=userid,
-            type_flags=PRIVATE_GROUP_TYPE_FLAGS,
+            type_flags=GROUP_TYPE_FLAGS["private"],
             scopes=[],
-            add_creator_as_member=True,
             **kwargs,
         )
 
@@ -62,9 +57,8 @@ class GroupCreateService:
         return self._create(
             name=name,
             userid=userid,
-            type_flags=OPEN_GROUP_TYPE_FLAGS,
+            type_flags=GROUP_TYPE_FLAGS["open"],
             scopes=scopes,
-            add_creator_as_member=False,
             **kwargs,
         )
 
@@ -87,15 +81,12 @@ class GroupCreateService:
         return self._create(
             name=name,
             userid=userid,
-            type_flags=RESTRICTED_GROUP_TYPE_FLAGS,
+            type_flags=GROUP_TYPE_FLAGS["restricted"],
             scopes=scopes,
-            add_creator_as_member=True,
             **kwargs,
         )
 
-    def _create(  # pylint: disable=too-many-arguments
-        self, name, userid, type_flags, scopes, add_creator_as_member, **kwargs
-    ):
+    def _create(self, name, userid, type_flags, scopes, **kwargs):
         """
         Create a group and save it to the DB.
 
@@ -104,7 +95,6 @@ class GroupCreateService:
         :param type_flags: the type of this group
         :param scopes: the list of scopes (URIs) that the group will be scoped to
         :type scopes: list(str)
-        :param add_creator_as_member: if the group creator should be added as a member
         :param kwargs: optional attributes to set on the group, as keyword
             arguments
         """
@@ -115,7 +105,7 @@ class GroupCreateService:
 
         group_scopes = [GroupScope(scope=s) for s in scopes]
 
-        if "organization" in kwargs:
+        if kwargs.get("organization"):
             self._validate_authorities_match(
                 creator.authority, kwargs["organization"].authority
             )
@@ -132,13 +122,12 @@ class GroupCreateService:
         )
         self.db.add(group)
 
-        if add_creator_as_member:
-            group.members.append(group.creator)
+        # Flush the DB to generate `group.pubid` before passing `group` to
+        # self.publish() or `return group`.
+        self.db.flush()
 
-            # Flush the DB to generate group.pubid before publish()ing it.
-            self.db.flush()
-
-            self.publish("group-join", group.pubid, group.creator.userid)
+        self.db.add(GroupMembership(group=group, user=group.creator, roles=["owner"]))
+        self.publish("group-join", group.pubid, group.creator.userid)
 
         return group
 

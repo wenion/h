@@ -12,7 +12,7 @@ from h.schemas import ValidationError
 from h.security import Permission
 from h.services.annotation_metadata import AnnotationMetadataService
 from h.services.annotation_read import AnnotationReadService
-from h.services.search_index import SearchIndexService
+from h.services.job_queue import JobQueueService
 from h.traversal.group import GroupContext
 from h.util.group_scope import url_in_scope
 
@@ -22,17 +22,17 @@ _ = i18n.TranslationStringFactory(__package__)
 class AnnotationWriteService:
     """A service for storing and retrieving annotations."""
 
-    def __init__(  # pylint:disable=too-many-arguments
+    def __init__(  # pylint:disable=too-many-arguments,too-many-positional-arguments
         self,
         db_session: Session,
         has_permission: Callable,
-        search_index_service: SearchIndexService,
+        queue_service: JobQueueService,
         annotation_read_service: AnnotationReadService,
         annotation_metadata_service: AnnotationMetadataService,
     ):
         self._db = db_session
         self._has_permission = has_permission
-        self._search_index_service = search_index_service
+        self._queue_service = queue_service
         self._annotation_read_service = annotation_read_service
         self._annotation_metadata_service = annotation_metadata_service
 
@@ -81,14 +81,17 @@ class AnnotationWriteService:
         if annotation_metadata:
             self._annotation_metadata_service.set(annotation, annotation_metadata)
 
-        self._search_index_service._queue.add_by_id(  # pylint: disable=protected-access
-            annotation.id, tag="storage.create_annotation", schedule_in=60
+        self._queue_service.add_by_id(
+            name="sync_annotation",
+            annotation_id=annotation.id,
+            tag="storage.create_annotation",
+            schedule_in=60,
         )
 
         return annotation
 
     def update_annotation(
-        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         annotation: Annotation,
         data: dict,
@@ -141,9 +144,9 @@ class AnnotationWriteService:
         # The search index service by default does not reindex if the existing ES
         # entry's timestamp matches the DB timestamp. If we're not changing this
         # timestamp, we need to force reindexing.
-        # pylint: disable=protected-access
-        self._search_index_service._queue.add_by_id(
-            annotation.id,
+        self._queue_service.add_by_id(
+            name="sync_annotation",
+            annotation_id=annotation.id,
             tag=reindex_tag,
             schedule_in=60,
             force=not update_timestamp,
@@ -217,6 +220,16 @@ class AnnotationWriteService:
 
     def upsert_annotation_slim(self, annotation):
         self._db.flush()  # See the last model changes in the transaction
+
+        user_id = self._db.scalar(
+            select(User.id).where(User.userid == annotation.userid)
+        )
+        if not annotation.group or not user_id:
+            # Due to the design of the old table this is possible for a short while
+            # when a user (and his groups) or a group is deleted.
+            # The AnnotationSlim records will get deleted by a cascade, no need to do anything here.
+            return
+
         moderated = self._db.scalar(
             select(
                 exists(
@@ -226,10 +239,6 @@ class AnnotationWriteService:
                 )
             )
         )
-        user_id = self._db.scalar(
-            select(User.id).where(User.userid == annotation.userid)
-        )
-
         stmt = insert(AnnotationSlim).values(
             [
                 {
@@ -270,7 +279,7 @@ def service_factory(_context, request) -> AnnotationWriteService:
     return AnnotationWriteService(
         db_session=request.db,
         has_permission=request.has_permission,
-        search_index_service=request.find_service(name="search_index"),
+        queue_service=request.find_service(name="queue_service"),
         annotation_read_service=request.find_service(AnnotationReadService),
         annotation_metadata_service=request.find_service(AnnotationMetadataService),
     )

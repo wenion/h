@@ -4,10 +4,12 @@ from urllib.parse import urlparse
 
 import colander
 import deform
-import jinja2
+from markupsafe import Markup
 from pyramid import httpexceptions, security
+from pyramid.config import not_
 from pyramid.exceptions import BadCSRFToken
 from pyramid.view import view_config, view_defaults
+from sqlalchemy import func, select
 
 from h import accounts, form, i18n, models, session
 from h.accounts import schemas
@@ -18,6 +20,7 @@ from h.accounts.events import (
     PasswordResetEvent,
 )
 from h.emails import reset_password
+from h.models import Annotation
 from h.schemas.forms.accounts import (
     EditProfileSchema,
     KmassEditProfileSchema,
@@ -50,6 +53,7 @@ def _login_redirect_url(request):
     context=BadCSRFToken,
     accept="text/html",
     renderer="h:templates/accounts/session_invalid.html.jinja2",
+    path_info=not_("/api"),
 )
 def bad_csrf_token_html(_context, request):
     request.response.status_code = 403
@@ -287,7 +291,7 @@ class ResetController:
         svc.update_password(user, password)
 
         self.request.session.flash(
-            jinja2.Markup(
+            Markup(
                 _(
                     "Your password has been reset. You can now log in with "
                     "your new password."
@@ -323,7 +327,7 @@ class ActivateController:
         activation = models.Activation.get_by_code(self.request.db, code)
         if activation is None:
             self.request.session.flash(
-                jinja2.Markup(
+                Markup(
                     _(
                         "We didn't recognize that activation link. "
                         "Have you already activated your account? "
@@ -342,7 +346,7 @@ class ActivateController:
         user.activate()
 
         self.request.session.flash(
-            jinja2.Markup(
+            Markup(
                 _(
                     "Your account has been activated! "
                     "You can now log in using the password you provided."
@@ -371,14 +375,12 @@ class ActivateController:
             # The user is already logged in to the account (so the account
             # must already be activated).
             self.request.session.flash(
-                jinja2.Markup(
-                    _("Your account has been activated and you're logged in.")
-                ),
+                Markup(_("Your account has been activated and you're logged in.")),
                 "success",
             )
         else:
             self.request.session.flash(
-                jinja2.Markup(
+                Markup(
                     _(
                         "You're already logged in to a different account. "
                         '<a href="{url}">Log out</a> and open the activation link '
@@ -667,6 +669,80 @@ class DeveloperController:
         return {"token": token.value}
 
 
+@view_defaults(
+    route_name="account_delete",
+    renderer="h:templates/accounts/delete.html.jinja2",
+    is_authenticated=True,
+)
+class DeleteController:
+    def __init__(self, request):
+        self.request = request
+
+        schema = schemas.DeleteAccountSchema().bind(request=self.request)
+
+        self.form = self.request.create_form(
+            schema,
+            buttons=(deform.Button(_("Delete your account"), css_class="btn--danger"),),
+            formid="delete",
+            back_link={
+                "href": self.request.route_url("account"),
+                "text": _("Back to safety"),
+            },
+        )
+
+    @view_config(request_method="GET")
+    def get(self):
+        return self.template_data()
+
+    @view_config(request_method="POST")
+    def post(self):
+        return form.handle_form_submission(
+            self.request,
+            self.form,
+            on_success=self.delete_user,
+            on_failure=self.template_data,
+            flash_success=False,
+        )
+
+    def delete_user(self, _appstruct):
+        self.request.find_service(name="user_delete").delete_user(
+            self.request.user,
+            requested_by=self.request.user,
+            tag=self.request.matched_route.name,
+        )
+
+        return httpexceptions.HTTPFound(
+            location=self.request.route_url("account_deleted")
+        )
+
+    def template_data(self):
+        def query(column):
+            return (
+                select(column)
+                .where(Annotation.deleted.is_(False))
+                .where(Annotation.userid == self.request.authenticated_userid)
+            )
+
+        count = self.request.db.scalar(
+            query(func.count(Annotation.id))  # pylint:disable=not-callable
+        )
+
+        oldest = self.request.db.scalar(
+            query(Annotation.created).order_by(Annotation.created)
+        )
+
+        newest = self.request.db.scalar(
+            query(Annotation.created).order_by(Annotation.created.desc())
+        )
+
+        return {
+            "count": count,
+            "oldest": oldest,
+            "newest": newest,
+            "form": self.form.render(),
+        }
+
+
 # TODO: This can be removed after October 2016, which will be >1 year from the
 #       date that the last account claim emails were sent out. At this point,
 #       if we have not done so already, we should remove all unclaimed
@@ -690,3 +766,12 @@ def dismiss_sidebar_tutorial(request):  # pragma: no cover
 
     request.user.sidebar_tutorial_dismissed = True
     return ajax_payload(request, {"status": "okay"})
+
+
+@view_config(
+    route_name="account_deleted",
+    request_method="GET",
+    renderer="h:templates/accounts/deleted.html.jinja2",
+)
+def account_deleted(_request):
+    return {}

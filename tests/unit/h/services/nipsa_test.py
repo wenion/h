@@ -25,12 +25,13 @@ class TestNipsaService:
         assert svc.is_flagged("acct:unflagged_user@example.com")
         assert users["unflagged_user"].nipsa is True
 
-    def test_flag_triggers_reindex_job(self, svc, users, search_index):
+    def test_flag_triggers_reindex_job(self, svc, users, tasks):
         svc.flag(users["unflagged_user"])
 
-        search_index.add_users_annotations.assert_called_once_with(
+        tasks.job_queue.add_annotations_from_user.delay.assert_called_once_with(
+            "sync_annotation",
             "acct:unflagged_user@example.com",
-            "NipsaService.flag",
+            tag="NipsaService.flag",
             force=True,
             schedule_in=30,
         )
@@ -41,12 +42,13 @@ class TestNipsaService:
         assert not svc.is_flagged("acct:flagged_user@example.com")
         assert not users["flagged_user"].nipsa
 
-    def test_unflag_triggers_reindex_job(self, svc, users, search_index):
+    def test_unflag_triggers_reindex_job(self, svc, users, tasks):
         svc.unflag(users["flagged_user"])
 
-        search_index.add_users_annotations.assert_called_once_with(
+        tasks.job_queue.add_annotations_from_user.delay.assert_called_once_with(
+            "sync_annotation",
             "acct:flagged_user@example.com",
-            "NipsaService.unflag",
+            tag="NipsaService.unflag",
             force=True,
             schedule_in=30,
         )
@@ -65,9 +67,9 @@ class TestNipsaService:
     def test_flag_updates_cache(self, svc, users):
         svc.fetch_all_flagged_userids()
         svc.flag(users["unflagged_user"])
-        users[
-            "unflagged_user"
-        ].nipsa = False  # Make sure result below comes from cache.
+        users["unflagged_user"].nipsa = (
+            False  # Make sure result below comes from cache.
+        )
 
         assert svc.is_flagged(users["unflagged_user"].userid)
 
@@ -86,8 +88,12 @@ class TestNipsaService:
         assert not svc.is_flagged("acct:flagged_user@example.com")
 
     @pytest.fixture
-    def svc(self, db_session, search_index):
-        return NipsaService(db_session, lambda: search_index)
+    def svc(self, db_session):
+        return NipsaService(db_session)
+
+    @pytest.fixture(autouse=True)
+    def tasks(self, patch):
+        return patch("h.services.nipsa.tasks")
 
     @pytest.fixture(autouse=True)
     def users(self, db_session, factories):
@@ -100,9 +106,8 @@ class TestNipsaService:
         return users
 
 
-def test_nipsa_factory(pyramid_request, search_index):
+def test_nipsa_factory(pyramid_request):
     svc = nipsa_factory(None, pyramid_request)
 
     assert isinstance(svc, NipsaService)
     assert svc.session == pyramid_request.db
-    assert svc._get_search_index() == search_index  # pylint:disable=protected-access

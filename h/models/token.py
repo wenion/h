@@ -2,6 +2,7 @@ import datetime
 
 import sqlalchemy
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import Mapped
 
 from h.db import Base, mixins
 
@@ -21,8 +22,6 @@ class Token(Base, mixins.Timestamps):
     __tablename__ = "token"
 
     id = sqlalchemy.Column(sqlalchemy.Integer, autoincrement=True, primary_key=True)
-
-    userid = sqlalchemy.Column(sqlalchemy.UnicodeText(), nullable=False)
 
     value = sqlalchemy.Column(sqlalchemy.UnicodeText(), nullable=False, unique=True)
 
@@ -44,10 +43,18 @@ class Token(Base, mixins.Timestamps):
 
     _authclient_id = sqlalchemy.Column(
         "authclient_id",
-        postgresql.UUID(),
+        postgresql.UUID(as_uuid=False),
         sqlalchemy.ForeignKey("authclient.id", ondelete="cascade"),
         nullable=True,
     )
+
+    user_id = sqlalchemy.Column(
+        sqlalchemy.Integer,
+        sqlalchemy.ForeignKey("user.id", ondelete="cascade"),
+        index=True,
+        nullable=False,
+    )
+    user: Mapped["User"] = sqlalchemy.orm.relationship(back_populates="tokens")
 
     #: The authclient which created the token.
     #: A NULL value means it is a developer token.

@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 import math
 import openai
 
-from redis_om import Migrator
 from redis_om import Field, JsonModel
 from pydantic import NonNegativeInt
 from typing import Optional
@@ -16,9 +15,6 @@ from h.models_redis.user_event_record import start_user_event_record, finish_use
 from h.models_redis.user_event_record import update_user_event_record, delete_user_event_record, batch_user_event_record, fetch_user_event_record_by_session
 from h.models_redis.result import Result
 from h.models_redis.rating import Rating
-from h.models_redis.process_model import ProcessModel, fetch_all_process_model, fetch_process_model_by_session_creator, get_process_model, create_process_model, update_process_model, delete_process_model_by_session_creator, delete_process_model
-from h.models_redis.task_page import TaskPage, is_task_page, fetch_all_task_pages, fetch_task_page_name_id, add_task_page, delete_task_page, delete_task_page_name_id
-from h.models_redis.push_record import PushRecord, add_push_record, fetch_push_record, delete_push_record, stop_pushing, same_as_previous
 from h.models_redis.message_cache import (
     MessageCache,
     get_message_cache,
@@ -49,27 +45,6 @@ __all__ = (
     "batch_user_event_record",
     "Rating",
     "UserFile",
-    "ProcessModel",
-    "fetch_all_process_model",
-    "fetch_process_model_by_session_creator",
-    "get_process_model",
-    "create_process_model",
-    "update_process_model",
-    "delete_process_model",
-    "delete_process_model_by_session_creator",
-    "TaskPage",
-    "is_task_page",
-    "fetch_all_task_pages",
-    "fetch_task_page_name_id",
-    "add_task_page",
-    "delete_task_page_name_id",
-    "delete_task_page",
-    "PushRecord",
-    "add_push_record",
-    "delete_push_record",
-    "fetch_push_record",
-    "stop_pushing",
-    "same_as_previous",
     "MessageCache",
     "get_message_cache",
     "create_message_cache",
@@ -380,7 +355,5 @@ def _save_in_redis(event):
 
 def includeme(config):
     # config.add_request_method(get_user_role, name="user_role", property=True)
-    Migrator().run()
-    # attach_sql(config)
-    openai.api_key = config.registry.settings.get("openai_key")
-    print("openai", openai.api_key)
+    # Migrator().run()
+    pass

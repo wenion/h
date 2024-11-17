@@ -79,16 +79,17 @@ celery.conf.update(
         "h.tasks.annotations",
         "h.tasks.cleanup",
         "h.tasks.indexer",
+        "h.tasks.job_queue",
         "h.tasks.mailer",
         "h.tasks.url_migration",
         "h.tasks.user_events",
     ),
     task_routes={
         "h.tasks.indexer.add_annotation": "indexer",
-        "h.tasks.indexer.add_annotations_between_times": "indexer",
-        "h.tasks.indexer.add_group_annotations": "indexer",
-        "h.tasks.indexer.add_users_annotations": "indexer",
         "h.tasks.indexer.delete_annotation": "indexer",
+        "h.tasks.job_queue.add_annotations_between_times": "indexer",
+        "h.tasks.job_queue.add_annotations_from_user": "indexer",
+        "h.tasks.job_queue.add_annotations_from_group": "indexer",
     },
     task_queues=[
         Queue(

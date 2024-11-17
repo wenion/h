@@ -1,21 +1,21 @@
 # Stage 1: Build static frontend assets.
-FROM node:21.4-alpine as build
+FROM node:23.1-alpine as build
 
 ENV NODE_ENV production
 
 # Install dependencies.
 WORKDIR /tmp/frontend-build
-COPY package.json .yarnrc.yml yarn.lock ./
+COPY package.json .yarnrc.yml yarn.lock tailwind.config.js ./
 COPY .yarn ./.yarn
 RUN yarn install --immutable
 
 # Build h js/css.
-COPY .babelrc gulpfile.mjs rollup.config.mjs ./
+COPY .babelrc gulpfile.js rollup.config.js ./
 COPY h/static ./h/static
 RUN yarn build
 
 # Stage 2: Build the rest of the app using the build output from Stage 1.
-FROM python:3.8.12-alpine3.13
+FROM python:3.11.10-alpine3.19
 LABEL maintainer="Hypothes.is Project and contributors"
 
 # Install system build and runtime dependencies.

@@ -9,7 +9,7 @@ pyramid-sanity
 
 # 3rd-party packages
 PyJWT
-SQLAlchemy >= 1.1.4
+SQLAlchemy
 alembic
 bcrypt
 bleach
@@ -30,7 +30,6 @@ jsonschema
 kombu
 markdown
 newrelic
-numpy
 oauthlib
 packaging
 passlib
@@ -40,6 +39,8 @@ pycryptodomex
 pyparsing >= 2.1.5
 pyramid
 pyramid-exclog
+markupsafe
+jinja2
 pyramid-jinja2
 pyramid-services
 pyramid-mailer

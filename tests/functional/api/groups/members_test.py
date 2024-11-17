@@ -2,6 +2,7 @@ import base64
 
 import pytest
 
+from h.models import GroupMembership
 from h.models.auth_client import GrantType
 
 
@@ -9,9 +10,14 @@ class TestReadMembers:
     def test_it_returns_list_of_members_for_restricted_group_without_authn(
         self, app, factories, db_session
     ):
-        group = factories.RestrictedGroup()
-        group.members = [factories.User(), factories.User(), factories.User()]
+        group = factories.RestrictedGroup(
+            memberships=[
+                GroupMembership(user=user)
+                for user in factories.User.create_batch(size=3)
+            ]
+        )
         db_session.commit()
+
         res = app.get("/api/groups/{pubid}/members".format(pubid=group.pubid))
 
         assert res.status_code == 200
@@ -21,17 +27,18 @@ class TestReadMembers:
         self, app, factories, db_session, group, user_with_token, token_auth_header
     ):
         user, _ = user_with_token
-        group.members.append(user)
+        group.memberships.extend(
+            [GroupMembership(user=user), GroupMembership(user=factories.User())]
+        )
         db_session.commit()
+
         res = app.get(
             "/api/groups/{pubid}/members".format(pubid=group.pubid),
             headers=token_auth_header,
         )
 
         returned_usernames = [member["username"] for member in res.json]
-        assert user.username in returned_usernames
-        assert group.creator.username in returned_usernames
-
+        assert returned_usernames == [member.username for member in group.members]
         assert res.status_code == 200
 
     def test_it_returns_404_if_user_does_not_have_read_access_to_group(
@@ -251,14 +258,14 @@ def third_party_group(db_session, factories):
 @pytest.fixture
 def group_member(group, db_session, factories):
     user = factories.User()
-    group.members.append(user)
+    group.memberships.append(GroupMembership(user=user))
     db_session.commit()
     return user
 
 
 @pytest.fixture
 def group_member_with_token(group_member, db_session, factories):
-    token = factories.DeveloperToken(userid=group_member.userid)
+    token = factories.DeveloperToken(user=group_member)
     db_session.add(token)
     db_session.commit()
     return (group_member, token)
@@ -267,7 +274,7 @@ def group_member_with_token(group_member, db_session, factories):
 @pytest.fixture
 def user_with_token(db_session, factories):
     user = factories.User()
-    token = factories.DeveloperToken(userid=user.userid)
+    token = factories.DeveloperToken(user=user)
     db_session.add(token)
     db_session.commit()
     return (user, token)

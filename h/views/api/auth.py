@@ -136,7 +136,7 @@ class OAuthAuthorizeController:
             )
 
         client_id = credentials.get("client_id")
-        client = self.request.db.query(models.AuthClient).get(client_id)
+        client = self.request.db.get(models.AuthClient, client_id)
 
         # If the client is "trusted" -- which means its code is
         # owned/controlled by us -- then we don't ask the user to explicitly
@@ -277,7 +277,7 @@ def api_token_error(context, request):
 
 def _present_debug_token(token):
     data = {
-        "userid": token.userid,
+        "userid": token.user.userid,
         "expires_at": utc_iso8601(token.expires),
         "issued_at": utc_iso8601(token.created),
         "expired": token.expired,

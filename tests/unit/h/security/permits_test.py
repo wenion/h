@@ -1,7 +1,9 @@
 from unittest.mock import patch, sentinel
 
 import pytest
+from pyramid.security import Allowed, Denied
 
+from h.models import GroupMembership
 from h.security import Identity, Permission
 from h.security.permits import PERMISSION_MAP, identity_permits
 from h.traversal import AnnotationContext
@@ -27,21 +29,21 @@ class TestIdentityPermits:
         "clauses,grants",
         (
             # At least one clause must be true, so if there are none, it's false
-            ([], False),
+            ([], Denied("Denied")),
             # A clause requires each element in it to be true
-            ([[always_true]], True),
-            ([[always_false]], False),
-            ([[always_true, always_true]], True),
-            ([[always_true, always_true, always_false]], False),
+            ([[always_true]], Allowed("Allowed")),
+            ([[always_false]], Denied("Denied")),
+            ([[always_true, always_true]], Allowed("Allowed")),
+            ([[always_true, always_true, always_false]], Denied("Denied")),
             # An empty clause is always true
-            ([[]], True),
+            ([[]], Allowed("Allowed")),
             # We lazy evaluate, so if anything in a clause is false we don't
             # evaluate predicates beyond it
-            ([[always_false, explode]], False),
+            ([[always_false, explode]], Denied("Denied")),
             # Only one clause has to be true
-            ([[always_false], [always_true]], True),
-            ([[always_true], [always_false]], True),
-            ([[always_true], [explode]], True),
+            ([[always_false], [always_true]], Allowed("Allowed")),
+            ([[always_true], [always_false]], Allowed("Allowed")),
+            ([[always_true], [explode]], Allowed("Allowed")),
         ),
     )
     def test_it(self, PERMISSION_MAP, clauses, grants):
@@ -54,9 +56,9 @@ class TestIdentityPermits:
         assert result == grants
 
     def test_it_denies_with_missing_permission(self):
-        assert not identity_permits(
+        assert identity_permits(
             sentinel.identity, sentinel.context, sentinel.non_existent_permission
-        )
+        ) == Denied("Denied")
 
     @pytest.fixture(autouse=True)
     def PERMISSION_MAP(self):
@@ -91,7 +93,7 @@ class TestIdentityPermitsIntegrated:
 
     @pytest.fixture
     def user(self, factories, group):
-        return factories.User(groups=[group])
+        return factories.User(memberships=[GroupMembership(group=group)])
 
     @pytest.fixture
     def group(self, factories):

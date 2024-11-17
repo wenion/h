@@ -14,10 +14,7 @@ class TestDocumentURI:
     def test_it_normalizes_the_uri(self):
         document_uri = DocumentURI(uri="http://example.com/")
 
-        assert (
-            document_uri.uri_normalized  # pylint:disable=comparison-with-callable
-            == "httpx://example.com"
-        )
+        assert document_uri.uri_normalized == "httpx://example.com"
 
     def test_type_defaults_to_empty_string(self, db_session, document_uri, factories):
         document_uri = factories.DocumentURI(type=None)
@@ -42,6 +39,15 @@ class TestDocumentURI:
 
         with pytest.raises(sa.exc.IntegrityError):
             db_session.flush()
+
+    def test_unique_constraint_can_take_long_values(self, db_session):
+        document_uri = DocumentURI(
+            uri="http://example.com/" * 10000,
+            claimant="https://example.com" * 10000,
+            document=Document(),
+        )
+        db_session.add(document_uri)
+        db_session.commit()
 
     def test_you_cannot_add_duplicate_document_uris(self, db_session):
         # You can't add DocumentURI's with the same claimant, uri, type and
@@ -121,7 +127,7 @@ class TestCreateOrUpdateDocumentURI:
 
         create_or_update_document_uri(session=db_session, **doc_uri_attrs)
 
-        document_ = db_session.query(Document).get(document.id)
+        document_ = db_session.get(Document, document.id)
         assert document_.web_uri == "http://example.com/first_uri.html"
 
     def test_it_logs_a_warning_if_document_ids_differ(

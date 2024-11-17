@@ -65,7 +65,7 @@ class TestCreateUpdateAnnotationSchema:
                 "references": ["foo", "bar"],
                 "tags": ["foo", "bar"],
                 "target": [
-                    {"selector": [{"type": "foo"}]},
+                    {"selector": [{"type": "foo", "suffix": "selector suffix"}]},
                     {"selector": [{"type": "bar"}]},
                 ],
                 "text": "foo",
@@ -123,6 +123,14 @@ class TestCreateUpdateAnnotationSchema:
                 "document.link.0.href: False is not of type 'string'",
             ),
             (
+                {
+                    "document": {
+                        "link": [{"href": f"https://example.com?{'LONG'*3000}"}]
+                    }
+                },
+                f"document.link.0.href: 'https://example.com?{'LONG'*3000}' is too long",
+            ),
+            (
                 {"document": {"link": [{"href": "http://example.com", "type": False}]}},
                 "document.link.0.type: False is not of type 'string'",
             ),
@@ -143,6 +151,7 @@ class TestCreateUpdateAnnotationSchema:
             ),
             ({"references": False}, "references: False is not of type 'array'"),
             ({"references": [False]}, "references.0: False is not of type 'string'"),
+            ({"tags": ["tag" * 1000]}, f"tags.0: '{'tag' * 1000}' is too long"),
             ({"tags": False}, "tags: False is not of type 'array'"),
             ({"tags": [False]}, "tags.0: False is not of type 'string'"),
             ({"target": False}, "target: False is not of type 'array'"),
@@ -248,6 +257,43 @@ class TestCreateUpdateAnnotationSchema:
             {"type": "FooSelector"},
             {"type": "BarSelector"},
         ]
+
+    @pytest.mark.parametrize(
+        "payload,expected",
+        [
+            (
+                {
+                    "target": [
+                        {
+                            "selector": [
+                                {"type": "FooSelector", "suffix": "Invalid \ud835"}
+                            ],
+                        }
+                    ]
+                },
+                "suffix: 'suffix' must be valid unicode",
+            ),
+            (
+                {
+                    "target": [
+                        {
+                            "selector": [
+                                {"type": "FooSelector", "prefix": "Invalid \ud835"}
+                            ],
+                        }
+                    ]
+                },
+                "prefix: 'prefix' must be valid unicode",
+            ),
+        ],
+    )
+    def test_it_validates_invalid_unicode(
+        self, pyramid_request, validate, payload, expected
+    ):
+        with pytest.raises(ValidationError) as exc:
+            validate(pyramid_request, payload)
+
+        assert str(exc.value) == expected
 
     def test_it_extracts_document_uris_from_the_document(
         self, pyramid_request, document_claims, validate

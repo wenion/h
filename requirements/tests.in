@@ -4,7 +4,9 @@ coverage
 pytest
 pytest-cov
 pytest-xdist[psutil]
-filelock
+pytest-mock
+freezegun
 factory-boy
 hypothesis
+h-testkit
 -r prod.txt

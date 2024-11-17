@@ -1,4 +1,4 @@
-from h import models
+from h import models, tasks
 
 
 class UserRenameError(Exception):
@@ -23,9 +23,8 @@ class UserRenameService:
     UserRenameError if the new username is already taken by another account.
     """
 
-    def __init__(self, session, search_index):
+    def __init__(self, session):
         self.session = session
-        self._search_index = search_index
 
     def check(self, user, new_username):
         existing_user = models.User.get_by_username(
@@ -52,12 +51,9 @@ class UserRenameService:
         # https://michael.merickel.org/projects/pyramid_auth_demo/auth_vs_auth.html
         self._purge_auth_tickets(user)
 
-        # For OAuth tokens, only the token's value is stored by clients, so we
-        # can just update the userid.
-        self._update_tokens(old_userid, new_userid)
-
         self._change_annotations(old_userid, new_userid)
-        self._search_index.add_users_annotations(
+        tasks.job_queue.add_annotations_from_user.delay(
+            "sync_annotation",
             old_userid,
             tag="RenameUserService.rename",
             schedule_in=30,
@@ -67,11 +63,6 @@ class UserRenameService:
         self.session.query(models.AuthTicket).filter(
             models.AuthTicket.user_id == user.id
         ).delete()
-
-    def _update_tokens(self, old_userid, new_userid):
-        self.session.query(models.Token).filter(
-            models.Token.userid == old_userid
-        ).update({"userid": new_userid}, synchronize_session="fetch")
 
     def _change_annotations(self, old_userid, new_userid):
         annotations = self._fetch_annotations(old_userid)
@@ -89,7 +80,4 @@ class UserRenameService:
 
 def service_factory(_context, request):
     """Return a RenameUserService instance for the passed context and request."""
-    return UserRenameService(
-        session=request.db,
-        search_index=request.find_service(name="search_index"),
-    )
+    return UserRenameService(session=request.db)

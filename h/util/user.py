@@ -1,4 +1,5 @@
 """Some shared utility functions for manipulating user data."""
+
 import re
 
 from h.exceptions import InvalidUserId
@@ -18,3 +19,7 @@ def split_user(userid):
     if match:
         return {"username": match.groups()[0], "domain": match.groups()[1]}
     raise InvalidUserId(userid)
+
+
+def format_userid(username, authority):
+    return f"acct:{username}@{authority}"

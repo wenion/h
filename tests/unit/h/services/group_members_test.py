@@ -1,8 +1,9 @@
 from unittest import mock
 
 import pytest
+from sqlalchemy import select
 
-from h.models import User
+from h.models import GroupMembership, User
 from h.services.group_members import GroupMembersService, group_members_factory
 
 
@@ -33,30 +34,37 @@ class TestMemberJoin:
 
 class TestMemberLeave:
     def test_it_removes_user_from_group(
-        self, group_members_service, factories, creator
+        self, group_members_service, factories, db_session
     ):
-        group = factories.Group(creator=creator)
-        new_member = factories.User()
-        group.members.append(new_member)
+        group, other_group = factories.Group.create_batch(size=2)
+        user, other_user = factories.User.create_batch(size=2)
+        db_session.add_all(
+            [
+                GroupMembership(group=group, user=user),
+                GroupMembership(group=other_group, user=user),
+                GroupMembership(group=group, user=other_user),
+            ]
+        )
 
-        group_members_service.member_leave(group, new_member.userid)
+        group_members_service.member_leave(group, user.userid)
 
-        assert new_member not in group.members
+        assert user not in group.members
+        assert user in other_group.members
+        assert other_user in group.members
 
-    def test_it_is_idempotent(self, group_members_service, factories, creator):
-        group = factories.Group(creator=creator)
-        new_member = factories.User()
-        group.members.append(new_member)
+    def test_it_does_nothing_if_the_user_isnt_a_member(
+        self, group_members_service, factories, publish
+    ):
+        group = factories.Group()
+        user = factories.User()
 
-        group_members_service.member_leave(group, new_member.userid)
-        group_members_service.member_leave(group, new_member.userid)
+        group_members_service.member_leave(group, user.userid)
 
-        assert new_member not in group.members
+        publish.assert_not_called()
 
     def test_it_publishes_leave_event(self, group_members_service, factories, publish):
         group = factories.Group()
-        new_member = factories.User()
-        group.members.append(new_member)
+        new_member = factories.User(memberships=[GroupMembership(group=group)])
 
         group_members_service.member_leave(group, new_member.userid)
 
@@ -71,26 +79,24 @@ class TestAddMembers:
 
         group_members_service.add_members(group, userids)
 
-        assert group.members == users
+        assert all(user in group.members for user in users)
 
     def test_it_does_not_remove_existing_members(
         self, factories, group_members_service
     ):
-        creator = factories.User()
-        group = factories.Group(creator=creator)
-        users = [factories.User(), factories.User()]
-        userids = [user.userid for user in users]
+        group = factories.Group()
+        existing_member = factories.User()
+        group.memberships.append(GroupMembership(user=existing_member))
 
-        group_members_service.add_members(group, userids)
+        group_members_service.add_members(group, [factories.User().userid])
 
-        assert len(group.members) == len(users) + 1  # account for creator user
-        assert creator in group.members
+        assert existing_member in group.members
 
 
 class TestUpdateMembers:
     def test_it_adds_users_in_userids(self, factories, group_members_service):
         group = factories.OpenGroup()  # no members at outset
-        new_members = [factories.User(), factories.User()]
+        new_members = (factories.User(), factories.User())
 
         group_members_service.update_members(
             group, [user.userid for user in new_members]
@@ -99,24 +105,29 @@ class TestUpdateMembers:
         assert group.members == new_members
 
     def test_it_removes_members_not_present_in_userids(
-        self, factories, group_members_service, creator
+        self, db_session, factories, group_members_service, creator
     ):
-        group = factories.Group(creator=creator)  # creator will be a member
-        new_members = [factories.User(), factories.User()]
-        group.members.append(new_members[0])
-        group.members.append(new_members[1])
+        group = factories.Group(
+            creator=creator,
+            memberships=[
+                GroupMembership(user=factories.User()),
+                GroupMembership(user=factories.User()),
+            ],
+        )
 
         group_members_service.update_members(group, [])
 
-        assert not group.members  # including the creator
+        assert not db_session.scalars(
+            select(GroupMembership).where(GroupMembership.group == group)
+        ).all()
 
     def test_it_does_not_remove_members_present_in_userids(
         self, factories, group_members_service, publish
     ):
         group = factories.OpenGroup()  # no members at outset
         new_members = [factories.User(), factories.User()]
-        group.members.append(new_members[0])
-        group.members.append(new_members[1])
+        group.memberships.append(GroupMembership(user=new_members[0]))
+        group.memberships.append(GroupMembership(user=new_members[1]))
 
         group_members_service.update_members(
             group, [user.userid for user in group.members]
@@ -132,17 +143,19 @@ class TestUpdateMembers:
         group_members_service.member_join = mock.Mock()
         group_members_service.member_leave = mock.Mock()
 
-        group = factories.OpenGroup()  # no members at outset
+        group = factories.OpenGroup()
         new_members = [factories.User(), factories.User()]
-        group.members.append(new_members[0])
+        group.memberships.append(GroupMembership(user=new_members[0]))
 
         group_members_service.update_members(group, [new_members[1].userid])
 
         group_members_service.member_join.assert_called_once_with(
             group, new_members[1].userid
         )
-        group_members_service.member_leave.assert_called_once_with(
-            group, new_members[0].userid
+        assert sorted(group_members_service.member_leave.call_args_list) == sorted(
+            [
+                mock.call(group, new_members[0].userid),
+            ]
         )
 
     def test_it_does_not_add_duplicate_members(self, factories, group_members_service):
@@ -154,8 +167,7 @@ class TestUpdateMembers:
             group, [new_member.userid, new_member.userid]
         )
 
-        assert group.members == [new_member]
-        assert len(group.members) == 1
+        assert group.members == (new_member,)
 
 
 @pytest.mark.usefixtures("user_service")

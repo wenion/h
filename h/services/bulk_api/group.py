@@ -16,8 +16,8 @@ class BulkGroup:
 class BulkGroupService:
     """A service for retrieving groups in bulk."""
 
-    def __init__(self, db: Session):
-        self._db = db
+    def __init__(self, db_replica: Session):
+        self._db_replica = db_replica
 
     def group_search(
         self, groups: List[str], annotations_created: dict
@@ -32,18 +32,20 @@ class BulkGroupService:
         :raises BadDateFilter: For poorly specified date conditions
         """
 
-        query = (
-            sa.select([Group.authority_provided_id])
-            .join(Annotation, Group.pubid == Annotation.groupid)
-            .group_by(Group.authority_provided_id)
-            .where(
-                date_match(Annotation.created, annotations_created),
-                Group.authority_provided_id.in_(groups),
-            )
+        query = sa.select(Group.authority_provided_id).where(
+            Group.authority_provided_id.in_(groups),
+            sa.exists(
+                sa.select(1)
+                .select_from(Annotation)
+                .where(
+                    Annotation.groupid == Group.pubid,
+                    date_match(Annotation.created, annotations_created),
+                )
+            ),
         )
-        results = self._db.scalars(query)
+        results = self._db_replica.scalars(query)
         return [BulkGroup(authority_provided_id=row) for row in results.all()]
 
 
 def service_factory(_context, request) -> BulkGroupService:
-    return BulkGroupService(db=request.db)
+    return BulkGroupService(db_replica=request.db_replica)

@@ -59,6 +59,7 @@ disable = [
     "too-many-public-methods",
 
     "too-many-arguments",
+    "too-many-positional-arguments",
 
     # not-callable is mis-firing on all pytest.mark.parametrize usages, so
     # disable it for now. This can be re-enabled once a new pytest version
@@ -71,6 +72,16 @@ disable = [
 
     # Temporarily ignored during pep8 -> pylint transition. This should be removed later.
     "fixme",
+
+    # h-matchers triggers this when called without brackets
+    "no-value-for-parameter",
+
+    # This is intermittently causing a false-positive:
+    # tests/unit/h/models/document/_uri_test.py:17:15: W0143: Comparing against a callable, did you omit the parenthesis? (comparison-with-callable)
+    # ...if we add a # pylint:disable comment for it then it starts intermittently causing:
+    # tests/unit/h/models/document/_uri_test.py:17:0: I0021: Useless suppression of 'comparison-with-callable' (useless-suppression)
+    # Just disable the whole rule globally.
+    "comparison-with-callable",
 ]
 
 # Just disable PyLint's name style checking for the tests, because we

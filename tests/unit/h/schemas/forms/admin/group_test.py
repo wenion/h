@@ -53,7 +53,7 @@ class TestAdminGroupSchema:
         with pytest.raises(colander.Invalid, match=f".*{required_field}.*"):
             bound_schema.deserialize(group_data)
 
-    @pytest.mark.parametrize("optional_field", ("description",))
+    @pytest.mark.parametrize("optional_field", ("description", "organization"))
     def test_it_allows_when_optional_field_missing(
         self, group_data, bound_schema, optional_field
     ):
@@ -69,10 +69,10 @@ class TestAdminGroupSchema:
         with pytest.raises(colander.Invalid, match="scope.*must be a complete URL"):
             bound_schema.deserialize(group_data)
 
-    def test_it_raises_if_no_origins(self, group_data, bound_schema):
+    def test_it_allows_no_scopes(self, group_data, bound_schema):
         group_data["scopes"] = []
-        with pytest.raises(colander.Invalid, match="At least one scope"):
-            bound_schema.deserialize(group_data)
+
+        bound_schema.deserialize(group_data)
 
     def test_it_raises_if_group_type_changed(
         self, group_data, pyramid_csrf_request, org, user_service
@@ -159,7 +159,10 @@ class TestAdminGroupSchema:
         for child in bound_schema.children:
             if child.name == "organization":
                 org_node = child
+
+        # pylint:disable=possibly-used-before-assignment
         assert org_node.widget.values == [
+            ("", "-- None --"),
             (org.pubid, f"{org.name} ({org.authority})"),
             (
                 third_party_org.pubid,

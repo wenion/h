@@ -1,13 +1,14 @@
+# pylint:disable=too-many-lines
+from datetime import datetime, timedelta
 from unittest import mock
 
 import colander
+import deform
 import pytest
 from h_matchers import Any
 from pyramid import httpexceptions
 
 from h.models import Subscriptions
-from h.services.developer_token import developer_token_service_factory
-from h.services.user_password import UserPasswordService
 from h.views import accounts as views
 
 
@@ -22,7 +23,7 @@ class FakeForm:
 
 
 class FakeSerializer:
-    ...
+    pass
 
 
 @pytest.mark.usefixtures("routes")
@@ -805,71 +806,200 @@ class TestEditProfileController:
         assert user.location == "Paris"
 
 
-@pytest.mark.usefixtures("authenticated_userid", "token_service")
+@pytest.mark.usefixtures("authenticated_userid", "developer_token_service")
 class TestDeveloperController:
-    def test_get_fetches_token(self, controller, token_service, authenticated_userid):
+    def test_get_fetches_token(
+        self, controller, developer_token_service, authenticated_userid
+    ):
         controller.get()
 
-        token_service.fetch.assert_called_once_with(authenticated_userid)
+        developer_token_service.fetch.assert_called_once_with(authenticated_userid)
 
-    def test_get_returns_token_for_authenticated_user(self, controller, token_service):
-        assert controller.get() == {"token": token_service.fetch.return_value.value}
+    def test_get_returns_token_for_authenticated_user(
+        self, controller, developer_token_service
+    ):
+        assert controller.get() == {
+            "token": developer_token_service.fetch.return_value.value
+        }
 
     def test_get_returns_empty_context_for_missing_token(
-        self, controller, token_service
+        self, controller, developer_token_service
     ):
-        token_service.fetch.return_value = None
+        developer_token_service.fetch.return_value = None
 
         assert controller.get() == {}
 
-    def test_post_fetches_token(self, controller, token_service, authenticated_userid):
+    def test_post_fetches_token(
+        self, controller, developer_token_service, authenticated_userid
+    ):
         controller.post()
 
-        token_service.fetch.assert_called_once_with(authenticated_userid)
+        developer_token_service.fetch.assert_called_once_with(authenticated_userid)
 
-    def test_post_regenerates_token_when_found(self, controller, token_service):
+    def test_post_regenerates_token_when_found(
+        self, controller, developer_token_service
+    ):
         controller.post()
 
-        token_service.regenerate.assert_called_once_with(
-            token_service.fetch.return_value
+        developer_token_service.regenerate.assert_called_once_with(
+            developer_token_service.fetch.return_value
         )
 
-    def test_post_returns_regenerated_token_when_found(self, controller, token_service):
+    def test_post_returns_regenerated_token_when_found(
+        self, controller, developer_token_service
+    ):
         result = controller.post()
 
-        assert result == {"token": token_service.regenerate.return_value.value}
+        assert result == {
+            "token": developer_token_service.regenerate.return_value.value
+        }
 
     def test_post_creates_new_token_when_not_found(
-        self, controller, token_service, authenticated_userid
+        self, controller, developer_token_service, authenticated_userid
     ):
-        token_service.fetch.return_value = None
+        developer_token_service.fetch.return_value = None
 
         controller.post()
 
-        token_service.create.assert_called_once_with(authenticated_userid)
+        developer_token_service.create.assert_called_once_with(authenticated_userid)
 
-    def test_post_returns_new_token_when_not_found(self, controller, token_service):
-        token_service.fetch.return_value = None
+    def test_post_returns_new_token_when_not_found(
+        self, controller, developer_token_service
+    ):
+        developer_token_service.fetch.return_value = None
 
         result = controller.post()
 
-        assert result == {"token": token_service.create.return_value.value}
+        assert result == {"token": developer_token_service.create.return_value.value}
 
     @pytest.fixture
     def controller(self, pyramid_request):
         return views.DeveloperController(pyramid_request)
 
     @pytest.fixture
-    def token_service(self, pyramid_config, pyramid_request):
-        svc = mock.Mock(spec=developer_token_service_factory(None, pyramid_request))
-        pyramid_config.register_service(svc, name="developer_token")
-        return svc
-
-    @pytest.fixture
     def authenticated_userid(self, pyramid_config):
         userid = "acct:jane@example.com"
         pyramid_config.testing_securitypolicy(userid)
         return userid
+
+
+class TestDeleteController:
+    def test_get(
+        self, authenticated_user, controller, factories, pyramid_request, schemas
+    ):
+        oldest_annotation = factories.Annotation(
+            userid=authenticated_user.userid, created=datetime(1970, 1, 1)
+        )
+        newest_annotation = factories.Annotation(
+            userid=authenticated_user.userid, created=datetime(1990, 1, 1)
+        )
+        # An annotation by another user. This shouldn't be counted.
+        factories.Annotation(created=oldest_annotation.created - timedelta(days=1))
+        # A deleted annotation. This shouldn't be counted.
+        factories.Annotation(
+            userid=authenticated_user.userid,
+            deleted=True,
+            created=newest_annotation.created + timedelta(days=1),
+        )
+
+        template_vars = controller.get()
+
+        schemas.DeleteAccountSchema.assert_called_once_with()
+        schemas.DeleteAccountSchema.return_value.bind.assert_called_with(
+            request=pyramid_request
+        )
+        pyramid_request.create_form.assert_called_once_with(
+            schemas.DeleteAccountSchema.return_value.bind.return_value,
+            buttons=Any.iterable.comprised_of(Any.instance_of(deform.Button)),
+            formid="delete",
+            back_link={
+                "href": "http://example.com/account/settings",
+                "text": Any.string(),
+            },
+        )
+        pyramid_request.create_form.return_value.render.assert_called_once_with()
+
+        assert template_vars == {
+            "count": 2,
+            "oldest": oldest_annotation.created,
+            "newest": newest_annotation.created,
+            "form": pyramid_request.create_form.return_value.render.return_value,
+        }
+
+    def test_get_when_user_has_no_annotations(self, controller, pyramid_request):
+        template_vars = controller.get()
+
+        assert template_vars == {
+            "count": 0,
+            "oldest": None,
+            "newest": None,
+            "form": pyramid_request.create_form.return_value.render.return_value,
+        }
+
+    def test_post(self, controller, form, pyramid_request, schemas):
+        result = controller.post()
+
+        schemas.DeleteAccountSchema.assert_called_once_with()
+        schemas.DeleteAccountSchema.return_value.bind.assert_called_with(
+            request=pyramid_request
+        )
+        pyramid_request.create_form.assert_called_once_with(
+            schemas.DeleteAccountSchema.return_value.bind.return_value,
+            buttons=Any.iterable.comprised_of(Any.instance_of(deform.Button)),
+            formid="delete",
+            back_link={
+                "href": "http://example.com/account/settings",
+                "text": Any.string(),
+            },
+        )
+        form.handle_form_submission.assert_called_once_with(
+            pyramid_request,
+            pyramid_request.create_form.return_value,
+            on_success=controller.delete_user,
+            on_failure=controller.template_data,
+            flash_success=False,
+        )
+        assert result == form.handle_form_submission.return_value
+
+    def test_delete_user(
+        self, authenticated_user, controller, pyramid_request, user_delete_service
+    ):
+        response = controller.delete_user(mock.sentinel.appstruct)
+
+        user_delete_service.delete_user.assert_called_once_with(
+            authenticated_user,
+            requested_by=authenticated_user,
+            tag=pyramid_request.matched_route.name,
+        )
+        assert response == Any.instance_of(httpexceptions.HTTPFound).with_attrs(
+            {"location": "http://example.com/account/deleted"}
+        )
+
+    @pytest.fixture(autouse=True)
+    def authenticated_user(self, factories, pyramid_config, pyramid_request):
+        authenticated_user = factories.User.build()
+        pyramid_config.testing_securitypolicy(authenticated_user.userid)
+        pyramid_request.user = authenticated_user
+        return authenticated_user
+
+    @pytest.fixture
+    def controller(self, pyramid_request):
+        return views.DeleteController(pyramid_request)
+
+    @pytest.fixture(autouse=True)
+    def routes(self, pyramid_config):
+        pyramid_config.add_route("account", "/account/settings")
+        pyramid_config.add_route("account_delete", "/account/delete")
+        pyramid_config.add_route("account_deleted", "/account/deleted")
+
+    @pytest.fixture(autouse=True)
+    def form(self, patch):
+        return patch("h.views.accounts.form")
+
+
+def test_account_deleted(pyramid_request):
+    # pylint:disable=use-implicit-booleaness-not-comparison
+    assert views.account_deleted(pyramid_request) == {}
 
 
 @pytest.fixture
@@ -892,13 +1022,11 @@ def mailer(patch):
     return patch("h.views.accounts.mailer")
 
 
-@pytest.fixture
-def user_password_service(pyramid_config):
-    service = mock.Mock(spec_set=UserPasswordService())
-    pyramid_config.register_service(service, name="user_password")
-    return service
-
-
 @pytest.fixture(autouse=True)
 def LoginSchema(patch):
     return patch("h.views.accounts.LoginSchema")
+
+
+@pytest.fixture(autouse=True)
+def schemas(patch):
+    return patch("h.views.accounts.schemas")

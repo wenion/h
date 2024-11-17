@@ -5,26 +5,16 @@ from unittest import mock
 import click.testing
 import deform
 import pytest
-import sqlalchemy
-from filelock import FileLock
 from pyramid import testing
 from pyramid.request import apply_request_extensions
-from sqlalchemy.orm import sessionmaker
 from webob.multidict import MultiDict
 
-from h import db
 from h.models import Organization
-from h.settings import database_url
+from h.models.auth_client import GrantType
+from h.security import Identity
 from tests.common import factories as common_factories
 from tests.common.fixtures.elasticsearch import *  # pylint:disable=wildcard-import,unused-wildcard-import
 from tests.common.fixtures.services import *  # pylint:disable=wildcard-import,unused-wildcard-import
-
-TEST_AUTHORITY = "example.com"
-DATABASE_URL = database_url(
-    os.environ.get("DATABASE_URL", "postgresql://postgres@localhost/htest")
-)
-
-Session = sessionmaker()
 
 
 class DummyFeature:
@@ -70,27 +60,6 @@ def cli():
         yield runner
 
 
-@pytest.fixture(scope="session")
-def db_engine(tmp_path_factory):
-    """Set up the database connection and create tables."""
-    engine = sqlalchemy.create_engine(DATABASE_URL)
-
-    shared_tmpdir = tmp_path_factory.getbasetemp().parent
-    done_file = shared_tmpdir / "db_initialized.done"
-    lock_file = shared_tmpdir / "db_initialized.lock"
-
-    with FileLock(str(lock_file)):
-        if done_file.is_file():
-            pass
-        else:
-            db.init(
-                engine, should_create=True, should_drop=True, authority=TEST_AUTHORITY
-            )
-            done_file.touch()
-
-    return engine
-
-
 @pytest.fixture
 def default_organization(db_session):
     # This looks a bit odd, but as part of our DB initialization we always add
@@ -98,40 +67,6 @@ def default_organization(db_session):
     return (
         db_session.query(Organization).filter_by(pubid=Organization.DEFAULT_PUBID).one()
     )
-
-
-@pytest.fixture
-def db_session(db_engine):
-    """
-    Prepare the SQLAlchemy session object.
-
-    We enable fast repeatable database tests by setting up the database only
-    once per session (see :func:`db_engine`) and then wrapping each test
-    function in a transaction that is rolled back.
-
-    Additionally, we set a SAVEPOINT before entering the test, and if we
-    detect that the test has committed (i.e. released the savepoint) we
-    immediately open another. This has the effect of preventing test code from
-    committing the outer transaction.
-    """
-    conn = db_engine.connect()
-    trans = conn.begin()
-    session = Session(bind=conn)
-    session.begin_nested()
-
-    @sqlalchemy.event.listens_for(session, "after_transaction_end")
-    def restart_savepoint(session, transaction):
-        if (  # pylint:disable=protected-access
-            transaction.nested and not transaction._parent.nested
-        ):
-            session.begin_nested()
-
-    try:
-        yield session
-    finally:
-        session.close()
-        trans.rollback()
-        conn.close()
 
 
 @pytest.fixture
@@ -204,18 +139,28 @@ def pyramid_config(pyramid_settings, pyramid_request):
 
 
 @pytest.fixture
-def pyramid_request(db_session, fake_feature, pyramid_settings):
+def pyramid_request(db_session, db_session_replica, fake_feature, pyramid_settings):
     """Return pyramid request object."""
-    request = testing.DummyRequest(db=db_session, feature=fake_feature)
-    request.default_authority = TEST_AUTHORITY
+    request = testing.DummyRequest(
+        db=db_session, db_replica=db_session_replica, feature=fake_feature
+    )
+    request.default_authority = "example.com"
     request.create_form = mock.Mock()
-    request.matched_route = mock.Mock()
+
+    request.matched_route = mock.Mock(spec=["name"])
+    # `name` is a special argument to the Mock constructor so if you want a
+    # mock to have a `name` attribute you can't just do Mock(name="name"), you
+    # have to use a separate call to configure_mock() instead.
+    # https://docs.python.org/3/library/unittest.mock.html#mock-names-and-the-name-attribute
+    request.matched_route.configure_mock(name="index")
+
     request.registry.settings = pyramid_settings
     request.is_xhr = False
     request.params = MultiDict()
     request.GET = request.params
     request.POST = request.params
     request.user = None
+    request.scheme = "https"
     return request
 
 
@@ -223,10 +168,24 @@ def pyramid_request(db_session, fake_feature, pyramid_settings):
 def pyramid_csrf_request(pyramid_request):
     """Return a dummy Pyramid request object with a valid CSRF token."""
     pyramid_request.headers["X-CSRF-Token"] = pyramid_request.session.get_csrf_token()
+    pyramid_request.referrer = "https://example.com"
+    pyramid_request.host_port = "80"
     return pyramid_request
 
 
 @pytest.fixture
 def pyramid_settings():
     """Return the default app settings."""
-    return {"sqlalchemy.url": DATABASE_URL}
+    return {"sqlalchemy.url": os.environ["DATABASE_URL"]}
+
+
+@pytest.fixture
+def auth_client(factories):
+    return factories.ConfidentialAuthClient(grant_type=GrantType.client_credentials)
+
+
+@pytest.fixture
+def with_auth_client(auth_client, pyramid_config):
+    pyramid_config.testing_securitypolicy(
+        identity=Identity.from_models(auth_client=auth_client)
+    )

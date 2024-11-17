@@ -1,5 +1,7 @@
 import pytest
 
+from h.models import GroupMembership
+
 
 class TestGetProfile:
     def test_it_returns_profile_with_single_group_when_not_authd(self, app):
@@ -147,15 +149,16 @@ def groups(factories):
 
 @pytest.fixture
 def user(groups, db_session, factories):
-    user = factories.User()
-    user.groups = groups
+    user = factories.User(
+        memberships=[GroupMembership(group=group) for group in groups]
+    )
     db_session.commit()
     return user
 
 
 @pytest.fixture
 def user_with_token(user, db_session, factories):
-    token = factories.DeveloperToken(userid=user.userid)
+    token = factories.DeveloperToken(user=user)
     db_session.add(token)
     db_session.commit()
     return (user, token)
@@ -184,6 +187,6 @@ def open_group(auth_client, db_session, factories):
 
 @pytest.fixture
 def third_party_user_with_token(third_party_user, db_session, factories):
-    token = factories.DeveloperToken(userid=third_party_user.userid)
+    token = factories.DeveloperToken(user=third_party_user)
     db_session.commit()
     return (third_party_user, token)

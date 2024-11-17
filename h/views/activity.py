@@ -2,7 +2,7 @@
 
 from urllib.parse import urlparse
 
-from jinja2 import Markup
+from markupsafe import Markup
 from pyramid import httpexceptions
 from pyramid.view import view_config, view_defaults
 
@@ -10,7 +10,6 @@ from h import util
 from h.activity import query
 from h.i18n import TranslationString as _
 from h.links import pretty_link
-from h.models.group import ReadableBy
 from h.paginator import paginate
 from h.presenters.organization_json import OrganizationJSONPresenter
 from h.search import parser
@@ -96,7 +95,7 @@ class GroupSearchController(SearchController):
         self.group = context.group
 
     @view_config(request_method="GET")
-    def search(self):  # pylint: disable=too-complex
+    def search(self):
         result = self._check_access_permissions()
         if result is not None:
             return result
@@ -107,54 +106,27 @@ class GroupSearchController(SearchController):
 
         result["opts"] = {"search_groupname": self.group.name}
 
-        # If the group has read access only for members  and the user is not in that list
-        # return without extra info.
-        if self.group.readable_by == ReadableBy.members and (
-            self.request.user not in self.group.members
-        ):
-            return result
-
         def user_annotation_count(aggregation, userid):
             for user in aggregation:
                 if user["user"] == userid:
                     return user["count"]
             return 0
 
-        members = []
-        moderators = []
         users_aggregation = result["search_results"].aggregations.get("users", [])
-        # If the group has members provide a list of member info,
-        # otherwise provide a list of moderator info instead.
-        if self.group.members:
-            members = [
-                {
-                    "username": u.username,
-                    "userid": u.userid,
-                    "count": user_annotation_count(users_aggregation, u.userid),
-                    "faceted_by": _faceted_by_user(
-                        self.request, u.username, self.parsed_query_params
-                    ),
-                }
-                for u in self.group.members
-            ]
-            members = sorted(members, key=lambda k: k["username"].lower())
-        else:
-            moderators = []
-            if self.group.creator:
-                # Pass a list of moderators, anticipating that [self.group.creator]
-                # will change to an actual list of moderators at some point.
-                moderators = [
-                    {
-                        "username": u.username,
-                        "userid": u.userid,
-                        "count": user_annotation_count(users_aggregation, u.userid),
-                        "faceted_by": _faceted_by_user(
-                            self.request, u.username, self.parsed_query_params
-                        ),
-                    }
-                    for u in [self.group.creator]
-                ]
-                moderators = sorted(moderators, key=lambda k: k["username"].lower())
+
+        members = [
+            {
+                "username": user.username,
+                "userid": user.userid,
+                "count": user_annotation_count(users_aggregation, user.userid),
+                "faceted_by": _faceted_by_user(
+                    self.request, user.username, self.parsed_query_params
+                ),
+            }
+            for user in sorted(
+                self.group.members, key=lambda user: user.username.lower()
+            )
+        ]
 
         group_annotation_count = self._get_total_annotations_in_group(
             result, self.request
@@ -187,7 +159,7 @@ class GroupSearchController(SearchController):
 
         result["group_users_args"] = [
             _("Members"),
-            moderators if self.group.type == "open" else members,
+            members,
             self.group.creator.userid if self.group.creator else None,
         ]
 
@@ -486,6 +458,7 @@ def _redirect_to_user_or_group_search(request, params):
             username=request.matchdict["username"],
             _query=params,
         )
+    # pylint:disable=possibly-used-before-assignment
     return httpexceptions.HTTPSeeOther(location=location)
 
 

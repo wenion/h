@@ -17,6 +17,8 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route("account_notifications", "/account/settings/notifications")
     config.add_route("account_developer", "/account/developer")
     config.add_route("account_user_event", "/account/user-event")
+    config.add_route("account_delete", "/account/delete")
+    config.add_route("account_deleted", "/account/deleted")
     config.add_route("claim_account_legacy", "/claim_account/{token}")
     config.add_route("dismiss_sidebar_tutorial", "/app/dismiss_sidebar_tutorial")
     config.add_route("download", "/download")
@@ -177,14 +179,11 @@ def includeme(config):  # pylint: disable=too-many-statements
     )
     config.add_route("api.bulk.group", "/api/bulk/group", request_method="POST")
 
-    config.add_route("api.groups", "/api/groups", factory="h.traversal.GroupRoot")
     config.add_route(
-        "api.group_upsert",
-        "/api/groups/{id}",
-        request_method="PUT",
-        factory="h.traversal.GroupRoot",
-        traverse="/{id}",
+        "api.bulk.lms.annotations", "/api/bulk/lms/annotations", request_method="POST"
     )
+
+    config.add_route("api.groups", "/api/groups", factory="h.traversal.GroupRoot")
     config.add_route(
         "api.group",
         "/api/groups/{id}",
@@ -225,7 +224,6 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route("api.repository", "/api/repository")
     config.add_route("api.client_url", "/api/client-url") # TODO remove
     config.add_route("api.typing", "/api/typing")
-    config.add_route("api.slack", "/api/slack")
     config.add_route("api.user_event", "/api/user-event") # TODO
     config.add_route("api.users", "/api/users", factory="h.traversal.UserRoot")
     config.add_route(
@@ -273,6 +271,12 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route(
         "group_edit",
         "/groups/{pubid}/edit",
+        factory="h.traversal.GroupRequiredRoot",
+        traverse="/{pubid}",
+    )
+    config.add_route(
+        "group_edit_members",
+        "/groups/{pubid}/edit/members",
         factory="h.traversal.GroupRequiredRoot",
         traverse="/{pubid}",
     )

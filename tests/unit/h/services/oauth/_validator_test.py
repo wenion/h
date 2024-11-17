@@ -244,8 +244,8 @@ class TestInvalidateAuthorizationCode:
         )
         db_session.flush()
 
-        assert db_session.query(models.AuthzCode).get(id_1) is None
-        assert db_session.query(models.AuthzCode).get(id_2) is not None
+        assert db_session.get(models.AuthzCode, id_1) is None
+        assert db_session.get(models.AuthzCode, id_2) is not None
 
     def test_it_skips_deleting_when_authz_code_is_missing(
         self, svc, oauth_request, db_session, factories
@@ -257,7 +257,7 @@ class TestInvalidateAuthorizationCode:
         )
         db_session.flush()
 
-        assert db_session.query(models.AuthzCode).get(keep_code.id) is not None
+        assert db_session.get(models.AuthzCode, keep_code.id) is not None
 
 
 class TestFindToken:
@@ -384,7 +384,7 @@ class TestSaveBearerToken:
 
     def test_it_sets_userid(self, svc, token_payload, oauth_request):
         token = svc.save_bearer_token(token_payload, oauth_request)
-        assert token.userid == oauth_request.user.userid
+        assert token.user == oauth_request.user
 
     def test_it_sets_value(self, svc, token_payload, oauth_request):
         token = svc.save_bearer_token(token_payload, oauth_request)
@@ -638,14 +638,12 @@ class TestValidateRefreshToken:
         result = svc.validate_refresh_token(token.refresh_token, client, oauth_request)
         assert result is True
 
-    def test_sets_user_when_token_valid(
-        self, svc, client, oauth_request, token, user_service
-    ):
-        user_service.fetch.return_value = mock.Mock()
-
+    def test_sets_user_when_token_valid(self, svc, client, oauth_request, token):
         assert oauth_request.user is None
+
         svc.validate_refresh_token(token.refresh_token, client, oauth_request)
-        assert oauth_request.user == user_service.fetch.return_value
+
+        assert oauth_request.user == token.user
 
     @pytest.fixture
     def token(self, factories, client):
@@ -699,8 +697,8 @@ class TestValidateScopes:
 
 
 @pytest.fixture
-def svc(db_session, user_service):
-    return OAuthValidator(db_session, user_service)
+def svc(db_session):
+    return OAuthValidator(db_session)
 
 
 @pytest.fixture

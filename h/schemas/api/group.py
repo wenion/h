@@ -17,6 +17,7 @@ GROUP_SCHEMA_PROPERTIES = {
     },
     "description": {"type": "string", "maxLength": GROUP_DESCRIPTION_MAX_LENGTH},
     "groupid": {"type": "string", "pattern": GROUPID_PATTERN},
+    "type": {"enum": ["private", "restricted", "open"]},
 }
 
 
@@ -50,11 +51,21 @@ class GroupAPISchema(JSONSchema):
         :rtype: dict
 
         """
+
         appstruct = super().validate(data)
         appstruct = self._whitelisted_fields_only(appstruct)
+        self._validate_name(appstruct)
         self._validate_groupid(appstruct)
 
         return appstruct
+
+    def _validate_name(self, appstruct):
+        name = appstruct.get("name")
+
+        if name and name.strip() != name:
+            raise ValidationError(
+                "Group names can't have leading or trailing whitespace."
+            )
 
     def _validate_groupid(self, appstruct):
         """
@@ -80,7 +91,7 @@ class GroupAPISchema(JSONSchema):
                 # pylint:disable=consider-using-f-string
                 "{err_msg} '{authority}'".format(
                     err_msg=_(
-                        "groupid may only be set on groups oustide of the default authority"
+                        "groupid may only be set on groups outside of the default authority"
                     ),
                     authority=self.default_authority,
                 )

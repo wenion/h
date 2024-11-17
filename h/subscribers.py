@@ -19,16 +19,18 @@ def add_renderer_globals(event):
     event["base_url"] = request.route_url("index")
     event["feature"] = request.feature
 
-    # Add Google Analytics
-    event["ga_tracking_id"] = request.registry.settings.get("ga_tracking_id")
+    event["google_analytics_measurement_id"] = request.registry.settings.get(
+        "google_analytics_measurement_id"
+    )
 
     # Add a frontend settings object which will be rendered as JSON into the
     # page.
     event["frontend_settings"] = {}
 
     if "h.sentry_dsn_frontend" in request.registry.settings:
-        event["frontend_settings"]["raven"] = {
+        event["frontend_settings"]["sentry"] = {
             "dsn": request.registry.settings["h.sentry_dsn_frontend"],
+            "environment": request.registry.settings["h.sentry_environment"],
             "release": __version__,
             "userid": request.authenticated_userid,
         }

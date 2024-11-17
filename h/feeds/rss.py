@@ -1,4 +1,5 @@
 """Functions for generating RSS feeds."""
+
 from calendar import timegm
 from email.utils import formatdate
 
@@ -48,7 +49,7 @@ def _feed_item_from_annotation(annotation, annotation_url):
     }
 
 
-def feed_from_annotations(  # pylint: disable=too-many-arguments
+def feed_from_annotations(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     annotations, annotation_url, rss_url, html_url, title, description
 ):
     """

@@ -1,10 +1,12 @@
 import codecs
 import logging
+from datetime import datetime, timedelta
 from functools import lru_cache
 
 import colander
 import deform
-from jinja2 import Markup
+from markupsafe import Markup
+from sqlalchemy import select
 
 from h import i18n, models
 from h.models.user import (
@@ -16,6 +18,7 @@ from h.models.user import (
 from h.schemas import validators
 from h.schemas.base import CSRFSchema
 from h.schemas.forms.accounts.util import PASSWORD_MIN_LENGTH
+from h.util.user import format_userid
 
 _ = i18n.TranslationString
 log = logging.getLogger(__name__)
@@ -46,11 +49,27 @@ def unique_email(node, value):
 
 def unique_username(node, value):
     """Colander validator that ensures the username does not exist."""
+    exc = colander.Invalid(node, _("This username is already taken."))
     request = node.bindings["request"]
     user = models.User.get_by_username(request.db, value, request.default_authority)
     if user:  # pragma: no cover
-        msg = _("This username is already taken.")
-        raise colander.Invalid(node, msg)
+        raise exc
+
+    # Don't allow recently-deleted usernames to be re-used.
+    # This is to make sure that there's time for the user's data to be expunged
+    # from all systems (for example: Elasticsearch) before we allow a new
+    # account with the same username to be registered.
+    # Otherwise new accounts could inherit dating belonging to deleted accounts.
+    if request.db.scalars(
+        select(models.UserDeletion.id).where(
+            models.UserDeletion.userid
+            == format_userid(value, request.default_authority)
+        )
+        # 31 days is an arbitrary time delta that should be more than enough
+        # time for all the previous user's data to be expunged.
+        .where(models.UserDeletion.requested_at > datetime.now() - timedelta(days=31))
+    ).first():
+        raise exc
 
 
 def email_node(**kwargs):
@@ -223,6 +242,21 @@ class PasswordChangeSchema(CSRFSchema):
             exc["password"] = _("Wrong password.")
 
         if exc.children:
+            raise exc
+
+
+class DeleteAccountSchema(CSRFSchema):
+    password = password_node(title=_("Confirm password"))
+
+    def validator(self, node, value):
+        super().validator(node, value)
+
+        request = node.bindings["request"]
+        svc = request.find_service(name="user_password")
+
+        if not svc.check_password(request.user, value.get("password")):
+            exc = colander.Invalid(node)
+            exc["password"] = _("Wrong password.")
             raise exc
 
 

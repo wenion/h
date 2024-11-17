@@ -7,13 +7,14 @@ PREFIX = "6879-"
 class DeveloperTokenService:
     """A service for retrieving and performing common operations on developer tokens."""
 
-    def __init__(self, session):
+    def __init__(self, session, user_svc):
         """
         Create a new developer token service.
 
         :param session: the SQLAlchemy session object
         """
         self.session = session
+        self.user_svc = user_svc
 
         self._cached_fetch = lru_cache_in_transaction(self.session)(self._fetch)
 
@@ -39,7 +40,8 @@ class DeveloperTokenService:
         :returns: a token instance
         :rtype: h.models.Token
         """
-        token = models.Token(userid=userid, value=self._generate_token())
+        user = self.user_svc.fetch(userid)
+        token = models.Token(user=user, value=self._generate_token())
         self.session.add(token)
         return token
 
@@ -64,9 +66,11 @@ class DeveloperTokenService:
         if userid is None:
             return None
 
+        user = self.user_svc.fetch(userid)
+
         return (
             self.session.query(models.Token)
-            .filter_by(userid=userid, authclient=None)
+            .filter_by(user=user, authclient=None)
             .order_by(models.Token.created.desc())
             .one_or_none()
         )
@@ -77,4 +81,4 @@ class DeveloperTokenService:
 
 
 def developer_token_service_factory(_context, request):
-    return DeveloperTokenService(request.db)
+    return DeveloperTokenService(request.db, request.find_service(name="user"))

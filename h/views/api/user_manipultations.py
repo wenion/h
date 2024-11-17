@@ -1555,21 +1555,6 @@ def rating(request):
 
 @api_config(
     versions=["v1", "v2"],
-    route_name="api.slack",
-    request_method="POST",
-    permission=Permission.Annotation.CREATE,
-    link_name="slack",
-    description="Slack",
-)
-def slack(request):
-    # app = request.registry["slack.app"]
-    # result = app.client.conversations_list()
-    # print("result", result)
-    pass
-
-
-@api_config(
-    versions=["v1", "v2"],
     route_name="api.user_event",
     request_method="GET",
     # permission=Permission.Annotation.CREATE,

@@ -8,20 +8,17 @@ import { EnvironmentFlags } from './base/environment-flags';
 window.envFlags = new EnvironmentFlags(document.documentElement);
 window.envFlags.init();
 
-// Set up the Google Analytics command queue if we have a tracking ID.
-const gaTrackingId = document.querySelector(
-  'meta[name="google-analytics-tracking-id"]',
-);
-if (gaTrackingId) {
+// See https://developers.google.com/analytics/devguides/migration/ua/analyticsjs-to-gtagjs
+const gaMeasurementId = document.querySelector(
+  'meta[name="google-analytics-measurement-id"]',
+)?.content;
+if (gaMeasurementId) {
   /* eslint-disable */
-  window.ga =
-    window.ga ||
-    function () {
-      (ga.q = ga.q || []).push(arguments);
-    };
-  ga.l = +new Date();
-  ga('create', gaTrackingId.content, 'auto');
-  ga('set', 'anonymizeIp', true);
-  ga('send', 'pageview');
+  window.dataLayer = window.dataLayer || [];
+  function gtag() {
+    dataLayer.push(arguments);
+  }
+  gtag('js', new Date());
+  gtag('config', gaMeasurementId);
   /* eslint-enable */
 }

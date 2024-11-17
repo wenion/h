@@ -9,8 +9,11 @@ from h.i18n import TranslationString as _
 from h.presenters import GroupJSONPresenter, GroupsJSONPresenter, UserJSONPresenter
 from h.schemas.api.group import CreateGroupAPISchema, UpdateGroupAPISchema
 from h.security import Permission
+from h.traversal import GroupContext
 from h.views.api.config import api_config
 from h.views.api.exceptions import PayloadError
+
+DEFAULT_GROUP_TYPE = "private"
 
 
 @api_config(
@@ -63,12 +66,29 @@ def create(request):
                 _("group with groupid '{}' already exists").format(groupid)
             )
 
-    group = group_create_service.create_private_group(
-        name=appstruct["name"],
-        userid=request.user.userid,
-        description=appstruct.get("description", None),
-        groupid=groupid,
-    )
+    group_type = appstruct.get("type", DEFAULT_GROUP_TYPE)
+
+    kwargs = {
+        "name": appstruct["name"],
+        "userid": request.user.userid,
+        "description": appstruct.get("description", None),
+        "groupid": groupid,
+    }
+
+    if group_type == "private":
+        method = group_create_service.create_private_group
+    else:
+        assert group_type in ("restricted", "open")
+        kwargs["scopes"] = []
+
+        if group_type == "restricted":
+            method = group_create_service.create_restricted_group
+        else:
+            assert group_type == "open"
+            method = group_create_service.create_open_group
+
+    group = method(**kwargs)
+
     return GroupJSONPresenter(group, request).asdict(expand=["organization", "scopes"])
 
 
@@ -80,7 +100,7 @@ def create(request):
     link_name="group.read",
     description="Fetch a group",
 )
-def read(context, request):
+def read(context: GroupContext, request):
     """Fetch a group."""
 
     expand = request.GET.getall("expand") or []
@@ -96,7 +116,7 @@ def read(context, request):
     link_name="group.update",
     description="Update a group",
 )
-def update(context, request):
+def update(context: GroupContext, request):
     """Update a group from a PATCH payload."""
     appstruct = UpdateGroupAPISchema(
         default_authority=request.default_authority,
@@ -122,74 +142,13 @@ def update(context, request):
 
 @api_config(
     versions=["v1", "v2"],
-    route_name="api.group_upsert",
-    request_method="PUT",
-    permission=Permission.Group.UPSERT,
-    link_name="group.create_or_update",
-    description="Create or update a group",
-)
-def upsert(context, request):
-    """
-    Create or update a group from a PUT payload.
-
-    If no group model is present in the passed ``context`` (on ``context.group``),
-    treat this as a create action and delegate to ``create``.
-
-    Otherwise, replace the existing group's resource properties entirely and update
-    the object.
-
-    :arg context:
-    :type context: h.traversal.GroupUpsertContext
-    """
-    if context.group is None:
-        return create(request)
-
-    group = context.group
-
-    # Because this is a PUT endpoint and not a PATCH, a full replacement of the
-    # entire resource is expected. Thus, we're validating against the Create schema
-    # here as we want to make sure properties required for a fresh object are present
-    appstruct = CreateGroupAPISchema(
-        default_authority=request.default_authority,
-        group_authority=request.effective_authority,
-    ).validate(_json_payload(request))
-
-    group_update_service = request.find_service(name="group_update")
-    group_service = request.find_service(name="group")
-
-    # Check for duplicate group
-    groupid = appstruct.get("groupid", None)
-    if groupid is not None:
-        duplicate_group = group_service.fetch(pubid_or_groupid=groupid)
-        if duplicate_group and (duplicate_group != group):
-            raise HTTPConflict(
-                _("group with groupid '{}' already exists").format(groupid)
-            )
-
-    # Need to make sure every resource-defined property is present, as this
-    # is meant as a full-resource-replace operation.
-    # TODO: This may be better handled in the schema at some point
-    update_properties = {
-        "name": appstruct["name"],
-        "description": appstruct.get("description", ""),
-        "groupid": appstruct.get("groupid", None),
-    }
-
-    group = group_update_service.update(group, **update_properties)
-
-    # Note that this view takes a ``GroupUpsertContext`` but uses a ``GroupContext`` here
-    return GroupJSONPresenter(group, request).asdict(expand=["organization", "scopes"])
-
-
-@api_config(
-    versions=["v1", "v2"],
     route_name="api.group_members",
     request_method="GET",
     link_name="group.members.read",
     description="Fetch all members of a group",
     permission=Permission.Group.READ,
 )
-def read_members(context, _request):
+def read_members(context: GroupContext, _request):
     """Fetch the members of a group."""
     return [UserJSONPresenter(user).asdict() for user in context.group.members]
 
@@ -202,7 +161,7 @@ def read_members(context, _request):
     description="Remove the current user from a group",
     is_authenticated=True,
 )
-def remove_member(context, request):
+def remove_member(context: GroupContext, request):
     """Remove a member from the given group."""
     # Currently, we only support removing the requesting user
     if request.matchdict.get("userid") == "me":
@@ -224,7 +183,7 @@ def remove_member(context, request):
     permission=Permission.Group.MEMBER_ADD,
     description="Add the user in the request params to a group.",
 )
-def add_member(context, request):
+def add_member(context: GroupContext, request):
     """
     Add a member to a given group.
 

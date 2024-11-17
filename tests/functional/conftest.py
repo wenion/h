@@ -2,6 +2,7 @@ import contextlib
 import os
 
 import pytest
+from sqlalchemy import text
 from webtest import TestApp
 
 from h import db
@@ -24,9 +25,9 @@ TEST_SETTINGS = {
     "h.sentry_dsn_frontend": "TEST_SENTRY_DSN_FRONTEND",
     "pyramid.debug_all": False,
     "secret_key": "notasecret",
-    "sqlalchemy.url": os.environ.get(
-        "DATABASE_URL", "postgresql://postgres@localhost/htest"
-    ),
+    "h_api_auth_cookie_secret_key": b"test_h_api_auth_cookie_secret_key",
+    "h_api_auth_cookie_salt": b"test_h_api_auth_cookie_salt",
+    "sqlalchemy.url": os.environ["DATABASE_URL"],
 }
 
 TEST_ENVIRONMENT = {
@@ -36,6 +37,8 @@ TEST_ENVIRONMENT = {
     "AUTH_DOMAIN": TEST_SETTINGS["h.authority"],
     "SENTRY_DSN_FRONTEND": TEST_SETTINGS["h.sentry_dsn_frontend"],
     "SECRET_KEY": TEST_SETTINGS["secret_key"],
+    "H_API_AUTH_COOKIE_SECRET_KEY": TEST_SETTINGS["h_api_auth_cookie_secret_key"],
+    "H_API_AUTH_COOKIE_SALT": TEST_SETTINGS["h_api_auth_cookie_salt"],
     "DATABASE_URL": TEST_SETTINGS["sqlalchemy.url"],
 }
 
@@ -58,28 +61,20 @@ def with_clean_db(db_engine):
     with contextlib.closing(db_engine.connect()) as conn:
         tx = conn.begin()
         tnames = ", ".join('"' + t.name + '"' for t in tables)
-        conn.execute(f"TRUNCATE {tnames};")
+        conn.execute(text(f"TRUNCATE {tnames};"))
         tx.commit()
 
     # We need to re-init the DB as it creates the default test group and
     # possibly more in future?
-    db.init(db_engine, authority=TEST_SETTINGS["h.authority"])
-
-
-@pytest.fixture(scope="session")
-def db_engine():
-    db_engine = db.make_engine(TEST_SETTINGS)
-    db.init(db_engine, authority=TEST_SETTINGS["h.authority"], should_create=True)
-
-    yield db_engine
-
-    db_engine.dispose()
+    db.pre_create(db_engine)
+    db.Base.metadata.create_all(db_engine)
+    db.post_create(db_engine)
 
 
 @pytest.fixture
-def db_session(db_engine):
+def db_session(db_engine, db_sessionfactory):
     """Get a standalone database session for preparing database state."""
-    session = db.Session(bind=db_engine)
+    session = db_sessionfactory(bind=db_engine)
     yield session
     session.close()
 
@@ -89,12 +84,6 @@ def factories(db_session):
     factories_common.set_session(db_session)
     yield factories_common
     factories_common.set_session(None)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def init_db(db_engine):
-    authority = TEST_SETTINGS["h.authority"]
-    db.init(db_engine, should_drop=True, should_create=True, authority=authority)
 
 
 @pytest.fixture(scope="session")

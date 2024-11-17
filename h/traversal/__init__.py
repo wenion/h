@@ -61,7 +61,7 @@ shouldn't return model objects directly).
 """
 
 from h.traversal.annotation import AnnotationContext, AnnotationRoot
-from h.traversal.group import GroupRequiredRoot, GroupRoot
+from h.traversal.group import GroupContext, GroupRequiredRoot, GroupRoot
 from h.traversal.organization import OrganizationContext, OrganizationRoot
 from h.traversal.user import UserByIDRoot, UserByNameRoot, UserContext, UserRoot
 from h.traversal.organisation_event import OrganisationEventContext, OrganisationEventRoot
@@ -86,4 +86,5 @@ __all__ = (
     "UserEventRecordRoot",
     "UserEventContext",
     "UserEventRoot",
+    "GroupContext",
 )

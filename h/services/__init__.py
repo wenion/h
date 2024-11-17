@@ -1,9 +1,16 @@
 """Service definitions that handle business logic."""
+
 from h.services.annotation_metadata import AnnotationMetadataService
 from h.services.annotation_read import AnnotationReadService
+from h.services.annotation_sync import AnnotationSyncService
 from h.services.annotation_write import AnnotationWriteService
-from h.services.auth_cookie import AuthCookieService
-from h.services.bulk_api import BulkAnnotationService, BulkGroupService
+from h.services.auth_ticket import AuthTicketService
+from h.services.bulk_api import (
+    BulkAnnotationService,
+    BulkGroupService,
+    BulkLMSStatsService,
+)
+from h.services.job_queue import JobQueueService
 from h.services.subscription import SubscriptionService
 from h.services.organisation_event_push_log import OrganisationEventPushLogService
 from h.services.message import MessageService
@@ -32,12 +39,15 @@ def includeme(config):  # pragma: no cover
         "h.services.annotation_stats.annotation_stats_factory", name="annotation_stats"
     )
     config.register_service_factory(
+        "h.services.annotation_sync.factory", iface=AnnotationSyncService
+    )
+    config.register_service_factory(
         "h.services.annotation_write.service_factory", iface=AnnotationWriteService
     )
 
     # Other services
     config.register_service_factory(
-        "h.services.auth_cookie.factory", iface=AuthCookieService
+        "h.services.auth_ticket.factory", iface=AuthTicketService
     )
     config.register_service_factory(
         "h.services.auth_token.auth_token_service_factory", name="auth_token"
@@ -48,6 +58,10 @@ def includeme(config):  # pragma: no cover
     config.register_service_factory(
         "h.services.bulk_api.group.service_factory", iface=BulkGroupService
     )
+    config.register_service_factory(
+        "h.services.bulk_api.lms_stats.service_factory", iface=BulkLMSStatsService
+    )
+
     config.register_service_factory(
         "h.services.developer_token.developer_token_service_factory",
         name="developer_token",
@@ -98,8 +112,12 @@ def includeme(config):  # pragma: no cover
         name="list_organizations",
     )
     config.register_service_factory(
-        "h.services.job_queue.metrics.factory", name="job_queue_metrics"
+        "h.services.job_queue_metrics.factory", name="job_queue_metrics"
     )
+    config.register_service_factory(
+        "h.services.job_queue.factory", iface=JobQueueService, name="queue_service"
+    )
+
     config.register_service_factory("h.services.nipsa.nipsa_factory", name="nipsa")
     config.register_service_factory(
         "h.services.oauth.service.factory", name="oauth_provider"

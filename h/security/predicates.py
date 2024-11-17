@@ -9,9 +9,10 @@ For example a predicate might define "group_created_by_user" which is only
 true when a user is present, a group is present and the user created that
 group.
 """
+
 from itertools import chain
 
-from h.models.group import JoinableBy, ReadableBy, WriteableBy
+from h.models.group import GroupMembershipRoles, JoinableBy, ReadableBy, WriteableBy
 
 
 def requires(*parent_predicates):
@@ -111,10 +112,6 @@ def group_found(_identity, context):
     return hasattr(context, "group") and context.group
 
 
-def group_not_found(_identity, context):
-    return not hasattr(context, "group") or not context.group
-
-
 @requires(group_found)
 def group_writable_by_members(_identity, context):
     return context.group.writeable_by == WriteableBy.members
@@ -146,12 +143,32 @@ def group_created_by_user(identity, context):
 
 
 @requires(authenticated_user, group_found)
-def group_has_user_as_member(identity, context):
-    # With detached groups like we have with the websocket, this doesn't work
-    # as SQLAlchemy does not consider them equal:
-    # return context.group in identity.user.groups
+def group_has_user_as_owner(identity, context):
+    return any(
+        owner.id == identity.user.id
+        for owner in context.group.get_members(GroupMembershipRoles.OWNER)
+    )
 
-    return any(user_group.id == context.group.id for user_group in identity.user.groups)
+
+@requires(authenticated_user, group_found)
+def group_has_user_as_admin(identity, context):
+    return any(
+        admin.id == identity.user.id
+        for admin in context.group.get_members(GroupMembershipRoles.ADMIN)
+    )
+
+
+@requires(authenticated_user, group_found)
+def group_has_user_as_moderator(identity, context):
+    return any(
+        moderator.id == identity.user.id
+        for moderator in context.group.get_members(GroupMembershipRoles.MODERATOR)
+    )
+
+
+@requires(authenticated_user, group_found)
+def group_has_user_as_member(identity, context):
+    return any(member.id == identity.user.id for member in context.group.members)
 
 
 @requires(authenticated_user, group_found)

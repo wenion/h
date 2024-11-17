@@ -1,111 +1,90 @@
-import deform
 from pyramid import httpexceptions
+from pyramid.csrf import get_csrf_token
 from pyramid.view import view_config, view_defaults
 
-from h import form, i18n
-from h.schemas.forms.group import group_schema
+from h import i18n
 from h.security import Permission
 
 _ = i18n.TranslationString
 
 
 @view_defaults(
-    route_name="group_create",
-    renderer="h:templates/groups/create.html.jinja2",
-    is_authenticated=True,
+    renderer="h:templates/groups/create_edit.html.jinja2", is_authenticated=True
 )
-class GroupCreateController:
-    def __init__(self, request):
-        self.request = request
-
-        self.schema = group_schema(autofocus_name=True).bind(request=self.request)
-
-        submit = deform.Button(
-            title=_("Create group"),
-            css_class="primary-action-btn "
-            "group-form__submit-btn "
-            "js-create-group-create-btn",
-        )
-        self.form = request.create_form(
-            self.schema, css_class="group-form__form", buttons=(submit,)
-        )
-
-    @view_config(request_method="GET")
-    def get(self):
-        """Render the form for creating a new group."""
-        return self._template_data()
-
-    @view_config(request_method="POST")
-    def post(self):
-        """Respond to a submission of the create group form."""
-
-        def on_success(appstruct):
-            group_create_service = self.request.find_service(name="group_create")
-            group = group_create_service.create_private_group(
-                name=appstruct["name"],
-                description=appstruct.get("description"),
-                userid=self.request.authenticated_userid,
-            )
-
-            url = self.request.route_path(
-                "group_read", pubid=group.pubid, slug=group.slug
-            )
-            return httpexceptions.HTTPSeeOther(url)
-
-        return form.handle_form_submission(
-            self.request,
-            self.form,
-            on_success=on_success,
-            on_failure=self._template_data,
-        )
-
-    def _template_data(self):
-        """Return the data needed to render this controller's page."""
-        return {"form": self.form.render()}
-
-
-@view_defaults(
-    route_name="group_edit",
-    renderer="h:templates/groups/edit.html.jinja2",
-    permission=Permission.Group.EDIT,
-)
-class GroupEditController:
+class GroupCreateEditController:
     def __init__(self, context, request):
-        self.group = context.group
+        self.context = context
         self.request = request
-        self.schema = group_schema().bind(request=self.request)
-        self.form = request.create_form(
-            self.schema, buttons=(_("Save"),), use_inline_editing=True
-        )
+        self.annotation_stats_service = request.find_service(name="annotation_stats")
 
-    @view_config(request_method="GET")
-    def get(self):
-        self.form.set_appstruct(
-            {"name": self.group.name or "", "description": self.group.description or ""}
-        )
+    @view_config(route_name="group_create", request_method="GET")
+    def create(self):
+        """Render the page for creating a new group."""
 
-        return self._template_data()
+        if self.request.feature("group_type"):
+            page_title = "Create a new group"
+        else:
+            page_title = "Create a new private group"
 
-    @view_config(request_method="POST")
-    def post(self):
-        return form.handle_form_submission(
-            self.request,
-            self.form,
-            on_success=self._update_group,
-            on_failure=self._template_data,
-        )
-
-    def _template_data(self):
         return {
-            "form": self.form.render(),
-            "group_path": self.request.route_path(
-                "group_read", pubid=self.group.pubid, slug=self.group.slug
-            ),
+            "page_title": page_title,
+            "js_config": self._js_config(),
         }
 
-    def _update_group(self, appstruct):
-        self.group.name = appstruct["name"]
-        self.group.description = appstruct["description"]
+    @view_config(
+        route_name="group_edit", request_method="GET", permission=Permission.Group.EDIT
+    )
+    @view_config(
+        route_name="group_edit_members",
+        request_method="GET",
+        permission=Permission.Group.EDIT,
+    )
+    def edit(self):
+        """Render the page for editing an existing group."""
+        return {
+            "page_title": "Edit group",
+            "js_config": self._js_config(),
+        }
+
+    def _js_config(self):
+        csrf_token = get_csrf_token(self.request)
+
+        js_config = {
+            "styles": self.request.registry["assets_env"].urls("group_forms_css"),
+            "api": {
+                "createGroup": {
+                    "method": "POST",
+                    "url": self.request.route_url("api.groups"),
+                    "headers": {"X-CSRF-Token": csrf_token},
+                },
+            },
+            "context": {"group": None},
+            "features": {
+                "group_members": self.request.feature("group_members"),
+                "group_type": self.request.feature("group_type"),
+            },
+        }
+
+        if group := getattr(self.context, "group", None):
+            js_config["context"]["group"] = {
+                "pubid": group.pubid,
+                "name": group.name,
+                "description": group.description,
+                "type": group.type,
+                "link": self.request.route_url(
+                    "group_read", pubid=group.pubid, slug=group.slug
+                ),
+                "num_annotations": self.annotation_stats_service.total_group_annotation_count(
+                    group.pubid, unshared=False
+                ),
+            }
+            js_config["api"]["updateGroup"] = {
+                "method": "PATCH",
+                "url": self.request.route_url("api.group", id=group.pubid),
+                "headers": {"X-CSRF-Token": csrf_token},
+            }
+
+        return js_config
 
 
 @view_config(route_name="group_read_noslug", request_method="GET")

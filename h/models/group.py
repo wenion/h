@@ -4,9 +4,12 @@ from collections import namedtuple
 
 import slugify
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import relationship
 
 from h import pubid
 from h.db import Base, mixins
+from h.models.user import User
 from h.util.group import split_groupid
 
 GROUP_NAME_MIN_LENGTH = 3
@@ -33,15 +36,45 @@ class WriteableBy(enum.Enum):
     members = "members"
 
 
+class GroupMembershipRoles(enum.StrEnum):
+    """The valid role strings that're allowed in the GroupMembership.roles column."""
+
+    MEMBER = "member"
+    MODERATOR = "moderator"
+    ADMIN = "admin"
+    OWNER = "owner"
+
+
 class GroupMembership(Base):
     __tablename__ = "user_group"
 
     __table_args__ = (sa.UniqueConstraint("user_id", "group_id"),)
 
     id = sa.Column("id", sa.Integer, autoincrement=True, primary_key=True)
+
     user_id = sa.Column("user_id", sa.Integer, sa.ForeignKey("user.id"), nullable=False)
+    user = relationship("User", back_populates="memberships", lazy="selectin")
+
     group_id = sa.Column(
-        "group_id", sa.Integer, sa.ForeignKey("group.id"), nullable=False
+        "group_id",
+        sa.Integer,
+        sa.ForeignKey("group.id", ondelete="cascade"),
+        nullable=False,
+        index=True,
+    )
+    group = relationship("Group", back_populates="memberships", lazy="selectin")
+
+    roles = sa.Column(
+        JSONB,
+        sa.CheckConstraint(
+            " OR ".join(
+                f"""(roles = '["{role}"]'::jsonb)"""
+                for role in ["member", "moderator", "admin", "owner"]
+            ),
+            name="validate_role_strings",
+        ),
+        server_default=sa.text("""'["member"]'::jsonb"""),
+        nullable=False,
     )
 
 
@@ -90,7 +123,7 @@ class Group(Base, mixins.Timestamps):
     #: Allow authorities to define their own unique identifier for a group
     #: (versus the pubid). This identifier is owned by the authority/client
     #: versus ``pubid``, which is owned and controlled by the service.
-    authority_provided_id = sa.Column(sa.UnicodeText(), nullable=True)
+    authority_provided_id = sa.Column(sa.UnicodeText(), nullable=True, index=True)
 
     #: Which type of user is allowed to join this group, possible values are:
     #: authority, None
@@ -134,12 +167,44 @@ class Group(Base, mixins.Timestamps):
             self.authority_provided_id = groupid_parts["authority_provided_id"]
             self.authority = groupid_parts["authority"]
 
-    # Group membership
-    members = sa.orm.relationship(
-        "User",
-        secondary="user_group",
-        backref=sa.orm.backref("groups", order_by="Group.name"),
-    )
+    memberships = sa.orm.relationship("GroupMembership", back_populates="group")
+
+    @property
+    def members(self) -> tuple[User, ...]:
+        """
+        Return a tuple of this group's members.
+
+        This is a convenience property for when you want to access a group's
+        members (User objects) rather than its memberships (GroupMembership
+        objects).
+
+        This is not an SQLAlchemy relationship! SQLAlchemy emits a warning if
+        you try to have both Group.memberships and a Group.members
+        relationships at the same time because it can result in reads returning
+        conflicting data and in writes causing integrity errors or unexpected
+        inserts or deletes. See:
+
+        https://docs.sqlalchemy.org/en/20/orm/basic_relationships.html#combining-association-object-with-many-to-many-access-patterns
+
+        Since this is just a normal Python property setting or mutating it
+        (e.g. `group.members = [...]` or `group.members.append(...)`) wouldn't
+        be registered with SQLAlchemy and the changes wouldn't be saved to the
+        DB. So this is a read-only property that returns an immutable tuple.
+        """
+        return self.get_members()
+
+    def get_members(self, role: GroupMembershipRoles | None = None) -> tuple[User, ...]:
+        """Return a tuple of this group's members."""
+        if role:
+            memberships = [
+                membership
+                for membership in self.memberships
+                if role in membership.roles
+            ]
+        else:
+            memberships = self.memberships
+
+        return tuple(membership.user for membership in memberships)
 
     scopes = sa.orm.relationship(
         "GroupScope", backref="group", cascade="all, delete-orphan"
@@ -197,11 +262,7 @@ class Group(Base, mixins.Timestamps):
             writeable_by=self.writeable_by,
         )
 
-        for type_, type_flags in (
-            ("open", OPEN_GROUP_TYPE_FLAGS),
-            ("private", PRIVATE_GROUP_TYPE_FLAGS),
-            ("restricted", RESTRICTED_GROUP_TYPE_FLAGS),
-        ):
+        for type_, type_flags in GROUP_TYPE_FLAGS.items():
             if self_type_flags == type_flags:
                 return type_
 
@@ -210,6 +271,16 @@ class Group(Base, mixins.Timestamps):
             "This shouldn't be in the database!"
         )
 
+    @type.setter
+    def type(self, value):
+        try:
+            new_type_flags = GROUP_TYPE_FLAGS[value]
+        except KeyError as err:
+            raise ValueError() from err
+
+        for index, flag in enumerate(new_type_flags._fields):
+            setattr(self, flag, new_type_flags[index])
+
     @property
     def is_public(self):
         return self.readable_by == ReadableBy.world
@@ -217,24 +288,21 @@ class Group(Base, mixins.Timestamps):
     def __repr__(self):
         return f"<Group: {self.slug}>"
 
-    @classmethod
-    def created_by(cls, session, user):
-        """Return a query object filtering groups by creator."""
-        return session.query(cls).filter(Group.creator == user)
-
 
 TypeFlags = namedtuple("TypeFlags", "joinable_by readable_by writeable_by")
 
-OPEN_GROUP_TYPE_FLAGS = TypeFlags(
-    joinable_by=None, readable_by=ReadableBy.world, writeable_by=WriteableBy.authority
-)
-
-PRIVATE_GROUP_TYPE_FLAGS = TypeFlags(
-    joinable_by=JoinableBy.authority,
-    readable_by=ReadableBy.members,
-    writeable_by=WriteableBy.members,
-)
-
-RESTRICTED_GROUP_TYPE_FLAGS = TypeFlags(
-    joinable_by=None, readable_by=ReadableBy.world, writeable_by=WriteableBy.members
-)
+GROUP_TYPE_FLAGS = {
+    "open": TypeFlags(
+        joinable_by=None,
+        readable_by=ReadableBy.world,
+        writeable_by=WriteableBy.authority,
+    ),
+    "private": TypeFlags(
+        joinable_by=JoinableBy.authority,
+        readable_by=ReadableBy.members,
+        writeable_by=WriteableBy.members,
+    ),
+    "restricted": TypeFlags(
+        joinable_by=None, readable_by=ReadableBy.world, writeable_by=WriteableBy.members
+    ),
+}
