@@ -226,6 +226,7 @@ def upload(request):
     file_path = meta["path"]
     depth = int(meta["depth"])
     name = meta["name"]
+    print(meta["access"])
     if file_path == "" or name == "":
         create_user_event("server-record", "UPLOAD FAILED", name, request.url, userid)
         return {
