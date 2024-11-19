@@ -392,6 +392,7 @@ def iterate_directory(dir, name, url, depth):
         'path': dir,
         'id': dir,
         'name': name,
+        'access': 'public', #Ivan
         'type': 'dir',  # dir | file
         'link': current_path,
         'children': [],
@@ -410,6 +411,7 @@ def iterate_directory(dir, name, url, depth):
                     'path': os.path.join(dir, entry.name),
                     'id': dir,
                     'name': entry.name,
+                    'access': 'public', #Ivan
                     'type': 'file',
                     'link': os.path.join(current_path, entry.name),
                     'creation_time': creation_time,
