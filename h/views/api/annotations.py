@@ -75,7 +75,6 @@ def search(request):
     description="Create an annotation",
 )
 def create(request):
-    print("create", request.json_body)
     """Create an annotation from the POST payload."""
     schema = CreateAnnotationSchema(request)
     appstruct = schema.validate(_json_payload(request))

@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 import click
 
-from h import models_redis
+from h.models_redis import UserEvent
 
 
 @click.group("event")
@@ -27,10 +27,10 @@ def length(ctx, username, authority):
 
     userid = "acct:"+ username + "@" + authority
 
-    result = models_redis.fetch_all_user_event(userid, "timestamp")
+    total = UserEvent.find(UserEvent.userid == userid).count()
     request.tm.commit()
 
-    click.echo(f"{username} has {result['total']} records", err=True)
+    click.echo(f"{username} has {total} records", err=True)
 
 
 @user_event.command()
@@ -54,7 +54,19 @@ def delete(ctx, username, authority, type):
 
     userid = "acct:"+ username + "@" + authority
 
-    result = models_redis.del_user_event(userid, type)
+    if type == 'all':
+        query = UserEvent.find(UserEvent.userid == userid)
+    else:
+        query = UserEvent.find(
+            (UserEvent.userid == userid) &
+            (UserEvent.event_type == type)
+        )
+    total = query.count()
+    result = query.all()
+
+    for item in result:
+        UserEvent.delete(item.pk)
+
     request.tm.commit()
 
-    click.echo(f"{result['total']} records[TYPE:{type}] of User {username} have been deleted.", err=True)
+    click.echo(f"{total} records[TYPE:{type}] of User {username} have been deleted.", err=True)

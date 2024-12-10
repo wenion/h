@@ -28,16 +28,10 @@ from urllib.parse import urljoin, urlparse, urlunparse, unquote
 
 from h.exceptions import InvalidUserId
 from h.security import Permission
-from h.services import OrganisationEventPushLogService
 from h.services import MessageService
 from h.views.api.config import api_config
 from h.models_redis import Rating
-from h.models_redis import get_highlights_from_openai, create_user_event, add_user_event
-from h.models_redis import get_user_status_by_userid, set_user_status
-from h.models_redis import update_user_event, fetch_all_user_events_by_session
-from h.models_redis import fetch_user_event_by_timestamp, batch_user_event_record
-
-
+from h.models_redis import get_highlights_from_openai
 
 log = logging.getLogger(__name__)
 
@@ -129,21 +123,21 @@ def upload(request):
         if not name.endswith(".html"):
             name = name + ".html"
         try:
-            create_user_event("server-record", "UPLOAD REQUEST", name, request.url, userid)
+            # create_user_event("server-record", "UPLOAD REQUEST", name, request.url, userid)
             filepath = os.path.join(root_dir, name)
             if os.path.exists(filepath):
                 print("exist file", filepath)
-                create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + " already exists", request.url,
-                                  userid)
+                # create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + " already exists", request.url,
+                #                   userid)
                 return {"error": name + " already exists"}
             with open(filepath, "wb") as output_file:
                 shutil.copyfileobj(input_file, output_file)
         except Exception as e:
-            create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + "error:" + repr(e), request.url, userid)
+            # create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + "error:" + repr(e), request.url, userid)
             return {"error": repr(e)}
 
         relavtive_path = os.path.relpath(filepath, settings.get("user_root"))
-        create_user_event("server-record", "UPLOAD RESPONSE SUCC", name, request.url, userid)
+        # create_user_event("server-record", "UPLOAD RESPONSE SUCC", name, request.url, userid)
 
         content = meta.get("content", "")
         page_url = meta.get('link')
@@ -171,14 +165,14 @@ def upload(request):
             }
 
             try:
-                create_user_event("server-record", "INGEST REQUEST", plain_text[0:30], page_url,userid)
+                # create_user_event("server-record", "INGEST REQUEST", plain_text[0:30], page_url,userid)
                 response = requests.post(url, data=data)
             except Exception as e:
-                create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + repr(e), page_url, userid)
+                # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + repr(e), page_url, userid)
                 return {"error": repr(e)}
             else:
                 if response.status_code != 200:
-                    create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:TA B proxy error", url, userid)
+                    # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:TA B proxy error", url, userid)
                     return {"error": "TA B proxy error"}
                 return {"succ": {
                     "depth": 0,
@@ -202,10 +196,10 @@ def upload(request):
             with open(filepath, "wb") as output_file:
                 shutil.copyfileobj(input_file, output_file)
         except Exception as e:
-            create_user_event("server-record", "UPLOAD REQUEST FROM GOOGLE FAIL", name, request.url, userid)
+            # create_user_event("server-record", "UPLOAD REQUEST FROM GOOGLE FAIL", name, request.url, userid)
             return {"error": repr(e)}
         else:
-            create_user_event("server-record", "UPLOAD REQUEST FROM GOOGLE SUCC", name, request.url, userid)
+            # create_user_event("server-record", "UPLOAD REQUEST FROM GOOGLE SUCC", name, request.url, userid)
             succ_response = {"succ": {
                 "depth": 0,
                 "id": root_dir,
@@ -227,7 +221,7 @@ def upload(request):
     depth = int(meta["depth"])
     name = meta["name"]
     if file_path == "" or name == "":
-        create_user_event("server-record", "UPLOAD FAILED", name, request.url, userid)
+        # create_user_event("server-record", "UPLOAD FAILED", name, request.url, userid)
         return {
             "error": str(meta)
         }
@@ -243,13 +237,13 @@ def upload(request):
 
     public_file_path = os.path.join(public_pdf_dir, name)
     try:
-        create_user_event("server-record", "UPLOAD REQUEST", name, request.url, userid)
+        # create_user_event("server-record", "UPLOAD REQUEST", name, request.url, userid)
         # check the user directory
         if not os.path.exists(parent_path):
             os.mkdir(parent_path)
 
         if os.path.exists(file_path):
-            create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + " already exists", request.url, userid)
+            # create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + " already exists", request.url, userid)
             return {"error": name + " already exists"}
 
         with open(file_path, "wb") as output_file:
@@ -258,10 +252,10 @@ def upload(request):
             with open(public_file_path, "wb") as output_file:
                 shutil.copyfileobj(source_file, output_file)
     except Exception as e:
-        create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + "error:" + repr(e), request.url, userid)
+        # create_user_event("server-record", "UPLOAD RESPONSE FAILED", name + "error:" + repr(e), request.url, userid)
         return {"error": repr(e)}
 
-    create_user_event("server-record", "UPLOAD RESPONSE SUCC", name, request.url, userid)
+    # create_user_event("server-record", "UPLOAD RESPONSE SUCC", name, request.url, userid)
     succ_response = {"succ": {
         "depth": depth,
         "id": parent_path,
@@ -286,20 +280,20 @@ def ingest(url, name, file_path, data, userid, succ_response):
     try:
         # start ingest
         print('start ingesting')
-        create_user_event("server-record", "INGEST REQUEST", name, url, userid)
+        # create_user_event("server-record", "INGEST REQUEST", name, url, userid)
         response = requests.post(url, files=files, data=data)
         # result = response.json()
     except Exception as e:
-        create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + repr(e), url, userid)
+        # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + repr(e), url, userid)
         return {"error": repr(e)}
     else:
         if response.status_code != 200:
-            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:TA B proxy error", url, userid)
+            # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:TA B proxy error", url, userid)
             return {"error": "TA B proxy error"}
     try:
         result = response.json()
     except Exception as e:
-        create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + repr(e), url, userid)
+        # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + repr(e), url, userid)
         return {"error": repr(e)}
     else:
         # check the ingesting is succ?
@@ -309,20 +303,20 @@ def ingest(url, name, file_path, data, userid, succ_response):
         #     else:
         #         return result
         if result["status"] == 404:
-            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + result["message"], url,
-                              userid)
+            # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + result["message"], url,
+            #                   userid)
             return {"error": result["message"]}
         elif result["status"] == 303:
-            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:303 " + result["message"], url,
-                              userid)
+            # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:303 " + result["message"], url,
+            #                   userid)
             return {"error": "The file was ingested successfully [CODE: 303]"}
             pass
         elif result["status"] == 304:
-            create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:304 " + result["message"], url,
-                              userid)
+            # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:304 " + result["message"], url,
+            #                   userid)
             return {"error": result["message"]}
         elif result["status"] == 200:
-            create_user_event("server-record", "INGEST RESPONSE SUCC", name, url, userid)
+            # create_user_event("server-record", "INGEST RESPONSE SUCC", name, url, userid)
             return succ_response
 
     local_file.close()
@@ -348,16 +342,16 @@ def delete(request):
     public_file_path = os.path.join(public_pdf_dir, filename)
 
     try:
-        create_user_event("server-record", "DELETE REQUEST", filename, request.url, userid)
+        # create_user_event("server-record", "DELETE REQUEST", filename, request.url, userid)
         print("file_path", file_path)
         if os.path.exists(file_path):
             os.remove(file_path)
         print("public_file_path", public_file_path)
         if os.path.exists(public_file_path):
             os.remove(public_file_path)
-        create_user_event("server-record", "DELETE RESPONSE SUCC", filename, request.url, userid)
+        # create_user_event("server-record", "DELETE RESPONSE SUCC", filename, request.url, userid)
     except Exception as e:
-        create_user_event("server-record", "DELETE RESPONSE FAIL", filename, request.url, userid)
+        # create_user_event("server-record", "DELETE RESPONSE FAIL", filename, request.url, userid)
         return {"error": repr(e)}
 
     # try:
@@ -490,50 +484,29 @@ def push_recommendation(request):
     }
 
 
-@api_config(
-    versions=["v1", "v2"],
-    route_name="api.share_flow",
-    request_method="DELETE",
-    permission=Permission.Annotation.CREATE,
-    link_name="share_flow.delete",
-    description="Remove the session of the share flow",
-)
-def remove_expert_replay(request):
-    session_id = request.GET.get("session_id")
-    task_name = request.GET.get("task_name")
-    user_id = request.authenticated_userid
-    result = fetch_all_user_events_by_session(user_id, session_id)
-    count = 0
-    for item in result['table_result']:
-        pk = update_user_event(item['pk'], dict(session_id='', task_name=''))
-        count += 1
-    return {'reset': count}
+# @api_config(
+#     versions=["v1", "v2"],
+#     route_name="api.share_flow",
+#     request_method="GET",
+#     permission=Permission.Annotation.CREATE,
+#     link_name="share_flow.read",
+#     description="Get the session of the share flow",
+# )
+# def read_share_flow(request):
+#     return expert_replay(request)
 
 
-@api_config(
-    versions=["v1", "v2"],
-    route_name="api.share_flow",
-    request_method="GET",
-    permission=Permission.Annotation.CREATE,
-    link_name="share_flow.read",
-    description="Get the session of the share flow",
-)
-def read_share_flow(request):
-    return expert_replay(request)
-
-
-@api_config(
-    versions=["v1", "v2"],
-    route_name="api.expert_replay",
-    request_method="GET",
-    permission=Permission.Annotation.CREATE,
-    link_name="expert_replay",
-    description="get the session of the expert replay",
-)
-def expert_replay(request):
-    userID="acct:admin@localhost"
-    resultAllEvents = batch_user_event_record(userID)
-    return batch_steps(resultAllEvents, request.registry.settings.get("homepage_url"))
+# @api_config(
+#     versions=["v1", "v2"],
+#     route_name="api.expert_replay",
+#     request_method="GET",
+#     permission=Permission.Annotation.CREATE,
+#     link_name="expert_replay",
+#     description="get the session of the expert replay",
+# )
+# def expert_replay(request):
+#     userID="acct:admin@localhost"
+#     return batch_steps([], request.registry.settings.get("homepage_url"))
 
 
 def get_image_path(base_url, pk, exist):
@@ -557,11 +530,12 @@ def batch_steps(index_list, base_url):
     auxDict = []
     for resultSesions in index_list:  # For the taskName and session
         eventlist = []
-        fetch_result = fetch_user_event_by_timestamp(
-            resultSesions.userid,
-            resultSesions.session_id,
-            resultSesions.startstamp - 10 + resultSesions.start * 1000,
-            resultSesions.endstamp)
+        # fetch_result = fetch_user_event_by_timestamp(
+        #     resultSesions.userid,
+        #     resultSesions.session_id,
+        #     resultSesions.startstamp - 10 + resultSesions.start * 1000,
+        #     resultSesions.endstamp)
+        fetch_result = []
         textKeydown=""
         last_click = None
         last_keyup = None
@@ -985,24 +959,106 @@ def batch_steps(index_list, base_url):
                                 "image": get_image_path(base_url, pk, resultTask.get('image'))
                             })
                 elif event_type =="keydown":# keyboard Events
-                    textKeydown=getKeyboard(textKeydown,str(resultTask['text_content']))
-                    if i<lenResult:
-                        if i+1 < len(fetch_result) and str(fetch_result[i+1]['event_type'])!="keydown": #Is last keydownEvent
-                            eventDescription=getTextbyEvent("keydown",textKeydown,"")
-                            textKeydown=""
-                            eventlist.append({
-                                "type": event_type,
-                                "url" : resultTask['base_url'],
-                                "xpath" : str(resultTask['x_path']),
-                                "text" : str(resultTask['text_content']),
-                                "offsetX": resultTask['offset_x'],
-                                "offsetY": resultTask['offset_y'],
-                                "position": "N/A",
+                    interaction_context = resultTask.get('interaction_context', '')
+                    xpath = resultTask.get('x_path', None)
+                    key = None
+                    name = None
+                    value = None
+                    try:
+                        interaction_context = json.loads(interaction_context)
+                    except json.JSONDecodeError:
+                        break
+                    else:
+                        key = interaction_context.get('key', None)
+                        name = interaction_context.get('name', None)
+                        value = interaction_context.get('value', None)
+                    if not value:
+                        if last_keyup and key:
+                            print(">>>", last_keyup)
+                            # last_keyup_value = last_keyup['interaction_context']['value']
+                            last_keyup_value = last_keyup['value']
+                            if key.lower() == 'shift' or \
+                                key.lower() == 'control' or \
+                                key.lower() == 'meta' or \
+                                key.lower() == 'enter' or \
+                                key.lower() == 'capslock' or \
+                                key.lower() == 'arrowright' or \
+                                key.lower() == 'arrowleft'or \
+                                key.lower() == 'arrowup'or \
+                                key.lower() == 'arrowdown':
+                                pass
+                            elif key.lower() == 'backspace':
+                                last_keyup_value = last_keyup_value[:-1]
+                            else:
+                                last_keyup_value += key
+
+                            # last_keyup = {
+                            #     'type': event_type,
+                            #     'url': resultTask['base_url'],
+                            #     "xpath" : resultTask.get('x_path'),
+                            #     "title": resultTask.get('title', resultTask['event_source']),
+                            #     "description" : "Typing \"" + last_keyup_value + '"' + ((" in the \"" + name + "\" input box") if name else ""),
+                            #     "interaction_context": {'key': key, 'value': last_keyup_value, 'name': name},
+                            #     }
+                            last_keyup = {
+                                'event_type': event_type,
+                                'url': resultTask['base_url'],
+                                "xpath" : resultTask.get('x_path'),
                                 "title": resultTask.get('title', resultTask['event_source']),
-                                "description" : str(eventDescription),
-                                "image": get_image_path(base_url, pk, resultTask.get('image'))
-                                })
-                    flagScroll=True
+                                'key': key,
+                                'name': name,
+                                'value': last_keyup_value
+                            }
+                        elif (not last_keyup) and key:
+                            if key.lower() == 'shift' or \
+                                key.lower() == 'control' or \
+                                key.lower() == 'meta' or \
+                                key.lower() == 'enter' or \
+                                key.lower() == 'capslock' or \
+                                key.lower() == 'arrowright' or \
+                                key.lower() == 'arrowleft'or \
+                                key.lower() == 'arrowup'or \
+                                key.lower() == 'arrowdown':
+                                key=''
+                            elif key.lower() == 'backspace':
+                                key=''
+                            else:
+                                pass
+                            # last_keyup = {
+                            #     'type': event_type,
+                            #     'url': resultTask['base_url'],
+                            #     "xpath" : resultTask.get('x_path'),
+                            #     "title": resultTask.get('title', resultTask['event_source']),
+                            #     "description" : "Typing \"" + key + '"' + ((" in the \"" + name + "\" input box") if name else ""),
+                            #     "interaction_context": {'key': key, 'value': key, 'name': name},
+                            #     }
+                            last_keyup = {
+                                'event_type': event_type,
+                                'url': resultTask['base_url'],
+                                "xpath" : resultTask.get('x_path'),
+                                "title": resultTask.get('title', resultTask['event_source']),
+                                'key': key,
+                                'name': name,
+                                'value': key
+                            }
+                    else:
+                        # last_keyup = {
+                        #     'type': event_type,
+                        #     'url': resultTask['base_url'],
+                        #     "xpath" : resultTask.get('x_path'),
+                        #     "title": resultTask.get('title', resultTask['event_source']),
+                        #     "description" : "Typing \"" + value + '"'+ ((" in the \"" + name + "\" input box") if name else ""),
+                        #     "interaction_context": {'key': key, 'value': value, 'name': name},
+                        #     }
+                        last_keyup = {
+                            'event_type': event_type,
+                            'url': resultTask['base_url'],
+                            "xpath" : resultTask.get('x_path'),
+                            "title": resultTask.get('title', resultTask['event_source']),
+                            'key': key,
+                            'name': name,
+                            'value': value
+                        }
                 elif event_type == 'click' or event_type == 'pointerdown': #CLICK
                     print("click event", event_type,
                           'tag_name', resultTask['tag_name'],
@@ -1452,55 +1508,6 @@ def message(request):
 
     response = request.find_service(MessageService).read(userid)
     return response
-
-
-@api_config(
-    versions=["v1", "v2"],
-    route_name="api.event",
-    request_method="POST",
-    permission=Permission.Annotation.CREATE,
-    link_name="event",
-    description="Create an user interaction",
-)
-def event(request):
-    event = request.json_body
-
-    #print("event api", event, request.authenticated_userid)
-    if event["tag_name"] == "RECORD":
-        if event["event_type"] == "START":
-            set_user_status(request.authenticated_userid, event["task_name"], event["session_id"], "")
-        if event["event_type"] == "END":
-            set_user_status(request.authenticated_userid, "", "", "")
-
-    session_id = get_user_status_by_userid(request.authenticated_userid).session_id if event["session_id"] == "" else \
-    event["session_id"]
-    task_name = get_user_status_by_userid(request.authenticated_userid).task_name if event["task_name"] == "" else \
-    event["task_name"]
-    add_user_event(
-        userid=request.authenticated_userid,
-        event_type=event["event_type"],
-        timestamp=event["timestamp"],
-        tag_name=event["tag_name"],
-        text_content=event["text_content"],
-        base_url=event["base_url"],
-        ip_address=request.client_addr,
-        interaction_context=event["interaction_context"],
-        event_source=event["event_source"],
-        x_path=event["x_path"],
-        offset_x=event["offset_x"],
-        offset_y=event["offset_y"],
-        doc_id=event["doc_id"],
-        region="",
-        session_id=session_id,
-        task_name=task_name,
-        width=event["width"],
-        height=event["height"],
-        image=event['image'] if 'image' in event else None,
-        title=event['title'] if 'title' in event else None,
-    )
-    return {
-        "succ": "event has been saved"
-    }
 
 
 @api_config(

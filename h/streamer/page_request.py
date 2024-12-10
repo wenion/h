@@ -3,8 +3,6 @@ import logging
 import requests
 from urllib.parse import urljoin
 
-from h.models_redis import create_user_event
-
 log = logging.getLogger(__name__)
 
 
@@ -38,7 +36,14 @@ def handle_web_page(message, registry=None):
         'content': plain_text,
     }
 
-    create_user_event("server-record", "Additional REQUEST", plain_text[0:30], page_url, message.socket.identity.user.userid)
+    trace_service = requests.find_service(name="trace")
+    trace_service.create_server_event(
+        message.socket.identity.user.userid,
+        "request",
+        "Additional",
+        plain_text[0:30],
+        page_url,
+    )
     response = requests.post(url, data=data)
 
     if response.status_code == 200:
@@ -50,7 +55,13 @@ def handle_web_page(message, registry=None):
                     "payload": json_data
                 },
             )
-            create_user_event("server-record", "Additional RESPONSE", json_data, page_url, message.socket.identity.user.userid)
+            trace_service.create_server_event(
+                message.socket.identity.user.userid,
+                "response",
+                "Additional",
+                plain_text[0:30],
+                page_url,
+            )
         except ValueError:
             message.socket.send_json(
                 {
@@ -59,7 +70,6 @@ def handle_web_page(message, registry=None):
                     "error": response.text
                 },
             )
-            create_user_event("server-record", "Additional RESPONSE", response.text, page_url, message.socket.identity.user.userid)
     else:
         message.socket.send_json(
             {
@@ -68,4 +78,3 @@ def handle_web_page(message, registry=None):
                 "error": f'Error {response.status_code}: {response.text}'
             }
         )
-        create_user_event("server-record", "Additional RESPONSE", f'Error {response.status_code}: {response.text}', page_url, message.socket.identity.user.userid)

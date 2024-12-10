@@ -31,7 +31,6 @@ def includeme(config):  # pylint: disable=too-many-statements
         factory="h.traversal.UserByNameRoot",
         traverse="/{username}",
     )
-    # config.add_route("activity.user_event", "/user-event")
 
     # Admin
     config.add_route("admin.index", "/admin/")
@@ -138,10 +137,18 @@ def includeme(config):  # pylint: disable=too-many-statements
     )
     config.add_route(
         "api.recording",
-        "/api/recordings/{id:[A-Za-z0-9_-]{10,22}}",
+        "/api/recordings/{id:[A-Za-z0-9_-]{10,26}}",
         factory="h.traversal:UserEventRecordRoot",
         traverse="/{id}",
     )
+    config.add_route("api.traces", "/api/traces", factory="h.traversal:UserEventRecordRoot")
+    config.add_route(
+        "api.trace",
+        "/api/traces/{id:[A-Za-z0-9_-]{10,26}}",
+        factory="h.traversal:UserEventRoot",
+        traverse="/{id}",
+    )
+
     config.add_route(
         "api.annotation_flag",
         "/api/annotations/{id:[A-Za-z0-9_-]{20,22}}/flag",
@@ -163,8 +170,8 @@ def includeme(config):  # pylint: disable=too-many-statements
 
     config.add_route(
         "api.image",
-        "/api/image/{id:[A-Za-z0-9_-]{26,30}}.jpg",
-        factory="h.traversal:UserEventRoot",
+        "/api/image/{id:[A-Za-z0-9_-]{24,30}}.jpg",
+        factory="h.traversal:UserEventImageRoot",
         traverse="/{id}",
     )
 
@@ -192,8 +199,6 @@ def includeme(config):  # pylint: disable=too-many-statements
         traverse="/{id}",
     )
     config.add_route("api.data_comics","api/data-comics")
-    config.add_route("api.expert_replay","api/expert-replay")
-    config.add_route("api.share_flow", "api/share_flow")
     config.add_route("api.profile", "/api/profile")
     config.add_route("api.profile_groups", "/api/profile/groups")
     config.add_route("api.debug_token", "/api/debug-token")

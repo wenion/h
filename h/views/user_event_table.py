@@ -10,8 +10,8 @@ from pyramid.view import view_config, view_defaults
 from h import util
 from h.exceptions import InvalidUserId
 from h.i18n import TranslationString as _
-from h.models_redis import fetch_user_event, get_user_event_sortable_fields, fetch_all_user_event
 
+DEFAULT_PAGE_SIZE = 1000
 PAGE_SIZE = 25
 SORT_BY = "timestamp"
 ORDER = "desc"
@@ -106,6 +106,7 @@ class UserEventSearchController:
 
     @view_config(request_method="GET")
     def get(self):  # pragma: no cover
+        trace_service = self.request.find_service(name="trace")
 
         # page
         page = self.request.params.get("page", 1)
@@ -130,19 +131,29 @@ class UserEventSearchController:
         sortby = self.request.params.get("sortby", SORT_BY)
         order = self.request.params.get("order", ORDER)
 
+
         # Fetch results.
         if type(page_size) == int:
             limit = page_size
             offset = (page - 1) * page_size
-            fetch_result = fetch_user_event(userid=self.request.authenticated_userid, offset=offset, limit=limit, sortby="-"+sortby if order =="desc" else sortby)
+            table_results = trace_service.user_event_search_query(
+                userid = self.request.authenticated_userid,
+                offset = offset,
+                limit = limit,
+                sortby = "-" + sortby if order =="desc" else sortby
+            )
         else:
-            fetch_result = fetch_all_user_event(userid=self.request.authenticated_userid, sortby="-"+sortby if order =="desc" else sortby)
+            table_results = trace_service.user_event_search_query(
+                userid = self.request.authenticated_userid,
+                offset = 0,
+                limit = DEFAULT_PAGE_SIZE,
+                sortby = "-" + sortby if order =="desc" else sortby
+                )
 
-        table_results = fetch_result["table_result"]
-        total = fetch_result["total"]
+        total = trace_service.count(self.request.authenticated_userid)
         table_head = list(table_results[0].keys()) if table_results else []
 
-        properties = get_user_event_sortable_fields()
+        properties = trace_service.get_user_event_sortable_fields()
         values=[]
         for key in properties:
             values.append((key, properties[key]["title"]))
@@ -169,6 +180,8 @@ class UserEventSearchController:
 
     @view_config(request_method="POST")
     def post(self):
+        trace_service = self.request.find_service(name="trace")
+
         userid = self.request.authenticated_userid
         try:
             name = util.user.split_user(userid)["username"]
@@ -188,7 +201,12 @@ class UserEventSearchController:
         sortby = self.request.POST.get("sortby", SORT_BY)
         order = self.request.POST.get("order", ORDER)
 
-        bunch_data = fetch_user_event(userid=self.request.authenticated_userid, offset=offset, limit=limit, sortby="-"+sortby if order =="desc" else sortby)['table_result']
+        bunch_data = trace_service.user_event_search_query(
+            userid = self.request.authenticated_userid,
+            offset = offset,
+            limit = limit,
+            sortby = "-" + sortby if order =="desc" else sortby
+        )
 
         csv_data = StringIO()
         csv_writer = csv.writer(csv_data)

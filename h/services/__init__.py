@@ -175,6 +175,12 @@ def includeme(config):  # pragma: no cover
         "h.services.highlight_event.highlight_event_factory", name="highlight_event"
     )
     config.register_service_factory(
+        "h.services.record_item.record_item_factory", name="record_item"
+    )
+    config.register_service_factory(
+        "h.services.trace.trace_factory", name="trace"
+    )
+    config.register_service_factory(
         "h.services.organisation_event_push_log.factory", iface=OrganisationEventPushLogService
     )
     config.register_service_factory(

@@ -19,12 +19,6 @@ import re
 from pyramid import i18n
 from collections import defaultdict
 
-from h.models_redis import start_user_event_record, finish_user_event_record
-from h.models_redis import batch_user_event_record, update_user_event_record, delete_user_event_record
-from h.views.api.user_manipultations import batch_steps
-from h.security import Permission
-from h.views.api.config import api_config
-
 _ = i18n.TranslationStringFactory(__package__)
 
 

@@ -1,4 +1,3 @@
-from datetime import datetime
 from h_pyramid_sentry import report_exception
 from kombu.exceptions import OperationalError
 from pyramid.events import BeforeRender, subscriber
@@ -9,7 +8,6 @@ from h.exceptions import RealtimeMessageQueueError
 from h.notification import reply
 from h.services.annotation_read import AnnotationReadService
 from h.tasks import mailer
-from h.models_redis import add_user_event, get_user_status_by_userid, set_user_status
 
 
 @subscriber(BeforeRender)
@@ -107,23 +105,11 @@ def add_annotation_event(event):
             if selector["type"] == "TextQuoteSelector" and "exact" in selector:
                 text_content = selector["exact"]
 
-        add_user_event(
+        request.find_service(name="trace").create_server_event(
             annotation.userid,
-            "sever-record",
-            int(datetime.now().timestamp() * 1000),
-            "HIGLIGHT"if annotation.text =="" else "ANNOTATION",
+            event.action,
+            "HIGLIGHT" if annotation.text =="" else "ANNOTATION",
             annotation.text,
             annotation.target_uri,
-            request.client_addr,
-            text_content,
-            event.annotation_id,
-            "",
-            0,
-            0,
-            "",
-            "",
-            get_user_status_by_userid(request.authenticated_userid).session_id,
-            get_user_status_by_userid(request.authenticated_userid).task_name,
-            0,
-            0
+            text_content
         )

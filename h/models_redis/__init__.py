@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-import math
 import openai
 
 from redis_om import Field, JsonModel
@@ -8,11 +6,7 @@ from typing import Optional
 
 from h.models_redis.user_role import UserRole
 from h.models_redis.user_event import UserEvent
-from h.models_redis.user_event import fetch_all_user_event, fetch_user_event, get_user_event_sortable_fields
-from h.models_redis.user_event import add_user_event, get_user_event, del_user_event, update_user_event, fetch_user_event_by_timestamp
 from h.models_redis.user_event_record import UserEventRecord
-from h.models_redis.user_event_record import start_user_event_record, finish_user_event_record, fetch_user_event_record_by_session_id
-from h.models_redis.user_event_record import update_user_event_record, delete_user_event_record, batch_user_event_record, fetch_user_event_record_by_session
 from h.models_redis.result import Result
 from h.models_redis.rating import Rating
 from h.models_redis.message_cache import (
@@ -28,21 +22,6 @@ __all__ = (
     "Bookmark",
     "UserEvent",
     "UserEventRecord",
-    "add_user_event",
-    "get_user_event",
-    "update_user_event",
-    "fetch_all_user_event",
-    "fetch_user_event_by_timestamp",
-    "del_user_event",
-    "fetch_user_event",
-    "get_user_event_sortable_fields",
-    "start_user_event_record",
-    "finish_user_event_record",
-    "fetch_user_event_record_by_session_id",
-    "fetch_user_event_record_by_session",
-    "update_user_event_record",
-    "delete_user_event_record",
-    "batch_user_event_record",
     "Rating",
     "UserFile",
     "MessageCache",
@@ -61,82 +40,6 @@ class Bookmark(JsonModel):
     result: str = Field(index=True)     # Result pk
     deleted: int = Field(index=True, default=0)
 
-
-class UserStatus(JsonModel):
-    class Meta:
-        global_key_prefix = 'h'
-        model_key_prefix = 'UserStatus'
-    userid: str = Field(index=True)
-    task_name: str = Field(index=True)
-    session_id: str = Field(index=True)
-    description: str = Field(index=True)
-    doc_id: Optional[str] = Field(full_text_search=True, sortable=True)
-
-
-def get_user_status_by_userid(userid):
-    total = UserStatus.find(
-        UserStatus.userid == userid
-        ).all()
-    if len(total):
-        return total[0]
-    else:
-        user_status = UserStatus(
-            userid=userid,
-            task_name="",
-            session_id="",
-            description="",
-            doc_id = ""
-        )
-        user_status.save()
-        return user_status
-
-
-def set_user_status(userid, task_name, session_id, description):
-    user_status = get_user_status_by_userid(userid)
-
-    user_status.task_name = task_name
-    user_status.session_id = session_id
-    user_status.description = description
-    user_status.save()
-
-
-def fetch_all_user_events_by_session(userid,sessionID):
-    result = UserEvent.find((UserEvent.userid == userid) & (UserEvent.session_id == sessionID)).sort_by("timestamp").all()
-    #.sort_by("-timestamp")
-    table_result=[]
-    for index, item in enumerate(result):
-        json_item = {'id': index, **get_user_event(item.pk)}
-        table_result.append(json_item)
-    #print(table_result)  
-    return {
-        "table_result": table_result,
-        "total": len(result),
-        }
-
-def fetch_all_user_sessions(userid):
-    result = UserEvent.find(UserEvent.userid == userid).sort_by("-timestamp").all()
-
-    auxSessionIds=[]
-    table_result=[]
-    for index, item in enumerate(result):
-        json_item = {'id': index, **get_user_event(item.pk)}
-        if json_item['session_id'] is not None and json_item['session_id']!="" and json_item['task_name'] is not None and json_item['task_name']!="":
-            if not auxSessionIds:
-                table_result.append(json_item)
-                auxSessionIds.append(json_item['session_id'])
-            else:
-                flag=True
-                for sesionid in auxSessionIds:
-                    if sesionid==json_item['session_id']:
-                        flag=False
-                if flag:
-                    table_result.append(json_item)
-                    auxSessionIds.append(json_item['session_id'])
-    #print("Num: "+ str(len(result))) 
-    return {
-        "table_result": table_result,
-        "total": len(result),
-        }
 
 # class Rating(JsonModel):
 #     class Meta:
@@ -324,33 +227,6 @@ def get_highlights_from_openai(query, page_content):
     except Exception as e:
         return {"error" : repr(e)}
     return {"succ": response_message}
-
-
-def create_user_event(event_type, tag_name, text_content, base_url, userid):
-    node = {
-        "event_type": event_type,
-        "timestamp": int(datetime.now().timestamp() * 1000),
-        "tag_name": tag_name,
-        "text_content": text_content,
-        "base_url": base_url,
-        "userid": userid
-    }
-    _save_in_redis(node)
-
-
-def _save_in_redis(event):
-    is_valid = UserEvent.validate(event)
-    if is_valid:
-        try:
-            user_event = UserEvent(**event)
-            # print("event", event)
-            user_event.save()
-        except Exception as e:
-            return {"error": repr(e)}
-        else:
-            return {"succ": str(event) + "has been saved"}
-    else:
-        return {"error": str(event)}
 
 
 def includeme(config):

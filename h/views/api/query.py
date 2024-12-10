@@ -26,7 +26,7 @@ from urllib.parse import urljoin
 
 from h.security import Permission
 from h.views.api.config import api_config
-from h.models_redis import Result, Bookmark, create_user_event
+from h.models_redis import Result, Bookmark
 from h.models_redis import get_user_role_by_userid, get_blacklist
 
 log = logging.getLogger(__name__)
@@ -48,6 +48,7 @@ def get_authorised_list():
 def query(request):
     userid = request.authenticated_userid if request.authenticated_userid else "anonymous"
     user_role = get_user_role_by_userid(userid)
+    trace_service = request.find_service(name="trace")
 
     query = request.GET.get("q")
     url = urljoin(request.registry.settings.get("query_url"), "query")
@@ -55,9 +56,21 @@ def query(request):
     params = {
         'q': query
     }
-    create_user_event("server-record", "QUERY REQUEST", query, request.url, userid)
+    trace_service.create_server_event(
+        userid,
+        "request",
+        "query",
+        query,
+        request.url
+    )
     response = requests.get(url, params=params)
-    create_user_event("server-record", "QUERY RESPONSE", query, request.url, userid)
+    trace_service.create_server_event(
+        userid,
+        "response",
+        "query",
+        query,
+        request.url
+    )
 
     authorised_list = get_authorised_list()
 
