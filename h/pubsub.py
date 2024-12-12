@@ -24,7 +24,6 @@ class Sub(ConsumerMixin):
     :param settings: A dictionary containing the message broker's
         connection details.
         Expected format : {'broker_url': '<address>'}
-        Example: {'broker_url': 'amqp://guest:guest@localhost:5672//'}
     :param name: Exchange'name. Predefine.
     :param routing_key: listen to messages with this routing key. Predefine.
     :param identifier: The listener's name to identified.
@@ -92,7 +91,6 @@ class Pub:
         :param settings: A dictionary containing the message broker's
             connection details.
             Expected format : {'broker_url': '<address>'}
-            Example: {'broker_url': 'amqp://guest:guest@localhost:5672//'}
         :param name: exchange's name
         """
 

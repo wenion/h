@@ -128,7 +128,7 @@ def get_connection(settings, fail_fast=False):
         quickly.
     """
 
-    conn = settings.get("broker_url", "amqp://guest:guest@localhost:5672//")
+    conn = settings.get("broker_url")
 
     kwargs = {}
     if fail_fast:

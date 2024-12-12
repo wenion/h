@@ -221,7 +221,7 @@ def _normalize_netloc(uri):
     if username is not None:
         userinfo = username
     if password is not None:
-        userinfo += ":" + password
+        userinfo += ":***"  # Replace password with asterisks or omit it entirely
 
     if ipv6_hostname:
         hostname = "[" + hostname + "]"

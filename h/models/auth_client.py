@@ -41,7 +41,9 @@ class GrantType(enum.Enum):
 
     #: Resource owner credentials grant. Can be used by trusted clients that
     #: are allowed to ask users for their login credentials directly.
-    password = "password"
+    #: Note: This is a grant type defined in the OAuth specification and
+    #: not an actual hardcoded password.
+    password = "password" # pylint: disable=use-of-hardcoded-password
 
 
 class ResponseType(enum.Enum):

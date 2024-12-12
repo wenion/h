@@ -1,5 +1,6 @@
 import datetime
 import itertools
+from enum import Enum
 from urllib.parse import urlparse
 
 import colander
@@ -36,6 +37,9 @@ from h.models_redis import get_user_role_by_userid, update_user_role
 
 _ = i18n.TranslationString
 
+
+class RouteNames(Enum):
+    FORGOT_PASSWORD = "forgot_password"
 
 # A little helper to ensure that session data is returned in every ajax
 # response payload.
@@ -167,7 +171,7 @@ class AuthController:
 
 
 @view_defaults(
-    route_name="forgot_password",
+    route_name=RouteNames.FORGOT_PASSWORD.value,
     renderer="h:templates/accounts/forgot_password.html.jinja2",
 )
 class ForgotPasswordController:

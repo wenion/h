@@ -21,7 +21,7 @@ celery = Celery("h")
 celery.conf.update(
     broker_url=os.environ.get(
         "CELERY_BROKER_URL",
-        os.environ.get("BROKER_URL", "amqp://guest:guest@localhost:5672//"),
+        os.environ.get("BROKER_URL"),
     ),
     broker_transport_options={
         # Celery's docs are very unclear about this but: when publishing a

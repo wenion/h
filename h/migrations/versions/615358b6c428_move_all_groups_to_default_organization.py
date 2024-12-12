@@ -79,7 +79,7 @@ class Organization(Base):
 def new_org(authority, session):
     organization = Organization(authority=authority, name=authority)
     session.add(organization)
-    log.info("Created new organization {name}".format(name=organization.name))
+    log.info("Created a new organization")
     return organization
 
 

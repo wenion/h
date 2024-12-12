@@ -78,10 +78,10 @@ class SettingsManager:
                     "use of envvar %s is deprecated: %s", envvar, deprecated_msg
                 )
             val = self._environ[envvar]
-            cast_message = f"environment variable {envvar}={val!r}"
+            cast_message = f"environment variable {envvar} is set (value not logged for security)"
         elif default and name not in self.settings:
             val = default
-            cast_message = f"{name}'s default {val!r}"
+            cast_message = f"{name} is using its default value (value not logged for security)"
         elif required and name not in self.settings:
             raise SettingError(f"error parsing environment variable {envvar} not found")
         if val:
