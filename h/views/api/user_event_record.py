@@ -28,6 +28,7 @@ _ = i18n.TranslationStringFactory(__package__)
     versions=["v1", "v2"],
     route_name="api.trackings",
     request_method="GET",
+    permission=Permission.Annotation.CREATE,
     link_name="tracking.read",
     description="Get the user viewing shareflow and scrollTop",
 )
@@ -36,13 +37,14 @@ def get_trackings(request):
     if track and track[0]:
         return track[0]
     else:
-        return { 'id': None, 'scrollTop' : 0, }
+        return { 'id': None, 'scrollToId' : None, }
 
 
 @api_config(
     versions=["v1", "v2"],
     route_name="api.trackings",
     request_method="POST",
+    permission=Permission.Annotation.CREATE,
     link_name="tracking.update",
     description="Update the user viewing shareflow and scrollTop",
 )
