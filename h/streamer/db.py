@@ -27,7 +27,6 @@ def read_only_transaction(session):
         session.rollback()
         raise
     except Exception as exc:  # pylint:disable=broad-except
-        LOG.warning("Caught exception during streamer transaction:", exc_info=exc)
         session.rollback()
     else:
         session.commit()

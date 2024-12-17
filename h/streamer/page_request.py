@@ -26,7 +26,6 @@ def handle_web_page(message, registry=None):
         parser.ignore_images = True
         plain_text = parser.handle(data["textContent"])
     except Exception as e:
-        log.error("html2text", e)
         plain_text = ''
 
     url = urljoin(registry.settings.get("query_url"), "knowledge")

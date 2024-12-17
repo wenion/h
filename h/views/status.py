@@ -14,14 +14,12 @@ def status(request):
     try:
         request.db.execute(text("SELECT 1"))
     except Exception as err:
-        log.exception(err)
         raise HTTPInternalServerError("Database connection failed") from err
 
     if "replica" in request.params:
         try:
             request.db_replica.execute(text("SELECT 1"))
         except Exception as err:
-            log.exception(err)
             raise HTTPInternalServerError("Replica database connection failed") from err
 
     if "sentry" in request.params:

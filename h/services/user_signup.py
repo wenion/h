@@ -106,10 +106,6 @@ class UserSignupService:
                     or 'duplicate key value violates unique constraint "ix__user__userid"'
                     in err.args[0]
                 ):
-                    log.warning(
-                        "concurrent account signup conflict error occurred during user signup %s",
-                        err.args[0],
-                    )
                     raise ConflictError(
                         f"The email address {user.email} has already been registered."
                     ) from err

@@ -116,7 +116,7 @@ export class AutosuggestDropdownController extends Controller {
     }
 
     if (newState.header !== prevState.header) {
-      this._header.innerHTML = newState.header;
+      this._header.textContent = newState.header;
     }
 
     const listChanged = updateHelper.listIsDifferent(
@@ -353,7 +353,7 @@ export class AutosuggestDropdownController extends Controller {
     // Create the new list items, render their contents
     // and update the dom with the new elements.
 
-    this._listContainer.innerHTML = '';
+    this._listContainer.textContent = '';
 
     this.state.list.forEach(listItem => {
       const li = document.createElement('li');
@@ -381,7 +381,7 @@ export class AutosuggestDropdownController extends Controller {
         this._selectCurrentActiveItem();
       });
 
-      li.innerHTML = this.options.renderListItem(listItem);
+      li.textContent = this.options.renderListItem(listItem);
 
       this._listContainer.appendChild(li);
     });

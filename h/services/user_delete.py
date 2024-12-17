@@ -356,9 +356,7 @@ class LimitedWorker:
             .returning(model_class.id)
         )
         if deleted_ids:
-            log.info(
-                "Deleted %d rows from %s", len(deleted_ids), model_class.__tablename__
-            )
+            pass
         return deleted_ids
 
     def _execute(self, stmnt):

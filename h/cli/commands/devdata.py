@@ -138,32 +138,3 @@ class DevDataFactory:
     def setattrs(object_, attrs):
         for name, value in attrs.items():
             setattr(object_, name, value)
-
-
-@click.command()
-@click.pass_context
-def devdata(ctx):
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        # The directory that we'll clone the devdata git repo into.
-        git_dir = os.path.join(tmpdirname, "devdata")
-
-        # Clone the private devdata repo from GitHub.
-        # This will fail if Git->GitHub HTTPS authentication isn't set up or if
-        # your GitHub account doesn't have access to the private repo.
-        subprocess.check_call(
-            ["git", "clone", "https://github.com/hypothesis/devdata.git", git_dir]
-        )
-
-        # Copy environment variables file into place.
-        shutil.copyfile(
-            os.path.join(git_dir, "h", "devdata.env"),
-            os.path.join(pathlib.Path(h.__file__).parent.parent, ".devdata.env"),
-        )
-
-        with open(
-            os.path.join(git_dir, "h", "devdata.json"), "r", encoding="utf8"
-        ) as handle:
-            DevDataFactory(
-                ctx.obj["bootstrap"](),
-                json.loads(handle.read()),
-            ).create_all()

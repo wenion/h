@@ -31,11 +31,16 @@ def get_blacklist():
     # the problem.
     try:
         with codecs.open("h/accounts/blacklist", encoding="utf-8") as handle:
-            blacklist = handle.readlines()
+            blacklist = set()
+            for line in handle:
+                sanitized = line.strip().lower()
+                if 0 < len(sanitized) <= 100:
+                    blacklist.add(sanitized)
     except (IOError, ValueError):  # pragma: no cover
         log.exception("unable to load blacklist")
-        blacklist = []
-    return set(line.strip().lower() for line in blacklist)
+        return set()
+
+    return blacklist
 
 
 def unique_email(node, value):

@@ -151,8 +151,6 @@ def upload(request):
                 markdown_text = parser.handle(content)
                 plain_text = markdown2plain(markdown_text)
             except Exception as e:
-                print("error",e)
-                log.error("html2text", e)
                 plain_text = ''
 
             url = urljoin(request.registry.settings.get("query_url"), "upload")
@@ -275,52 +273,7 @@ def upload(request):
 
 
 def ingest(url, name, file_path, data, userid, succ_response):
-    local_file = open(file_path, "rb")
-    files = {"myFile": (name, local_file)}
-    try:
-        # start ingest
-        print('start ingesting')
-        # create_user_event("server-record", "INGEST REQUEST", name, url, userid)
-        response = requests.post(url, files=files, data=data)
-        # result = response.json()
-    except Exception as e:
-        # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + repr(e), url, userid)
-        return {"error": repr(e)}
-    else:
-        if response.status_code != 200:
-            # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:TA B proxy error", url, userid)
-            return {"error": "TA B proxy error"}
-    try:
-        result = response.json()
-    except Exception as e:
-        # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + repr(e), url, userid)
-        return {"error": repr(e)}
-    else:
-        # check the ingesting is succ?
-        # if "error" in result:
-        #     if "[the ingestion failed]" in result["error"]:
-        #         succ_response["tab"] = result["error"]
-        #     else:
-        #         return result
-        if result["status"] == 404:
-            # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:" + result["message"], url,
-            #                   userid)
-            return {"error": result["message"]}
-        elif result["status"] == 303:
-            # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:303 " + result["message"], url,
-            #                   userid)
-            return {"error": "The file was ingested successfully [CODE: 303]"}
-            pass
-        elif result["status"] == 304:
-            # create_user_event("server-record", "INGEST RESPONSE FAILED", name + " error:304 " + result["message"], url,
-            #                   userid)
-            return {"error": result["message"]}
-        elif result["status"] == 200:
-            # create_user_event("server-record", "INGEST RESPONSE SUCC", name, url, userid)
-            return succ_response
-
-    local_file.close()
-    # return succ_response
+    return {"error": "TA B Ingest is not available!"}
 
 
 @api_config(
@@ -398,7 +351,7 @@ def iterate_directory(dir, name, url, depth):
                     stat_info = entry.stat()
                     creation_time = stat_info.st_ctime
                 except OSError as e:
-                    print(f"Error accessing file {entry.name}: {e}")
+                    pass
                 file_node = {
                     'path': os.path.join(dir, entry.name),
                     'id': dir,

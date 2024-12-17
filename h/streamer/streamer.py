@@ -98,7 +98,7 @@ def supervise(greenlets):  # pragma: no cover
     except (KeyboardInterrupt, SystemExit):
         raise
     except:  # pylint:disable=bare-except
-        log.critical("Unexpected exception in streamer greenlet:", exc_info=True)
+        log.critical("Unexpected exception in streamer greenlet:")
     else:
         log.critical("Unexpected early exit of streamer greenlets. Aborting!")
     # If the worker greenlets exit early, our best option is to kill the worker
