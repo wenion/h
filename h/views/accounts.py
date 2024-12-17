@@ -38,9 +38,6 @@ from h.models_redis import get_user_role_by_userid, update_user_role
 _ = i18n.TranslationString
 
 
-class RouteNames(Enum):
-    FORGOT_PASSWORD = "forgot_password"
-
 # A little helper to ensure that session data is returned in every ajax
 # response payload.
 def ajax_payload(request, data):  # pragma: no cover
@@ -94,7 +91,7 @@ def error_validation(error, request):  # pragma: no cover
 class AuthController:
     def __init__(self, request):
         form_footer = '<a class="link" href="{href}">{text}</a>'.format(  # pylint: disable=consider-using-f-string
-            href=request.route_path("forgot_password"), text=_("Forgot your password?")
+            href=request.route_path("reset"), text=_("Forgot your password?")
         )
 
         self.request = request
@@ -171,7 +168,7 @@ class AuthController:
 
 
 @view_defaults(
-    route_name=RouteNames.FORGOT_PASSWORD.value,
+    route_name="reset",
     renderer="h:templates/accounts/forgot_password.html.jinja2",
 )
 class ForgotPasswordController:

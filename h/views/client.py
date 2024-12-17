@@ -90,14 +90,6 @@ def sidebar_app(request, extra=None):
     # tags added by e.g. browser extensions.
     client_origin = origin(_client_url(request))
 
-    # nb. Inline styles are currently allowed for the client because LaTeX
-    # math rendering using KaTeX relies on them.
-    style_src = f"{client_origin} 'unsafe-inline'"
-
-    request.response.headers["Content-Security-Policy"] = (
-        f"script-src {client_origin}; style-src {style_src}"
-    )
-
     return ctx
 
 

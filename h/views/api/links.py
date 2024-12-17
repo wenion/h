@@ -27,7 +27,7 @@ def links(_context, request):
     return {
         "account.settings": request.route_url("account"),
         "download": request.route_url("download"),
-        "forgot-password": request.route_url("forgot_password"),
+        "forgot-password": request.route_url("reset"),
         "groups.new": request.route_url("group_create"),
         "help": request.route_url("help"),
         "home": home_url,

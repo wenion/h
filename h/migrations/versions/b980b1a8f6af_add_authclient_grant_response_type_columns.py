@@ -28,8 +28,6 @@ class GrantType(enum.Enum):
     authorization_code = "authorization_code"
     client_credentials = "client_credentials"
     jwt_bearer = "urn:ietf:params:oauth:grant-type:jwt-bearer"
-    #: Resource owner credentials grant. This is part of OAuth specifications.
-    password = "password"  # pylint: disable=use-of-hardcoded-password
 
 
 grant_type = sa.Enum(GrantType, name="authclient_grant_type")

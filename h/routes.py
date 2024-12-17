@@ -9,7 +9,7 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route("logout", "/logout")
     config.add_route("signup", "/signup")
     config.add_route("activate", "/activate/{id}/{code}")
-    config.add_route("forgot_password", "/forgot-password")
+    config.add_route("reset", "/forgot-password")
     config.add_route("account_reset", "/account/reset")
     config.add_route("account_reset_with_code", "/account/reset/{code}")
     config.add_route("account", "/account/settings")
