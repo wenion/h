@@ -220,13 +220,20 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route("api.rating", "/api/rating")
     config.add_route("api.recommendation", "/api/recommendation")
     config.add_route("api.pull", "/api/pull")
+    config.add_route("api.files", "/api/files")
+    config.add_route(
+        "api.file",
+        "/api/files/{id:[A-Za-z0-9_-]{10,26}}",
+        factory="h.traversal:FileRoot",
+        traverse="/{id}",
+    )
     config.add_route(
         "api.upload", "/api/upload"# , factory="h.traversal:FileRoot" TODO implement when finish database
     )
     config.add_route(
         "api.delete", "/api/delete"# , factory="h.traversal:FileRoot" TODO implement when finish database
     )
-    config.add_route("api.repository", "/api/repository")
+    # config.add_route("api.repository", "/api/repository")
     config.add_route("api.client_url", "/api/client-url") # TODO remove
     config.add_route("api.typing", "/api/typing")
     config.add_route("api.user_event", "/api/user-event") # TODO

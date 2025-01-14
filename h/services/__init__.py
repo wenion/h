@@ -186,3 +186,6 @@ def includeme(config):  # pragma: no cover
     config.register_service_factory(
         "h.services.message.message_service_factory", iface=MessageService
     )
+    config.register_service_factory(
+        "h.services.file_management.file_management_factory", name="file_management"
+    )

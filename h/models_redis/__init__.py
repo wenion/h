@@ -1,6 +1,6 @@
 import openai
 
-from redis_om import Field, JsonModel
+from redis_om import Field, JsonModel, Migrator
 from pydantic import NonNegativeInt
 from typing import Optional
 
@@ -9,6 +9,7 @@ from h.models_redis.user_event import UserEvent
 from h.models_redis.user_event_record import UserEventRecord
 from h.models_redis.result import Result
 from h.models_redis.rating import Rating
+from h.models_redis.file_meta import FileMeta
 from h.models_redis.message_cache import (
     MessageCache,
     get_message_cache,
@@ -20,6 +21,7 @@ __all__ = (
     "UserRole",
     "Result",
     "Bookmark",
+    "FileMeta",
     "UserEvent",
     "UserEventRecord",
     "Rating",
@@ -231,5 +233,4 @@ def get_highlights_from_openai(query, page_content):
 
 def includeme(config):
     # config.add_request_method(get_user_role, name="user_role", property=True)
-    # Migrator().run()
-    pass
+    Migrator().run()

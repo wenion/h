@@ -67,6 +67,7 @@ from h.traversal.user import UserByIDRoot, UserByNameRoot, UserContext, UserRoot
 from h.traversal.organisation_event import OrganisationEventContext, OrganisationEventRoot
 from h.traversal.user_event_record import UserEventRecordContext, UserEventRecordRoot
 from h.traversal.user_event import UserEventContext, UserEventRoot, UserEventImageRoot
+from h.traversal.file_management import FileManagementContext, FileRoot
 
 
 __all__ = (
@@ -88,4 +89,6 @@ __all__ = (
     "UserEventRoot",
     "UserEventImageRoot",
     "GroupContext",
+    "FileManagementContext",
+    "FileRoot",
 )

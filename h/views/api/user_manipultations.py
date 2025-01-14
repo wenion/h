@@ -83,7 +83,7 @@ def markdown2plain(content):
 
     return plain_text
 
-
+'''
 @api_config(
     versions=["v1", "v2"],
     route_name="api.upload",
@@ -272,7 +272,7 @@ def upload(request):
         print('upload not pdf')
         return succ_response
     return ingest(url, name, file_path, data, userid, succ_response)
-
+'''
 
 def ingest(url, name, file_path, data, userid, succ_response):
     local_file = open(file_path, "rb")
@@ -416,25 +416,6 @@ def iterate_directory(dir, name, url, depth):
                     iterate_directory(os.path.join(dir, entry.name), entry.name, current_path, depth + 1))
 
     return directory_node
-
-
-@api_config(
-    versions=["v1", "v2"],
-    route_name="api.repository",
-    request_method="GET",
-    permission=Permission.Annotation.CREATE,
-    link_name="repository",
-    description="Get user cloud repository",
-)
-def repository(request):
-    username = split_user(request.authenticated_userid)["username"]
-    settings = request.registry.settings
-    url = os.path.join(settings.get("user_root_url"), "static", username)
-
-    dir = os.path.join(settings.get("user_root"), username)
-    if not os.path.exists(dir):
-        os.mkdir(dir)
-    return iterate_directory(dir, username, os.path.join(settings.get("user_root_url"), "static"), 0)
 
 
 # TODO remove
