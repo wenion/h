@@ -4,6 +4,27 @@ log = get_task_logger(__name__)
 
 
 @celery.task
+def job_start(event):
+    pass
+
+@celery.task
+def job_finish(event):
+    pass
+
+
+def log_trace(event):
+    tag_name = event["tagName"]
+    action_type = event.get('custom', "")
+    event_type = event["type"]
+    task_name = "" if event.get("taskName") is None else event.get("taskName")
+    label = event.get('label', "")
+    userid = event.get('userid', "")
+
+    output = '|'.join([tag_name, action_type, event_type, task_name, label, userid])
+    log.info(output)
+
+
+@celery.task
 def add_event(event):
     """Task to add the new UserEvent table."""
     # pylint:disable=no-member
@@ -31,4 +52,10 @@ def add_event(event):
         'label':event.get('label'),
         'action_type':event.get('custom'),
     }
-    celery.request.find_service(name="trace").create_user_event(new_appstruct)
+    user_dict = celery.request.find_service(name="trace").create_user_event(new_appstruct)
+    log_trace(event)
+
+    if user_dict["tag_name"] == "RECORD" and user_dict["text_content"] == "start":
+        job_start.delay(event)
+    if user_dict["tag_name"] == "RECORD" and user_dict["text_content"] == "finish":
+        job_finish.delay(event)

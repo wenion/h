@@ -144,7 +144,6 @@ class TraceService:
     def create_user_event(data):
         """Create an user event."""
         data['system_time'] = datetime.now(timezone.utc)
-        print('data', data)
         trace = UserEvent(**data)
         trace.save()
         return TraceService.user_event(trace)
