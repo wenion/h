@@ -53,7 +53,7 @@ class TraceService:
     @staticmethod
     def user_event_search_query(userid, offset, limit, sortby):
         query = UserEvent.find(UserEvent.userid == userid)
-        results = query.copy(offset=offset, limit=limit).sort_by(sortby).execute(exhaust_results=True)
+        results = query.copy(offset=offset, limit=limit).sort_by(sortby).execute(exhaust_results=False)
 
         table_result=[]
         for index, item in enumerate(results):
