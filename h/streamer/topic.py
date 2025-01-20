@@ -98,6 +98,7 @@ def handle_message(message, registry, session):
     # to stop connections being added or dropped during iteration, and if that
     # happens Python will throw a "Set changed size during iteration" error.
     sockets = list(websocket.WebSocket.instances)
+    print("message", message)
     for socket in sockets:
         if not hasattr(socket, "client_id") or \
             message.payload["client_id"] != socket.client_id:
