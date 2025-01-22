@@ -159,6 +159,26 @@ def read(context: FileManagementContext, request):
 @api_config(
     versions=["v1", "v2"],
     route_name="api.file",
+    request_method=("PATCH", "PUT"),
+    permission=Permission.Profile.UPDATE,
+    link_name="file.update_permission",
+    description="Update the permission file",
+)
+def update_permission(context: FileManagementContext, request):
+    file_meta = context.filemeta
+    userid = request.authenticated_userid
+
+    file_management = request.find_service(name="file_management")
+    succ = file_management.update_file_permission(file_meta.pk, file_meta.access_permissions, userid)
+    if succ:
+        return {"id": context.id, "updated": succ}
+    else:
+        return httpexceptions.HTTPUnauthorized()
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.file",
     request_method="DELETE",
     permission=Permission.Profile.UPDATE,
     link_name="file.delete",
