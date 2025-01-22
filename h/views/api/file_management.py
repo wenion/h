@@ -167,9 +167,10 @@ def read(context: FileManagementContext, request):
 def update_permission(context: FileManagementContext, request):
     file_meta = context.filemeta
     userid = request.authenticated_userid
-
+    Permission = request.params.get('access_permissions')
     print(f"File PK : {file_meta.pk}")  # Esto imprimirá el valor de file_meta.pk
     print(f"Access Permissions : {file_meta.access_permissions}")  # Esto imprimirá el valor de file_meta.access_permissions
+    print(f"IVAN Permissions : {Permission}")  # Esto imprimirá el valor de file_meta.access_permissions
 
     file_management = request.find_service(name="file_management")
     succ = file_management.update_file_permission(file_meta.pk, file_meta.access_permissions, userid)
