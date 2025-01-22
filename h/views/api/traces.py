@@ -27,15 +27,18 @@ _ = i18n.TranslationStringFactory(__package__)
     versions=["v1", "v2"],
     route_name="api.traces",
     request_method="GET",
-    permission=Permission.Annotation.CREATE,
+    permission=Permission.Profile.UPDATE,
     link_name="traces.read",
     description="Fetch the user's traces",
 )
 def traces(request):
     """Retrieve the traces for this request's user event record."""
     id = request.GET.get('id')
+    userid = request.authenticated_userid
 
-    return request.find_service(name="trace").get_traces_by_session_id(id)
+    result = request.find_service(name="trace").get_user_trace(userid, id)
+    if not len(result):
+        return request.find_service(name="trace").get_traces_by_session_id(id)
 
 
 @api_config(
