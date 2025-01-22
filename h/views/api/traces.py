@@ -39,6 +39,7 @@ def traces(request):
     result = request.find_service(name="trace").get_user_trace(userid, id)
     if not len(result):
         return request.find_service(name="trace").get_traces_by_session_id(id)
+    return result
 
 
 @api_config(
