@@ -163,7 +163,8 @@ class TraceService:
             }
             json_events.append(json_item)
 
-        return json_events
+        # return json_events
+        return address_events(json_events)
 
     @staticmethod
     def get_user_trace(userid, id):
@@ -192,7 +193,6 @@ class TraceService:
             json_events.append(json_item)
 
         return address_events(json_events)
-
 
 
 def trace_factory(_context, request):
