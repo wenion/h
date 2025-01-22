@@ -86,12 +86,11 @@ class WebSocket(_WebSocket):
 
         try:
             if "messageType" in payload and "type" in payload:
-                # send to RabbitMQ topic exchange
-                self.pub.send_trace(payload)
-
                 if self.identity:
                     # complete more details
                     payload['userid'] = self.identity.user.userid
+                    # send to RabbitMQ topic exchange
+                    self.pub.send_trace(payload)
                     # TODO Multithreading issues, remove later
                     user_events.add_event.delay(payload)
             elif "messageType" in payload and payload["messageType"] == "PageData":
