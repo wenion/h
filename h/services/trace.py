@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 import pytz
 
 from h.models_redis import UserEvent
+from h.services.trace_model import address_events
+from h.services.record_item import RecordItemService
 
 
 class TraceService:
@@ -162,6 +164,35 @@ class TraceService:
             json_events.append(json_item)
 
         return json_events
+
+    @staticmethod
+    def get_user_trace(userid, id):
+        # query = UserEvent.find(UserEvent.session_id == id)
+        # user_events = query.sort_by('timestamp').execute(exhaust_results=True)
+        record_item = RecordItemService.get_record_item_by_id(id)
+
+        print("record_item", record_item)
+        user_events = []
+
+        if record_item:
+            query = UserEvent.find(
+                (UserEvent.userid == userid) &
+                (UserEvent.timestamp >= record_item.startstamp) &
+                (UserEvent.timestamp <= record_item.endstamp + 100)
+            )
+            user_events = query.sort_by("timestamp").execute(exhaust_results=True)
+
+
+        json_events = []
+        for index, item in enumerate(user_events):
+            json_item = {
+                'index': index,
+                **TraceService.basic_user_event(item),
+            }
+            json_events.append(json_item)
+
+        return address_events(json_events)
+
 
 
 def trace_factory(_context, request):
