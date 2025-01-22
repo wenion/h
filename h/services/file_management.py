@@ -169,6 +169,13 @@ class FileManagementService:
         return file_meta
 
     @staticmethod
+    def update_file_permission(pk, permission, userid):
+        if FileManagementService.update_file_meta(pk, {"access_permissions": permission}, userid):
+            return True
+        else:
+            return False
+
+    @staticmethod
     def update_file_meta(pk, data, userid):
         file_meta = FileManagementService.get_file_by_id(pk)
         if file_meta and file_meta.userid == userid:
@@ -179,7 +186,7 @@ class FileManagementService:
             if "file_path" in data:
                 file_meta.file_path = data["file_path"]
             if "access_permissions" in data:
-                file_meta.access_permissions = file_meta["access_permissions"]
+                file_meta.access_permissions = data["access_permissions"]#Change to permit update the permission was: file_meta["access_permissions"]
             if "deleted" in data:
                 file_meta.deleted = data["deleted"]
             file_meta.save()
