@@ -38,6 +38,7 @@ class RecordItemService:
             'role': 'unknown',
             'shared': True if item.shared else False,
             'timestamp': item.startstamp,
+            'endstamp': item.endstamp,
             'userid': item.userid,
         }
 
