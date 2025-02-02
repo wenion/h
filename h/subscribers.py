@@ -100,16 +100,19 @@ def add_annotation_event(event):
         annotation = request.find_service(AnnotationReadService).get_annotation_by_id(
             event.annotation_id
         )
-        text_content = ""
+        interaction_context = ""
         for selector in annotation.target_selectors:
             if selector["type"] == "TextQuoteSelector" and "exact" in selector:
-                text_content = selector["exact"]
+                interaction_context = selector["exact"]
+        print("action", event.action)
 
         request.find_service(name="trace").create_server_event(
             annotation.userid,
-            event.action,
-            "HIGLIGHT" if annotation.text =="" else "ANNOTATION",
+            "annotation",
+            "HIGHLIGHT" if annotation.text =="" else "ANNOTATION",
             annotation.text,
             annotation.target_uri,
-            text_content
+            interaction_context,
+            interaction_context if annotation.text =="" else annotation.text,
+            event.action + " highlight" if annotation.text =="" else event.action + " annotation"
         )

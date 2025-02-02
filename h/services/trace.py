@@ -105,25 +105,39 @@ class TraceService:
             'image': image_src,
         }
 
-    def create_server_event(self, userid, type, tag, description, url=None, interaction_context=None):
+    def create_server_event(
+        self,
+        userid,
+        type,
+        tag,
+        text_content,
+        url=None,
+        interaction_context=None,
+        label="",
+        custom="",
+        page_title="",
+    ):
         """Create an server-side user event."""
-        session_id = ""
-        task_name = ""
+        session_id = None
+        task_name = None
         if len(queue_session_id := self.request.session.peek_flash("recordingSessionId")) > 0:
             session_id = queue_session_id[0]
         if len(queue_task_name := self.request.session.peek_flash("recordingTaskName")) > 0:
             task_name = queue_task_name[0]
 
+        if custom == "":
+            custom = type
+
         new_appstruct = {
             'userid': userid,
-            'event_type': "sever-record",
+            'event_type': type,
             'timestamp': int(datetime.now().timestamp() * 1000),
             'tag_name': tag.upper(),
-            'text_content': description,
+            'text_content': text_content,
             'base_url': self.request.url if not url else url,
-            'ip_address': self.request.client_addr,
+            'ip_address': "", #self.request.client_addr,
             'interaction_context': tag if not interaction_context else interaction_context,
-            'event_source': tag.upper(),
+            'event_source': "SERVER",
             # "system_time": datetime.now(timezone.utc),
             'x_path': "",
             'offset_x': None,
@@ -135,9 +149,9 @@ class TraceService:
             'width': 0,
             'height': 0,
             'image': None,
-            'title': "",
-            'label': "",
-            'action_type': type,
+            'title': page_title,
+            'label': label,
+            'action_type': custom,
         }
         return TraceService.create_user_event(new_appstruct)
     

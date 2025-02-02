@@ -31,7 +31,7 @@ class RecordItemService:
     def basic_record_item(item):
         return {
             'id': item.pk,
-            'sessionId': item.session_id,
+            'sessionId': item.pk,
             'taskName': item.task_name,
             'description': item.description,
             'groupid': item.groupid,
