@@ -104,7 +104,10 @@ def add_annotation_event(event):
         for selector in annotation.target_selectors:
             if selector["type"] == "TextQuoteSelector" and "exact" in selector:
                 interaction_context = selector["exact"]
-        print("action", event.action)
+
+        page_title = ""
+        if annotation.document and annotation.document.title:
+            page_title = annotation.document.title
 
         request.find_service(name="trace").create_server_event(
             annotation.userid,
@@ -114,5 +117,6 @@ def add_annotation_event(event):
             annotation.target_uri,
             interaction_context,
             interaction_context if annotation.text =="" else annotation.text,
-            event.action + " highlight" if annotation.text =="" else event.action + " annotation"
+            event.action + " highlight" if annotation.text =="" else event.action + " annotation",
+            page_title
         )
