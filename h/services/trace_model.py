@@ -1,35 +1,55 @@
+def hasCommandKey(main_string):
+    return any(sub in main_string for sub in [
+        "`Meta`",
+        "`Shift`",
+        "`Alt`",
+        "`Ctrl`",
+        "`ArrowLeft`",
+        "`ArrowRight`",
+    ])
+
 def _user_event_finite_state(event, state):
     if state["state"] == "init":
-        if event["tagName"] == "Navigate":
+        # Ignore
+        if event["title"] == "push":
+            return {**event, "state": "ignore"}, event
+        elif event["type"] == "pointerdown" and event["title"] == "click" and event["tagName"] == "HYPOTHESIS-SIDEBAR":
+            return {**event, "state": "ignore"}, event
+        elif event["type"] == "client" and event["title"] == "click" and event["tagName"] == "EXPERT-TRACE_CLOSE":
+            return {**event, "state": "ignore"}, event
+        elif event["tagName"] == "HYPOTHESIS-ADDER":
+            return {**event, "state": "ignore"}, event
+        elif event["title"] == "click" and event["type"] == "client":
+            return {**event, "state": "ignore"}, event
+        # Nav
+        elif event["tagName"] == "Navigate":
             return {**event, "state": "n1"}, event
-        if event["title"] == "switch to":
+        elif event["tagName"] == "Switch":
             return {**event, "state": "n1"}, event
         elif event["tagName"] == "RECORD" and event["description"] == "start":
             return {**event, "state": "ignore"}, event
         elif event["tagName"] == "RECORD" and event["description"] == "finish":
             return {**event, "state": "ignore"}, event
-        elif event["tagName"] == "EXPERT-TRACE_CLOSE":
+        # Type
+        elif event["type"] == "keydown" and event["title"] == "type" and hasCommandKey(event["description"]):
             return {**event, "state": "ignore"}, event
-        elif event["type"] == "pointerdown" and event["tagName"] == "HYPOTHESIS-SIDEBAR":
+        elif event["type"] == "keydown" and event["title"] == "type" and not hasCommandKey(event["description"]) and event["description"].strip() == "":
             return {**event, "state": "ignore"}, event
-        elif event["type"] == "pointerdown" and event["tagName"] != "HYPOTHESIS-SIDEBAR":
-            return {**event, "state": "c1"}, event
-        elif event["type"] == "mouseup" and event["title"] == "select":
-            return {**event, "state": "s1"}, event
-        elif event["title"] == "copy":
-            return {**event, "state": "cp1"}, event
-        elif event["title"] == "paste":
-            return {**event, "state": "p1"}, event
-        elif event["title"] == "type" and event["type"] == "keydown" and event["description"] == "`Ctrl` + v":
-            return {**event, "state": "p1"}, event
-        elif event["title"] == "type" and event["type"] == "keydown" and event["description"] == "`Meta` + v":
-            return {**event, "state": "p1"}, event
-        elif event["title"] == "type" and event["description"] == "":
-            return {**event, "state": "ignore"}, event
-        elif event["title"] == "type" and event["description"] != "":
+        elif event["type"] == "keydown" and event["title"] == "type" and not hasCommandKey(event["description"]) and event["description"].strip() != "":
             return {**event, "state": "t1"}, event
-        elif event["type"] == "client" and event["title"] == "click" and event["tagName"] == "EXPERT-TRACE_CLOSE":
-            return {**event, "state": "ignore"}, event
+        elif event["type"] == "keydown" and event["title"] == "copy":
+            return {**event, "state": "cp1"}, event
+        elif event["type"] == "copy" and event["title"] == "copy":
+            return {**event, "state": "cp2"}, event
+        elif event["type"] == "keydown" and event["title"] == "paste":
+            return {**event, "state": "ps1"}, event
+        elif event["type"] == "paste" and event["title"] == "paste":
+            return {**event, "state": "ps2"}, event
+        # Select text
+        elif event["type"] == "pointerdown" and event["title"] == "click" and event["tagName"] != "SELECT":
+            return {**event, "state": "c1"}, event
+        elif event["type"] == "pointerdown" and event["title"] == "click" and event["tagName"] == "SELECT":
+            return {**event, "state": "cs1"}, event
         else:
             return {**event, "state": "end"}, event
     elif state["state"] == "n1":
@@ -37,12 +57,12 @@ def _user_event_finite_state(event, state):
             return {**event, "state": "n1"}, event
         elif event["tagName"] == "Navigate" and event["url"] != state["url"]:
             return {**event, "state": "n2"}, event
-        elif event["title"] == "switch to" and event["url"] == state["url"]:
+        elif event["tagName"] == "Switch" and event["url"] == state["url"]:
             return {**event, "state": "n1"}, event
-        elif event["title"] == "switch to" and event["url"] != state["url"]:
+        elif event["tagName"] == "Switch" and event["url"] != state["url"]:
             return {**event, "state": "n2"}, event
         elif event["tagName"] == "RECORD" and event["description"] == "start":
-            return state, event
+            return {**state, "state": "n1"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "n2":
@@ -50,43 +70,47 @@ def _user_event_finite_state(event, state):
             return {**event, "state": "n2"}, event
         elif event["tagName"] == "Navigate" and event["url"] != state["url"]:
             return {**event, "state": "n1"}, event
-        elif event["title"] == "switch to" and event["url"] == state["url"]:
+        elif event["tagName"] == "Switch" and event["url"] == state["url"]:
             return {**event, "state": "n2"}, event
-        elif event["title"] == "switch to" and event["url"] != state["url"]:
+        elif event["tagName"] == "Switch" and event["url"] != state["url"]:
             return {**event, "state": "n1"}, event
         elif event["tagName"] == "RECORD" and event["description"] == "start":
-            return state, event
+            return {**state, "state": "n2"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "c1":
-        if event["title"] == "click" and event["type"] == "pointerdown" and event["clientX"] == state["clientX"] and event["clientY"] == state["clientY"] and event["tagName"] == state["tagName"]:
-            return {**event, "state": "c1"}, event
-        elif event["type"] == "mouseup" and event["title"] == "select":
-            return {**event, "state": "s1"}, event
+        if event["type"] == "mouseup" and event["title"] == "select":
+            return {**event, "state": "end"}, event
         else:
             return {**state, "state": "end"}, event
-    elif state["state"] == "s1":
-        if event["type"] == "mouseup" and event["title"] == "select":
+    elif state["state"] == "cs1":
+        if event["type"] == "change" and event["title"] == "type" and event["tagName"] == "SELECT":
             return {**event, "state": "s1"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "t1":
-        if event["title"] == "type" and event["description"] == state["description"]:
-            return {**event, "state": "t1"}, event
+        if event["type"] == "keydown" and event["title"] == "type" and event["description"] == state["description"] and event["tagName"] != "SELECT":
+            return {**state, "state": "t1"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "cp1":
-        if event["title"] == "copy" and event["description"] == state["description"]:
-            return {**event, "state": "cp1"}, event
+        if event["type"] == "copy" and event["title"] == "copy":
+            return {**event, "state": "cp2"}, event
         else:
             return {**state, "state": "end"}, event
-    elif state["state"] == "p1":
-        if event["title"] == "paste":
-            return {**event, "state": "p1"}, event
-        elif event["title"] == "type" and event["type"] == "keydown" and event["description"] == "`Ctrl` + v":
-            return {**event, "state": "p1"}, event
-        elif event["title"] == "type" and event["type"] == "keydown" and event["description"] == "`Meta` + v":
-            return {**event, "state": "p1"}, event
+    elif state["state"] == "cp2":
+        if event["type"] == "keydown" and event["title"] == "copy" and event["description"] == state["description"]:
+            return {**event, "state": "cp2"}, event
+        else:
+            return {**state, "state": "end"}, event
+    elif state["state"] == "ps1":
+        if event["type"] == "paste" and event["title"] == "paste":
+            return {**event, "state": "ps2"}, event
+        else:
+            return {**state, "state": "end"}, event
+    elif state["state"] == "ps2":
+        if event["type"] == "keydown" and event["title"] == "paste" and event["description"] == state["description"]:
+            return {**event, "state": "ps2"}, event
         else:
             return {**state, "state": "end"}, event
     else:
