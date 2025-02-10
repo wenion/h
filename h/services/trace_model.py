@@ -21,6 +21,8 @@ def _user_event_finite_state(event, state):
             return {**event, "state": "ignore"}, event
         elif event["title"] == "click" and event["type"] == "client":
             return {**event, "state": "ignore"}, event
+        elif event["type"] == "contextmenu":
+            return {**event, "state": "ignore"}, event
         # Nav
         elif event["tagName"] == "Navigate":
             return {**event, "state": "n1"}, event
