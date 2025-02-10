@@ -34,7 +34,7 @@ def _user_event_finite_state(event, state):
             return {**event, "state": "ignore"}, event
         # Change
         elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX":
-            return {**event, "title": "tick", "state": "end"}, event
+            return {**event, "title": "click", "state": "end"}, event
         # Type
         elif event["type"] == "keydown" and event["title"] == "type" and hasCommandKey(event["description"]):
             return {**event, "state": "ignore"}, event
@@ -98,7 +98,7 @@ def _user_event_finite_state(event, state):
             return {**state, "state": "end"}, event
     elif state["state"] == "c7":
         if event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX" and event["description"] == state["description"]:
-            return {**event, "title": "tick", "state": "end"}, event
+            return {**event, "title": "click", "state": "end"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "cs1":
