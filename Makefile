@@ -173,7 +173,7 @@ sure: checkformatting lint frontend-typecheck test coverage functests
 
 .PHONY: docker
 docker:
-	@git archive --format=tar.gz HEAD | docker build -t hypothesis/hypothesis:$(DOCKER_TAG) -
+	@git archive --format=tar.gz HEAD | docker build -t hypothesis/h:$(DOCKER_TAG) -
 
 .PHONY: run-docker
 run-docker:
@@ -203,7 +203,7 @@ run-docker:
 		-e "ENABLE_WORKER=true" \
 		-p 5000:5000 \
 		--name hypothesis \
-		hypothesis/hypothesis:$(DOCKER_TAG)
+		hypothesis/h:$(DOCKER_TAG)
 
 .PHONY: docker-run-local
 docker-run-local:
@@ -221,7 +221,7 @@ docker-run-local:
 		--env-file env.localhost.list \
 		-p 5000:5000 \
 		--name hypothesis \
-		hypothesis/hypothesis:$(DOCKER_TAG)
+		hypothesis/h:$(DOCKER_TAG)
 
 .PHONY: docker-run-prod
 docker-run-prod:
@@ -239,9 +239,11 @@ docker-run-prod:
 		--env-file env.production.list \
 		-p 5000:5000 \
 		--name hypothesis \
-		hypothesis/hypothesis:$(DOCKER_TAG)
+		hypothesis/h:$(DOCKER_TAG)
 
-DOCKER_TAG = dev
+TAG := $(shell git describe --tags --always)
+SHORT_HASH := $(shell git rev-parse --short HEAD)
+DOCKER_TAG := $(TAG)-$(SHORT_HASH)
 
 build/manifest.json: node_modules/.uptodate
 	@yarn build
