@@ -81,11 +81,15 @@ def _user_event_finite_state(event, state):
     elif state["state"] == "c1":
         if event["type"] == "mouseup" and event["title"] == "select":
             return {**event, "state": "end"}, event
+        elif event["type"] == "pointerdown" and event["title"] == "click" and event["tagName"] != "SELECT" and event["description"] == state["description"]:
+            return {**event, "state": "c1"}, event
+        elif event["type"] == "contextmenu":
+            return {**state, "state": "rc1"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "cs1":
         if event["type"] == "change" and event["title"] == "type" and event["tagName"] == "SELECT":
-            return {**event, "state": "s1"}, event
+            return {**event, "state": "end"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "t1":
@@ -111,8 +115,17 @@ def _user_event_finite_state(event, state):
     elif state["state"] == "ps2":
         if event["type"] == "keydown" and event["title"] == "paste" and event["description"] == state["description"]:
             return {**event, "state": "ps2"}, event
+        elif event["type"] == "change" and event["description"] == state["description"]:
+            return {**event, "state": "ps2"}, event
         else:
             return {**state, "state": "end"}, event
+    elif state["state"] == "rc1":
+        if event["type"] == "copy" and event["title"] == "copy":
+            return {**event, "state": "cp2"}, event
+        elif event["type"] == "paste" and event["title"] == "paste":
+            return {**event, "state": "ps2"}, event
+        else:
+            return {**event, "state": "ignore"}, event
     else:
         return state, event
 
