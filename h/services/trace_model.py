@@ -32,6 +32,9 @@ def _user_event_finite_state(event, state):
             return {**event, "state": "ignore"}, event
         elif event["tagName"] == "RECORD" and event["description"] == "finish":
             return {**event, "state": "ignore"}, event
+        # Change
+        elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX":
+            return {**event, "title": "tick", "state": "end"}, event
         # Type
         elif event["type"] == "keydown" and event["title"] == "type" and hasCommandKey(event["description"]):
             return {**event, "state": "ignore"}, event
@@ -47,11 +50,13 @@ def _user_event_finite_state(event, state):
             return {**event, "state": "ps1"}, event
         elif event["type"] == "paste" and event["title"] == "paste":
             return {**event, "state": "ps2"}, event
-        # Select text
-        elif event["type"] == "pointerdown" and event["title"] == "click" and event["tagName"] != "SELECT":
-            return {**event, "state": "c1"}, event
+        # Select/Click text
         elif event["type"] == "pointerdown" and event["title"] == "click" and event["tagName"] == "SELECT":
             return {**event, "state": "cs1"}, event
+        elif event["type"] == "pointerdown" and event["title"] == "click" and event["tagName"] == "CHECKBOX":
+            return {**event, "state": "c7"}, event
+        elif event["type"] == "pointerdown" and event["title"] == "click" and event["tagName"] != "SELECT" and event["tagName"] != "CHECKBOX":
+            return {**event, "state": "c1"}, event
         else:
             return {**event, "state": "end"}, event
     elif state["state"] == "n1":
@@ -89,6 +94,11 @@ def _user_event_finite_state(event, state):
             return {**state, "state": "rc1"}, event
         elif event["type"] == "submit":
             return {**event, "state": "end"}, event
+        else:
+            return {**state, "state": "end"}, event
+    elif state["state"] == "c7":
+        if event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX" and event["description"] == state["description"]:
+            return {**event, "title": "tick", "state": "end"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "cs1":
