@@ -87,6 +87,8 @@ def _user_event_finite_state(event, state):
             return {**event, "state": "c1"}, event
         elif event["type"] == "contextmenu":
             return {**state, "state": "rc1"}, event
+        elif event["type"] == "submit":
+            return {**event, "state": "end"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "cs1":
