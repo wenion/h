@@ -93,12 +93,12 @@ def _user_event_finite_state(event, state):
         elif event["type"] == "contextmenu":
             return {**state, "state": "rc1"}, event
         elif event["type"] == "submit":
-            return {**event, "state": "end"}, event
+            return {**event, "clientX": state["clientX"], "clientY": state["clientY"], "state": "end"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "c7":
         if event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX" and event["description"] == state["description"]:
-            return {**event, "title": "click", "state": "end"}, event
+            return {**state, "title": "click", "state": "end"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "cs1":
