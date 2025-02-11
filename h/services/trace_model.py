@@ -34,7 +34,7 @@ def _user_event_finite_state(event, state):
             return {**event, "state": "ignore"}, event
         # Change
         elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX":
-            return {**event, "title": "click", "state": "end"}, event
+            return {**event, "title": "click", "state": "cb1"}, event
         # Type
         elif event["type"] == "keydown" and event["title"] == "type" and hasCommandKey(event["description"]):
             return {**event, "state": "ignore"}, event
@@ -58,7 +58,9 @@ def _user_event_finite_state(event, state):
         elif event["type"] == "pointerdown" and event["title"] == "click" and event["tagName"] != "SELECT" and event["tagName"] != "CHECKBOX":
             return {**event, "state": "c1"}, event
         else:
-            return {**event, "state": "end"}, event
+            return {**event, "state": "i"}, event
+    elif state["state"] == "i":
+        return {**state, "state": "end"}, event
     elif state["state"] == "n1":
         if event["tagName"] == "Navigate" and event["url"] == state["url"]:
             return {**event, "state": "n1"}, event
@@ -98,14 +100,18 @@ def _user_event_finite_state(event, state):
             return {**state, "state": "end"}, event
     elif state["state"] == "c7":
         if event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX" and event["description"] == state["description"]:
-            return {**state, "title": "click", "state": "end"}, event
+            return {**state, "title": "click", "state": "cb1"}, event
         else:
             return {**state, "state": "end"}, event
+    elif state["state"] == "cb1":
+        return {**state, "state": "end"}, event
     elif state["state"] == "cs1":
         if event["type"] == "change" and event["title"] == "type" and event["tagName"] == "SELECT":
-            return {**event, "state": "end"}, event
+            return {**event, "state": "cs2"}, event
         else:
             return {**state, "state": "end"}, event
+    elif state["state"] == "cs2":
+        return {**state, "state": "end"}, event
     elif state["state"] == "t1":
         if event["type"] == "keydown" and event["title"] == "type" and event["description"] == state["description"] and event["tagName"] != "SELECT":
             return {**state, "state": "t1"}, event
@@ -147,24 +153,25 @@ def address_events(events):
     if not len(events):
         return events
 
-    start_state = {**events[0], "state": "init"}
+    s = {**events[0], "state": "init"}
 
     better = []
-    s = start_state
 
-    for i in events:
+    index = 0
+
+    while index < len(events):
+        i = events[index]
+
         [state, event] = _user_event_finite_state(i, s)
         if state["state"] == "end":
             better.append(state)
             s = {**state, "state": "init"}
-            [state, event] = _user_event_finite_state(i, s)
         elif state["state"] == "ignore":
             s = {**state, "state": "init"}
-            [state, event] = _user_event_finite_state(i, s)
-
-        s = state
-        if state["state"] == "end":
-            better.append(state)
+            index += 1
+        else:
+            s = state
+            index += 1
 
     # remove repeat
     seen_ids = set()
