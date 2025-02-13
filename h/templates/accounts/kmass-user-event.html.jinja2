@@ -9,31 +9,13 @@
     <form action="/account/user-event" method="post">
       <label> page size
         <select class="pageSize" name="pageSize" data-ref="pageSizeSelect">
-          {% if query and query.page_size == 10 %}
-            <option value="10" selected>10</option>
-          {% else %}
-            <option value="10">10</option>
-          {% endif %}
-          {% if query.page_size == 25 %}
-            <option value="25" selected>25</option>
-          {% else %}
-            <option value="25">25</option>
-          {% endif %}
-          {% if query.page_size == 50 %}
-            <option value="50" selected>50</option>
-          {% else %}
-            <option value="50">50</option>
-          {% endif %}
-          {% if query.page_size == 100 %}
-            <option value="100" selected>100</option>
-          {% else %}
-            <option value="100">100</option>
-          {% endif %}
-          {% if query.page_size == "all" %}
-            <option value="all" selected>all</option>
-          {% else %}
-            <option value="all">all</option>
-          {% endif %}
+          {% for item in page_size_option %}
+            {% if query and query.page_size == item %}
+              <option value={{ item }} selected>{{ item }}</option>
+            {% else %}
+              <option value={{ item }}>{{ item }}</option>
+            {% endif %}
+          {% endfor %}
         </select>
       </label>
 
@@ -51,26 +33,30 @@
 
       <label> order
         <select class="order" name="order" data-ref="orderSelect">
-          {% if query and query.order == "desc" %}
-            <option value="desc" selected>DESC</option>
-          {% else %}
-            <option value="desc">DESC</option>
-          {% endif %}
-          {% if query and query.order == "asc" %}
-            <option value="asc" selected>ASC</option>
-          {% else %}
-            <option value="asc">ASC</option>
-          {% endif %}
+          {% for item in order_option %}
+            {% if query and query.order == item %}
+              <option value={{ item }} selected>{{ item|upper }}</option>
+            {% else %}
+              <option value={{ item }}>{{ item|upper }}</option>
+            {% endif %}
+          {% endfor %}
         </select>
       </label>
+
+      <label for="page" style="visibility: hidden;">Current Page
+        <input type="number" id="page" name="page" value={{ query.page }} readonly/>
+      </label>
+        <a data-ref="linkAnchor" href={{ query.link }} style="visibility: hidden;"> <input type="button" value="Display"/></a>
       <hr>
 
       <label for="pages">Export Pages:</label>
-      <input type="number" id="pages" name="pages" min="1" max="25" value="5">
-      <input type="submit" value="Export" />
+      <input type="number" id="pages" name="pages" data-ref="pagesInput" min="1" value={{ query.pages }}>
+      <input type="submit" data-ref="exportSubmit" value="Export" />
     </form>
     </div>
     <div class="search-results" style="margin-top: 25px">
+
+    {% include "h:templates/includes/kmass-paginator.html.jinja2" %}
 
       <table class="search-results__list">
         <thead style="color: #fff;background-color: #333;">

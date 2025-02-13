@@ -5,16 +5,23 @@ import math
 from io import StringIO
 
 from pyramid import response
+from pyramid.httpexceptions import HTTPBadRequest, HTTPFound
 from pyramid.view import view_config, view_defaults
 
 from h import util
 from h.exceptions import InvalidUserId
 from h.i18n import TranslationString as _
 
+START_PAGE = 1
+PAGES = 5
 DEFAULT_PAGE_SIZE = 1000
 PAGE_SIZE = 25
 SORT_BY = "timestamp"
 ORDER = "desc"
+MAX_LIMIT = DEFAULT_PAGE_SIZE * 10
+
+PAGE_SIZE_LIST = ["10", "25", "50", "100"]
+ORDER_LIST = ["desc", "asc"]
 
 def paginate(request, total, page_size):  # pylint:disable=too-complex
     first = 1
@@ -105,52 +112,109 @@ class UserEventSearchController:
         self.request = request
 
     @view_config(request_method="GET")
-    def get(self):  # pragma: no cover
+    def get(self):
+        start_page = self.request.params.get('page', START_PAGE)
+        pages = self.request.params.get('pages', PAGES)
+        page_size = self.request.params.get('pageSize', PAGE_SIZE)
+        sortby = self.request.params.get('sortby', SORT_BY)
+        order = self.request.params.get('order', ORDER)
+
+        params = {
+            "page": start_page,
+            "pages": pages,
+            "pageSize": page_size,
+            "sortby": sortby,
+            "order" : order,
+        }
+        return HTTPFound(
+            location=self.request.route_path(
+                "account_user_event", _query=params
+            )
+        )
+
+    @view_config(
+        request_method="GET",
+        request_param=["page", "pages", "pageSize", "sortby", "order"],
+    )
+    def get_param(self):  # pragma: no cover
         trace_service = self.request.find_service(name="trace")
 
         # page
-        page = self.request.params.get("page", 1)
+        page = self.request.params.get("page")
+        pages = self.request.params.get("pages")
+        page_size = self.request.params.get("pageSize")
+        sortby = self.request.params.get("sortby")
+        order = self.request.params.get("order")
+        params = {
+            "page": page,
+            "pages": pages,
+            "pageSize": page_size,
+            "sortby": sortby,
+            "order" : order,
+        }
+
+        if page_size not in PAGE_SIZE_LIST:
+            params["pageSize"] = PAGE_SIZE_LIST[1]
+            return HTTPFound(
+                location=self.request.route_path(
+                    "account_user_event", _query=params
+                )
+            )
+
+        total = trace_service.count(self.request.authenticated_userid)
+        pg = paginate(self.request, total, page_size=int(page_size))
 
         try:
             page = int(page)
         except ValueError:
-            page = 1
+            params["page"] = START_PAGE
+            return HTTPFound(
+                location=self.request.route_path(
+                    "account_user_event", _query=params
+                )
+            )
 
-        # Don't allow negative page numbers.
-        page = max(page, 1)
+        if page > pg["max"] or page < 0:
+            params["page"] = START_PAGE
+            return HTTPFound(
+                location=self.request.route_path(
+                    "account_user_event", _query=params
+                )
+            )
 
-        page_size = self.request.params.get("pageSize", PAGE_SIZE)
-        if page_size == "all":
-            pass
-        else:
-            try:
-                page_size = int(page_size)
-            except ValueError:
-                page_size = PAGE_SIZE
+        properties = trace_service.get_user_event_sortable_fields()
+        keys=[]
+        for key in properties:
+            keys.append(key)
 
-        sortby = self.request.params.get("sortby", SORT_BY)
-        order = self.request.params.get("order", ORDER)
+        if sortby not in keys:
+            params["sortby"] = SORT_BY
+            return HTTPFound(
+                location=self.request.route_path(
+                    "account_user_event", _query=params
+                )
+            )
 
+        if order not in ORDER_LIST:
+            params["order"] = ORDER_LIST[0]
+            # location = f"{base_url}/account/user-event?{urlencode(params)}"
+            # return HTTPFound(location=location)
+            return HTTPFound(
+                location=self.request.route_path(
+                    "account_user_event", _query=params
+                )
+            )
 
         # Fetch results.
-        if type(page_size) == int:
-            limit = page_size
-            offset = (page - 1) * page_size
-            table_results = trace_service.user_event_search_query(
-                userid = self.request.authenticated_userid,
-                offset = offset,
-                limit = limit,
-                sortby = "-" + sortby if order =="desc" else sortby
-            )
-        else:
-            table_results = trace_service.user_event_search_query(
-                userid = self.request.authenticated_userid,
-                offset = 0,
-                limit = DEFAULT_PAGE_SIZE,
-                sortby = "-" + sortby if order =="desc" else sortby
-                )
+        limit = int(page_size)
+        offset = (page - 1) * int(page_size)
+        table_results = trace_service.user_event_search_query(
+            userid = self.request.authenticated_userid,
+            offset = offset,
+            limit = limit,
+            sortby = "-" + sortby if order =="desc" else sortby
+        )
 
-        total = trace_service.count(self.request.authenticated_userid)
         table_head = list(table_results[0].keys()) if table_results else []
 
         properties = trace_service.get_user_event_sortable_fields()
@@ -167,13 +231,17 @@ class UserEventSearchController:
         return {
             "table_head": table_head,
             "table_results": table_results,
-            "page": paginate(self.request, total, page_size=page_size) if type(page_size) == int else paginate(self.request, total, page_size=PAGE_SIZE if total == 0 else total),
+            "page": pg,
             "values": values,
+            "page_size_option": PAGE_SIZE_LIST,
+            "order_option": ORDER_LIST,
             "query": {
-                "page": page,
+                "page": str(page),
+                "pages": pages,
                 "page_size": page_size,
                 "sortby": sortby,
                 "order": order,
+                "link": self.request.route_path("account_user_event", _query=params)
             },
             "max_display": max_display,
         }
@@ -184,22 +252,56 @@ class UserEventSearchController:
 
         userid = self.request.authenticated_userid
         try:
-            name = util.user.split_user(userid)["username"]
+            username = util.user.split_user(userid)["username"]
         except InvalidUserId:
-            name = userid
+            return HTTPFound(self.request.route_path("login"))
+        except Exception as e:
+            return HTTPFound(self.request.route_path("index"))
 
-        pages = int(self.request.POST.get("pages", 25))
+        page = self.request.POST.get("page")
+        pages = self.request.POST.get("pages")
+        page_size = self.request.POST.get("pageSize")
+        sortby = self.request.POST.get("sortby")
+        order = self.request.POST.get("order")
 
-        page_size = self.request.POST.get("pageSize", 25)
-        if page_size.isdigit():
-            page_size = int(page_size)
-        else:
-            page_size = 25
+        if page_size not in PAGE_SIZE_LIST:
+            raise HTTPBadRequest("Invalid page size value")
 
-        offset = 0
-        limit = page_size * pages
-        sortby = self.request.POST.get("sortby", SORT_BY)
-        order = self.request.POST.get("order", ORDER)
+        total = trace_service.count(self.request.authenticated_userid)
+        pg = paginate(self.request, total, page_size=int(page_size))
+
+        try:
+            page = int(page)
+        except ValueError:
+            raise HTTPBadRequest("The page value is illegal")
+
+        if page > pg["max"] or page < 0:
+            raise HTTPBadRequest("The page value is either too large or too small")
+
+        try:
+            pages = int(pages)
+        except ValueError:
+            raise HTTPBadRequest("The value of pages is illegal")
+
+        if pages > pg["max"] or pages < 0:
+            raise HTTPBadRequest("The value of pages is either too large or too small")
+
+        properties = trace_service.get_user_event_sortable_fields()
+        keys=[]
+        for key in properties:
+            keys.append(key)
+
+        if sortby not in keys:
+            raise HTTPBadRequest("The sortby value is illegal")
+
+        if order not in ORDER_LIST:
+            raise HTTPBadRequest("The order value is illegal")
+
+        limit = int(page_size) * pages
+        offset = (page - 1) * int(page_size)
+
+        if limit > MAX_LIMIT:
+            raise HTTPBadRequest("The value of page is out of range")
 
         bunch_data = trace_service.user_event_search_query(
             userid = self.request.authenticated_userid,
@@ -215,6 +317,7 @@ class UserEventSearchController:
             csv_writer.writerow(item.values())
 
         res = response.Response(content_type='text/csv')
-        res.content_disposition = f'attachment; filename="{name}_result.csv"'
         res.body = csv_data.getvalue().encode('utf-8')
+        res.headers["Content-Disposition"] = f'attachment; filename="{username}_result.csv"'
+
         return res

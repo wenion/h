@@ -1,12 +1,4 @@
-import escapeHtml from 'escape-html';
-
 import { Controller } from '../base/controller';
-
-const PAGE = '1';
-const PAGE_SIZE = '25';
-const SORTBY = 'timestamp';
-const ORDER = 'desc';
-
 
 /**
  * Controller for the search bar.
@@ -31,39 +23,42 @@ export class KmassController extends Controller {
       this.setState({ paginator: event.target.getAttribute('value') });
     });
 
+    this.refs.pagesInput.addEventListener('change', (event) => {
+      this.setState({ pages: event.target.value });
+    });
+
+    this.refs.pagesInput.addEventListener('focus', (event) => {
+      this.refs.exportSubmit.disabled = true;
+    });
+
+    this.refs.pagesInput.addEventListener('blur', (event) => {
+      this.refs.exportSubmit.disabled = false;
+    });
+
   }
 
   update(newState, prevState) {
     if (newState != prevState) {
-      const urlSearchParams = new URLSearchParams(window.location.search)
-      let page = urlSearchParams.get("page") ? urlSearchParams.get("page"): PAGE;
-      let pageSize = urlSearchParams.get("pageSize") ? urlSearchParams.get("pageSize"): PAGE_SIZE;
-      let sortby = urlSearchParams.get("sortby") ? urlSearchParams.get("sortby"): SORTBY;
-      let order = urlSearchParams.get("order") ? urlSearchParams.get("order"): ORDER;
-      if (newState.page) {
-        page = newState.page
+      const url = new URL(this.refs.linkAnchor.href)
+
+      if (newState.paginator) {
+        url.searchParams.set('page', newState.paginator);
       }
       if (newState.pageSize) {
-        pageSize = newState.pageSize
-        page = PAGE
+        url.searchParams.set('pageSize', newState.pageSize);
       }
       if (newState.sortby) {
-        sortby = newState.sortby
-        page = PAGE
+        url.searchParams.set('sortby', newState.sortby);
       }
       if (newState.order) {
-        order = newState.order
-        page = PAGE
+        url.searchParams.set('order', newState.order);
+      }
+      if (newState.pages) {
+        url.searchParams.set('pages', newState.pages);
       }
 
-      let url = document.location.origin +
-        document.location.pathname +
-        "?page=" + page +
-        "&pageSize=" + pageSize +
-        "&sortby=" + sortby +
-        "&order=" + order
-
-      document.location.href = url
+      this.refs.linkAnchor.href = url.toString();
+      this.refs.linkAnchor.click();
     }
     
   }
