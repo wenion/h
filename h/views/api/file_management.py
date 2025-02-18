@@ -168,15 +168,12 @@ def update_permission(context: FileManagementContext, request):
     file_meta = context.filemeta
     userid = request.authenticated_userid
     new_permissions = request.json_body.get("access_permissions", None)
-    print(f"Usuario: {userid}, Nuevo permiso: {new_permissions}")
 
     file_management = request.find_service(name="file_management")
     succ = file_management.update_file_permission(file_meta.pk, new_permissions, userid)
     if succ:
-        print(f"Permisos actualizados con éxito para el archivo {file_meta.pk}")
         return {"id": context.id, "updated": succ}
     else:
-        print("Error: No se pudo actualizar el permiso")
         return httpexceptions.HTTPUnauthorized()
 
 
