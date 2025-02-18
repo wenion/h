@@ -176,7 +176,7 @@ def update_permission(context: FileManagementContext, request):
         print(f"Permisos actualizados con éxito para el archivo {file_meta.pk}")
         return {"id": context.id, "updated": succ}
     else:
-        print("Error: No se pudo actualizar el permiso.")
+        print("Error: No se pudo actualizar el permiso")
         return httpexceptions.HTTPUnauthorized()
 
 
