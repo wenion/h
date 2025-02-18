@@ -20,6 +20,8 @@ def _user_event_finite_state(event, state):
             return {**event, "state": "cp1"}, event
         elif event["title"] == "paste":
             return {**event, "state": "p1"}, event
+        elif event["title"] == "type" and event["type"] == "keydown" and event["description"] == "`Ctrl` + v":
+            return {**event, "state": "p1"}, event
         elif event["title"] == "type" and event["description"] == "":
             return {**event, "state": "ignore"}, event
         elif event["title"] == "type" and event["description"] != "":
@@ -78,6 +80,8 @@ def _user_event_finite_state(event, state):
             return {**state, "state": "end"}, event
     elif state["state"] == "p1":
         if event["title"] == "paste":
+            return {**event, "state": "p1"}, event
+        elif event["title"] == "type" and event["type"] == "keydown" and event["description"] == "`Ctrl` + v":
             return {**event, "state": "p1"}, event
         else:
             return {**state, "state": "end"}, event
