@@ -8,6 +8,9 @@ services:
         interval: 1s
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - /home/hypothesis/data:/var/lib/postgresql/data:Z
     networks:
       - dbs
   elasticsearch:
