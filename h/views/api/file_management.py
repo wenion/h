@@ -167,17 +167,16 @@ def read(context: FileManagementContext, request):
 def update_permission(context: FileManagementContext, request):
     file_meta = context.filemeta
     userid = request.authenticated_userid
-    permissions = request.json_body.get('access_permissions')
-    file_meta.access_permissions=permissions
-    print(f"File PK : {file_meta.pk}")  # Esto imprimirá el valor de file_meta.pk
-    print(f"Access Permissions : {file_meta.access_permissions}")  # Esto imprimirá el valor de file_meta.access_permissions
-    print(f"IVAN Permissions : {permissions}")  # Esto imprimirá el valor de file_meta.access_permissions
+
+    print(f"Usuario: {userid}, Permisos actuales: {file_meta.access_permissions}")
 
     file_management = request.find_service(name="file_management")
     succ = file_management.update_file_permission(file_meta.pk, file_meta.access_permissions, userid)
     if succ:
+        print(f"Permisos actualizados con éxito para el archivo {file_meta.pk}")
         return {"id": context.id, "updated": succ}
     else:
+        print("Error: No se pudo actualizar el permiso.")
         return httpexceptions.HTTPUnauthorized()
 
 
