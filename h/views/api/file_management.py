@@ -62,6 +62,7 @@ def upload(request):
     size = request.POST.get('size')
     file_type = request.POST.get('type')
     path = request.POST.get('path')
+    access_permissions=  request.POST.get('permissions')
 
     if not filename or not size or not file_type or not path:
         return httpexceptions.HTTPBadRequest()
@@ -84,7 +85,7 @@ def upload(request):
             {
                 "userid" : userid,
                 "link" : os.path.join(user_root, path),
-                "access_permissions": "private",
+                "access_permissions": access_permissions,
             }
         )
 
