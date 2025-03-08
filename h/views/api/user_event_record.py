@@ -20,6 +20,7 @@ from h.security import Permission
 from h.traversal import UserEventRecordContext
 from h.views.api.config import api_config
 from h.views.api.exceptions import PayloadError
+from h.tasks import shareflow
 
 _ = i18n.TranslationStringFactory(__package__)
 
@@ -67,10 +68,12 @@ def recordings(request):
     """Retrieve the groups for this request's user."""
     userid = request.authenticated_userid if request.authenticated_userid else ""
 
-    all_record_items = request.find_service(name="record_item").record_item_search_query(
-        userid, True
+    all = request.find_service(name="shareflow").json_shareflow_metadata_search_query(
+        userid = userid,
+        shared = True
     )
-    return all_record_items
+
+    return all
 
 
 @api_config(
@@ -86,11 +89,20 @@ def create(request):
     payload = _json_payload(request)
     data = create_validate(request, payload)
 
-    record_item = request.find_service(name="record_item").init_user_event_record(data)
-    
-    request.session.flash(record_item["sessionId"], "recordingSessionId")
-    request.session.flash(record_item["taskName"], "recordingTaskName")
-    return record_item
+    # TODO remove
+    redis_data = create_redis_validate(request, payload)
+    record_item = request.find_service(name="record_item").init_user_event_record(redis_data)
+
+    shareflow_service = request.find_service(name="shareflow")
+    shareflow_metadata = shareflow_service.create_shareflow_metadata({
+        **data,
+        "pk": record_item.get("id", None) # refer to record_item which stored in redis
+    })
+
+    request.session.flash(shareflow_metadata.session_id, "recordingSessionId")
+    request.session.flash(shareflow_metadata.task_name, "recordingTaskName")
+
+    return shareflow_service.present(shareflow_metadata)
 
 
 @api_config(
@@ -116,24 +128,20 @@ def read(context: UserEventRecordContext, request):
     link_name="recording.update",
     description="Update an recording",
 )
-def update(context, request):
+def update(context: UserEventRecordContext, request):
     """Update the specified annotation with data from the PATCH payload."""
     data = _json_payload(request)
+    shareflow_metadata = context.shareflow_metadata
 
-    if 'shared' in data:
-        record_item = request.find_service(name="record_item").share_user_event_record(
-            context.id,
-            1 if data['shared'] else 0
-        )
-        return record_item
+    service = request.find_service(name="shareflow")
+    updated = service.update_shareflow_metadata(data, shareflow_metadata)
+    json_reply =service.present(updated)
+
     if 'endstamp' in data:
-        record_item = request.find_service(name="record_item").finish_user_event_record(
-            context.id,
-            data['endstamp']
-        )
         request.session.pop_flash("recordingSessionId")
         request.session.pop_flash("recordingTaskName")
-        return record_item
+        shareflow.add_shareflow_metadata.delay(json_reply)
+    return json_reply
 
 
 @api_config(
@@ -145,22 +153,11 @@ def update(context, request):
     description="Delete an recording",
 )
 def delete(context, request):
-    # Steve: delete process model when Shareflow gets deleted
-    # try:
-    #     tad_url = urljoin(request.registry.settings.get("tad_url"), "delete_process_model")
-    #     pm_data = {"user_id": context.user_event_record.userid,
-    #               "shareflow_name": context.user_event_record.task_name,
-    #               "session_id": context.user_event_record.session_id}
-    #     headers = {"Content-Type": "application/json"}
-    #     pm_deletion_response = requests.post(tad_url, json=pm_data, headers=headers)
-    #     if not pm_deletion_response["created"]:
-    #         print("Unable to delete process model due to", pm_deletion_response["message"])
-    # except Exception as e:
-    #     print("Process model not deleted due to error:", e)
-    #     pass
-    succ = request.find_service(name="record_item").delete_user_event_record(context.id)
+    shareflow_metadata = context.shareflow_metadata
+    service = request.find_service(name="shareflow")
+    succ = service.delete_shareflow_metadata(shareflow_metadata)
     # TODO
-    return {"id": context.id, "deleted": succ}
+    return {"id": shareflow_metadata.session_id, "deleted": succ}
 
 
 def _json_payload(request):
@@ -176,6 +173,20 @@ def _json_payload(request):
 
 
 def create_validate(request, data):
+    new_appstruct = {}
+
+    new_appstruct["userid"] = request.authenticated_userid
+    new_appstruct["startstamp"] = data["startstamp"]
+    new_appstruct["session_id"] = data["sessionId"]
+    new_appstruct["task_name"] = data["taskName"]
+    new_appstruct["backdate"] = data["backdate"]
+    new_appstruct["description"] = data["description"]
+
+    # TODO
+    # timezone
+    return new_appstruct
+
+def create_redis_validate(request, data):
     new_appstruct = {}
 
     new_appstruct["userid"] = request.authenticated_userid

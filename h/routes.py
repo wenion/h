@@ -141,7 +141,7 @@ def includeme(config):  # pylint: disable=too-many-statements
         factory="h.traversal:UserEventRecordRoot",
         traverse="/{id}",
     )
-    config.add_route("api.traces", "/api/traces", factory="h.traversal:UserEventRecordRoot")
+    config.add_route("api.traces", "/api/traces")
     config.add_route(
         "api.trace",
         "/api/traces/{id:[A-Za-z0-9_-]{10,26}}",
@@ -170,8 +170,8 @@ def includeme(config):  # pylint: disable=too-many-statements
 
     config.add_route(
         "api.image",
-        "/api/image/{id:[A-Za-z0-9_-]{24,30}}.jpg",
-        factory="h.traversal:UserEventImageRoot",
+        "/api/image/{id:[A-Za-z0-9_-]{1,30}}.jpg",
+        factory="h.traversal:ShareflowImageRoot",
         traverse="/{id}",
     )
 

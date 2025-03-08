@@ -37,10 +37,8 @@ def read(context, request):
     #     return httpexceptions.HTTPNotFound()
 
     # print('user', user)
-    base64_string_with_prefix = context.image
-    if base64_string_with_prefix:
-        base64_string = base64_string_with_prefix.split(',')[1]
-        image = base64.b64decode(base64_string)
-        return Response(image, content_type='image/jpeg')
+    shareflow_image = context.image
+    if shareflow_image:
+        return Response(shareflow_image.image_data, content_type='image/jpeg')
     else:
         return httpexceptions.HTTPNotFound()

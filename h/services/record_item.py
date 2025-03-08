@@ -32,12 +32,15 @@ class RecordItemService:
         return {
             'id': item.pk,
             'sessionId': item.pk,
+            'session_id': item.pk,
             'taskName': item.task_name,
+            'task_name': item.task_name,
             'description': item.description,
-            'groupid': item.groupid,
+            # 'groupid': item.groupid,
             'role': 'unknown',
             'shared': True if item.shared else False,
             'timestamp': item.startstamp,
+            'startstamp': item.startstamp,
             'endstamp': item.endstamp,
             'userid': item.userid,
         }

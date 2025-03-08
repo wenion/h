@@ -19,8 +19,9 @@ def log_trace(event):
     task_name = "" if event.get("taskName") is None else event.get("taskName")
     label = event.get('label', "")
     userid = event.get('userid', "")
+    session_id = "" if event.get('sessionId') is None else event.get('sessionId')
 
-    output = '|'.join([tag_name, action_type, event_type, task_name, label, userid])
+    output = '|'.join([tag_name, action_type, event_type, task_name, label, userid, session_id])
     log.info(output)
 
 

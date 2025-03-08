@@ -35,6 +35,9 @@ from h.models.group_scope import GroupScope
 from h.models.job import Job
 from h.models.organization import Organization
 from h.models.setting import Setting
+from h.models.shareflow_metadata import ShareflowMetadata
+from h.models.shareflow_image import ShareflowImage
+from h.models.shareflow import Shareflow
 from h.models.subscriptions import Subscriptions
 from h.models.token import Token
 from h.models.user import User
@@ -64,6 +67,9 @@ __all__ = (
     "Job",
     "Organization",
     "Setting",
+    "ShareflowMetadata",
+    "ShareflowImage",
+    "Shareflow",
     "Subscriptions",
     "Token",
     "User",

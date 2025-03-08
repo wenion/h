@@ -189,3 +189,6 @@ def includeme(config):  # pragma: no cover
     config.register_service_factory(
         "h.services.file_management.file_management_factory", name="file_management"
     )
+    config.register_service_factory(
+        "h.services.shareflow.shareflow_service_factory", name="shareflow"
+    )

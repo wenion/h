@@ -1,44 +1,47 @@
 from dataclasses import dataclass
 
-from h.models_redis import UserEvent
+from h.models import Shareflow, ShareflowImage
 
 
 @dataclass
 class UserEventContext:
     """Context for user_event views."""
 
-    user_event: UserEvent
-
-    @property
-    def id(self):
-        return self.user_event.pk
-
-    @property
-    def image(self):
-        return self.user_event.image
+    shareflow: Shareflow = None
 
 
 class UserEventRoot:
     """Root factory for routes whose context is an `UserEventRoot`."""
 
     def __init__(self, request):
-        self._trace_service = request.find_service(name="trace")
+        self._request = request
+        self._shareflow_service = request.find_service(name="shareflow")
 
     def __getitem__(self, id):
-        trace = self._trace_service.get_trace_by_id(id)
-        if trace is None:
+        shareflow = self._shareflow_service.get_trace_by_id(id)
+
+        if shareflow is None:
             raise KeyError()
 
-        return UserEventContext(trace)
+        return UserEventContext(shareflow)
 
 
-class UserEventImageRoot(UserEventRoot):
-    """Root factory for routes whose context is an `UserEventRoot`."""
+@dataclass
+class ShareflowImageContext:
+    """Context for user_event views."""
+
+    image: ShareflowImage = None
+
+
+class ShareflowImageRoot:
+    def __init__(self, request):
+        self._request = request
+        self._shareflow_service = request.find_service(name="shareflow")
 
     def __getitem__(self, id):
         id = id.split(".")[0]
-        user_event_context = super().__getitem__(id)
-        if user_event_context is None:
+        image = self._shareflow_service.get_shareflow_image_by_id(id)
+        if image is None:
             raise KeyError()
 
-        return user_event_context
+        return ShareflowImageContext(image)

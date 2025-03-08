@@ -91,6 +91,7 @@ class TraceService:
             image_src = item.pk
         return {
             'id': item.pk,
+            'pk': item.pk,
             'type': item.event_type,
             'title': item.action_type,
             'description': item.label,
