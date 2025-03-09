@@ -220,10 +220,10 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route("api.rating", "/api/rating")
     config.add_route("api.recommendation", "/api/recommendation")
     config.add_route("api.pull", "/api/pull")
-    config.add_route("api.files", "/api/files")
+    config.add_route("api.trees", "/api/trees")
     config.add_route(
-        "api.file",
-        "/api/files/{id:[A-Za-z0-9_-]{10,26}}",
+        "api.tree",
+        "/api/trees/{id:[A-Za-z0-9_-]{10,26}}",
         factory="h.traversal:FileRoot",
         traverse="/{id}",
     )

@@ -23,6 +23,7 @@ from pyramid import httpexceptions
 from h.security import Permission
 from h.traversal import FileManagementContext
 from h.views.api.config import api_config
+from h.views.api.exceptions import PayloadError
 
 
 _ = i18n.TranslationStringFactory(__package__)
@@ -124,13 +125,13 @@ def upload(request):
 
 @api_config(
     versions=["v1", "v2"],
-    route_name="api.files",
+    route_name="api.trees",
     request_method="GET",
     permission=Permission.Annotation.CREATE,
-    link_name="files.read",
+    link_name="trees.read",
     description="List all files of the user",
 )
-def files(request):
+def trees(request):
     userid = request.authenticated_userid
     dir = request.params.get('dir')
     file_management = request.find_service(name="file_management")
@@ -144,11 +145,11 @@ def files(request):
 
 @api_config(
     versions=["v1", "v2"],
-    route_name="api.file",
+    route_name="api.tree",
     request_method="GET",
     permission=Permission.Profile.UPDATE,
-    link_name="file.read",
-    description="Fetch an recording",
+    link_name="tree.read",
+    description="Fetch a file",
 )
 def read(context: FileManagementContext, request):
     filemeta = context.filemeta
@@ -158,10 +159,35 @@ def read(context: FileManagementContext, request):
 
 @api_config(
     versions=["v1", "v2"],
-    route_name="api.file",
+    route_name="api.tree",
+    request_method=("PATCH", "PUT"),
+    permission=Permission.Profile.UPDATE,
+    link_name="tree.update",
+    description="Update file status",
+)
+def update(context: FileManagementContext, request):
+    userid = request.authenticated_userid
+    data = _json_payload(request)
+    filemeta = context.filemeta
+
+    file_management = request.find_service(name="file_management")
+
+    update = {}
+    permission = data.get("permission", None)
+    if permission:
+        update["access_permissions"] = permission
+
+    result = file_management.update_file_meta(filemeta.pk, update, userid)
+
+    return file_management.file_meta_dict(result)
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.tree",
     request_method="DELETE",
     permission=Permission.Profile.UPDATE,
-    link_name="file.delete",
+    link_name="tree.delete",
     description="Delete a file",
 )
 def delete(context: FileManagementContext, request):
@@ -174,3 +200,15 @@ def delete(context: FileManagementContext, request):
         return {"id": context.id, "deleted": succ}
     else:
         return httpexceptions.HTTPUnauthorized()
+
+
+def _json_payload(request):
+    """
+    Return a parsed JSON payload for the request.
+
+    :raises PayloadError: if the body has no valid JSON body
+    """
+    try:
+        return request.json_body
+    except ValueError as err:
+        raise PayloadError() from err

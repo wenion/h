@@ -179,7 +179,7 @@ class FileManagementService:
             if "file_path" in data:
                 file_meta.file_path = data["file_path"]
             if "access_permissions" in data:
-                file_meta.access_permissions = file_meta["access_permissions"]
+                file_meta.access_permissions = data["access_permissions"]
             if "deleted" in data:
                 file_meta.deleted = data["deleted"]
             file_meta.save()
