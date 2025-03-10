@@ -176,7 +176,7 @@ class ShareflowService:
 
         model.update(
             {
-                "id": shareflow_metadata.session_id,
+                "id": shareflow_metadata.pk, # id: set as pk
                 "description": shareflow_metadata.description,
                 "pk": shareflow_metadata.pk,
                 "role": shareflow_metadata.description,

@@ -96,7 +96,9 @@ def create(request):
     shareflow_service = request.find_service(name="shareflow")
     shareflow_metadata = shareflow_service.create_shareflow_metadata({
         **data,
-        "pk": record_item.get("id", None) # refer to record_item which stored in redis
+        # withdraw the frontend's sessionId
+        "session_id": record_item.get("id", None),
+        "pk": record_item.get("id", None), # refer to record_item which stored in redis
     })
 
     request.session.flash(shareflow_metadata.session_id, "recordingSessionId")
