@@ -35,6 +35,10 @@ def _user_event_finite_state(event, state):
         # Change
         elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX":
             return {**event, "title": "click", "state": "cb1"}, event
+        elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "SELECT":
+            return {**event, "title": "select", "state": "cs1", "description": None}, event
+        elif event["type"] == "change" and event["title"] == "type" and event["tagName"] != "SELECT" and event["tagName"] != "CHECKBOX":
+            return {**event, "state": "t1"}, event
         # Type
         elif event["type"] == "keydown" and event["title"] == "type" and hasCommandKey(event["description"]):
             return {**event, "state": "ignore"}, event
@@ -107,16 +111,26 @@ def _user_event_finite_state(event, state):
         return {**state, "state": "end"}, event
     elif state["state"] == "cs1":
         if event["type"] == "change" and event["title"] == "type" and event["tagName"] == "SELECT":
-            return {**event, "state": "cs2"}, event
+            description = event["description"].strip()
+            dropdown = " from the \"" + state["description"].strip() + "\"." if state["description"] else "."
+            return {
+                **event,
+                "state": "cs2",
+                "title": "select",
+                "description": "Select \"" + description + "\"" + dropdown
+                }, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "cs2":
         return {**state, "state": "end"}, event
     elif state["state"] == "t1":
-        if event["type"] == "keydown" and event["title"] == "type" and event["description"] == state["description"] and event["tagName"] != "SELECT":
+        if event["type"] == "keydown" and event["title"] == "type" and event["description"] == state["description"] and event["tagName"] != "SELECT" and event["tagName"] != "CHECKBOX":
             return {**state, "state": "t1"}, event
+        elif event["type"] == "change" and event["title"] == "type" and event["tagName"] != "SELECT" and event["tagName"] != "CHECKBOX":
+            return {**event, "state": "t1"}, event
         else:
-            return {**state, "state": "end"}, event
+            description = state["description"] if state["description"] != "" else "Clear content"
+            return {**state, "description": description, "state": "end"}, event
     elif state["state"] == "cp1":
         if event["type"] == "copy" and event["title"] == "copy":
             return {**event, "state": "cp2"}, event
