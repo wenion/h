@@ -161,7 +161,7 @@ class FileManagementService:
             file_path = data["file_path"],
             link = data.get("link", ""),
             userid = data["userid"],
-            access_permissions = data.get("access_permissions", "private"),
+            access_permissions = data["access_permissions"],
             url = data.get("url", ""),
             deleted = 0,
         )

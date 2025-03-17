@@ -115,6 +115,7 @@ def upload(request):
                 "link" : file_full_path,
                 "userid" : userid,
                 "url" : url,
+                "access_permissions": access_permissions,
             }
         )
         if file:
