@@ -64,7 +64,6 @@ def configure(environ=None, settings=None):  # pylint: disable=too-many-statemen
     # Configuration for User root directory
     settings_manager.set("user_root", "USER_ROOT")
     settings_manager.set("user_root_url", "USER_ROOT_URL") # TODO Merge with user root when file management was served
-    settings_manager.set("homepage_url", "HOMEPAGE_URL")
     settings_manager.set("query_url", "QUERY_URL")
     settings_manager.set("tad_url", "TAD_URL")
     settings_manager.set("openai_key", "OPENAI_KEY")

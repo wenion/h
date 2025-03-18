@@ -22,7 +22,7 @@ def links(_context, request):
     oauth_revoke_url = request.route_url("oauth_revoke")
 
     websocket_url = request.registry.settings.get("h.websocket_url")
-    home_url = request.registry.settings.get("homepage_url")
+    home_url = request.registry.settings.get("h.homepage_redirect_url")
 
     return {
         "account.settings": request.route_url("account"),

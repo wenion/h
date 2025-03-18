@@ -419,18 +419,18 @@ def iterate_directory(dir, name, url, depth):
 
 
 # TODO remove
-@api_config(
-    versions=["v1", "v2"],
-    route_name="api.client_url",
-    request_method="GET",
-    link_name="client",
-    description="Get the Client location",
-)
-def client_url(request):
-    return {
-        "base_url": request.registry.settings.get("homepage_url"),
-        "url_string": "",
-    }
+# @api_config(
+#     versions=["v1", "v2"],
+#     route_name="api.client_url",
+#     request_method="GET",
+#     link_name="client",
+#     description="Get the Client location",
+# )
+# def client_url(request):
+#     return {
+#         "base_url": request.registry.settings.get("h.homepage_redirect_url"),
+#         "url_string": "",
+#     }
 
 
 @api_config(
