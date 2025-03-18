@@ -63,6 +63,7 @@ def upload(request):
     size = request.POST.get('size')
     file_type = request.POST.get('type')
     path = request.POST.get('path')
+    access_permissions = request.POST.get('access')
 
     if not filename or not size or not file_type or not path:
         return httpexceptions.HTTPBadRequest()
@@ -115,6 +116,7 @@ def upload(request):
                 "link" : file_full_path,
                 "userid" : userid,
                 "url" : url,
+                "access_permissions": access_permissions,
             }
         )
         if file:
@@ -173,7 +175,7 @@ def update(context: FileManagementContext, request):
     file_management = request.find_service(name="file_management")
 
     update = {}
-    permission = data.get("permission", None)
+    permission = data.get("access", None)
     if permission:
         update["access_permissions"] = permission
 

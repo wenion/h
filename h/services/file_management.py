@@ -36,7 +36,7 @@ class FileManagementService:
             "filePath": filemeta.file_path,
             "url": filemeta.url,
             "userid": filemeta.userid,
-            "permission": filemeta.access_permissions,
+            "access": filemeta.access_permissions,
         }
 
     @staticmethod
