@@ -65,7 +65,7 @@ class Sub(ConsumerMixin):
         wrapped handler.
         """
 
-        self.handler(body, message)
+        self.handler(body)
         message.ack()
 
     @staticmethod

@@ -70,7 +70,7 @@ def task_process_messages(settings, routing_key, work_queue, raise_error=True):
     should never return. If it does, this function will raise an exception.
     """
 
-    def callback(payload, message):
+    def callback(payload):
         message = Topic(routing_key=routing_key, payload=payload)
         try:
             work_queue.put(message, timeout=0.1)
