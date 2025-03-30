@@ -123,9 +123,12 @@ class ShareflowService:
     def get_shareflows_by_session_id(self, id: str):
         shareflow_metadata = self.read_shareflow_metadata_by_session_id(id)
         if shareflow_metadata:
-            shareflows = shareflow_metadata.shareflows
-            # order by
-            # return [self.present_shareflow(shareflow) for shareflow in shareflows]
+            shareflows = (
+                self._db.query(Shareflow)
+                .filter(Shareflow.metadata_ref == shareflow_metadata)
+                .order_by(Shareflow.index, Shareflow.timestamp)
+                .all()
+            )
             return [self.present_shareflow(shareflow) for shareflow in shareflows if not getattr(shareflow, 'deleted', False)]
         else:
             raise InvalidUUID
@@ -137,6 +140,7 @@ class ShareflowService:
         model.update(
             {
                 'id': shareflow.id,
+                'index': shareflow.index,
                 'metadata_id': shareflow.metadata_id,
                 'pk': shareflow.pk,
                 'type': shareflow.type,

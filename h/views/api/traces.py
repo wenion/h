@@ -106,11 +106,13 @@ def update_traces(request):
             "title": item["title"],
             "description": item["description"],
             "url": item["url"],
+            "index": item["index"],
         }
         if shareflow.type != update["type"] or \
             shareflow.title != update["title"] or \
             shareflow.description != update["description"] or \
-            shareflow.url != update["url"]:
+            shareflow.url != update["url"] or \
+            shareflow.index != update["index"]:
             shareflow = shareflow_service.update_shareflow(shareflow, **update)
 
     return shareflow_service.get_shareflows_by_session_id(id)

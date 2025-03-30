@@ -14,6 +14,8 @@ class Shareflow(Base):
     )
     """The value of annotation.id, named here pubid following the convention of group.pubid"""
 
+    index = sa.Column(sa.Integer, nullable=True)
+
     metadata_id = sa.Column(sa.Integer, sa.ForeignKey("shareflow_metadata.id"), nullable=False)
     
     metadata_ref = sa.orm.relationship("ShareflowMetadata", back_populates="shareflows")
