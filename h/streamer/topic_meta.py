@@ -11,8 +11,12 @@ log = logging.getLogger(__name__)
 TRACE_EXCHANGE = "trace"
 TASK_EXCHANGE = "process.task"
 TRACE_TOPIC = "request.user.event"
-PAGE_TOPIC = "request.user.page"
 TASK_TOPIC = "response.user.event"
+
+PULL_EXCHANGE = "pull"
+PUSH_EXCHANGE = "push"
+PULL_TOPIC = "pull.user.tab"
+PUSH_TOPIC = "push.user.tab"
 
 Topic = namedtuple("Topic", ["routing_key", "payload"])
 
@@ -20,9 +24,13 @@ Topic = namedtuple("Topic", ["routing_key", "payload"])
 class TraceTopicPub(Pub):
     def __init__(self, settings):
         super().__init__(settings, TRACE_EXCHANGE)
-    
+
     def send_trace(self, payload):
         self.publish(payload, TRACE_TOPIC)
+
+class PushTopicPub(Pub):
+    def __init__(self, settings):
+        super().__init__(settings, PUSH_EXCHANGE)
     
-    def send_page(self, payload):
-        self.publish(payload, PAGE_TOPIC)
+    def send_push(self, payload):
+        self.publish(payload, PUSH_TOPIC)

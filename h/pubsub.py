@@ -131,4 +131,4 @@ class Pub:
 
 
 def includeme(config):  # pragma: nocover
-    config.add_request_method(Publisher, name="pub", reify=True)
+    config.add_request_method(Pub, name="pub", reify=True)

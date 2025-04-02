@@ -76,6 +76,59 @@ def query(request):
 
     if response.status_code == 200:
         json_data = response.json()
+        context = []
+        """
+            json format:
+            [{"content": str, "title": str, "summary": str, "url": str, "repository": str}, {...}]
+            context format:
+            [{
+                "id": str,
+                "page_content": str,
+                "metadata": {
+                    "id": str,
+                    "heading?": str,
+                    "title": str,
+                    "url": str,
+                    "score": str,
+                    "summary": str,
+                    "highlights": str,
+                    "deleted"?: boolean,
+                    "expired"?: boolean,
+                    "repository": str,
+                },
+                "is_bookmark?": True
+            }, {}]
+        """
+        for index, item in enumerate(json_data):
+            result = {
+                "id": "dsi-"+ str(index),
+                "page_content": "",
+                "metadata": {
+                    "id": "dsi-"+ str(index),
+                    "title": item["title"],
+                    "url": item["url"],
+                    "score": str(0.99 - index*0.01),
+                    "summary": item["summary"],
+                    "highlights": "",
+                    "repository": item["repository"],
+                },
+                "is_bookmark": False
+            }
+            context.append(result)
+        return {
+            'status' : str(response.status_code),
+            'query' : query,
+            'context' : [context]
+        }
+    else:
+        return {
+            'status' : "proxy reverse can't get the response, status code: " + str(response.status_code),
+            'query' : query,
+            'context' : []
+        }
+'''
+    if response.status_code == 200:
+        json_data = response.json()
 
         count = 0
         topics = []
@@ -149,7 +202,7 @@ def query(request):
             'query' : query,
             'context' : []
         }
-
+'''
 
 @api_config(
     versions=["v1", "v2"],

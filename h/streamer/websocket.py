@@ -9,8 +9,8 @@ from gevent.queue import Full
 from ws4py.websocket import WebSocket as _WebSocket
 
 from h.streamer.filter import FILTER_SCHEMA, SocketFilter
-from h.streamer.page_request import handle_web_page
-from h.streamer.topic_meta import TraceTopicPub
+# from h.streamer.page_request import handle_web_page
+from h.streamer.topic_meta import TraceTopicPub, PushTopicPub
 from h.tasks import user_events
 
 log = logging.getLogger(__name__)
@@ -62,6 +62,7 @@ class WebSocket(_WebSocket):
         )
 
         self.pub = TraceTopicPub(environ["h.ws.settings"])
+        self.push = PushTopicPub(environ["h.ws.settings"])
         self.debug = environ["h.ws.debug"]
         self.identity = environ["h.ws.identity"]
 
@@ -94,7 +95,9 @@ class WebSocket(_WebSocket):
                     # TODO Multithreading issues, remove later
                     user_events.add_event.delay(payload)
             elif "messageType" in payload and payload["messageType"] == "PageData":
-                self.pub.send_page(payload)
+                if self.identity:
+                    payload['userid'] = self.identity.user.userid
+                    self.push.send_push(payload)
             else:
                 self._work_queue.put(Message(socket=self, payload=payload), timeout=0.1)
         except Full:  # pragma: no cover
@@ -108,6 +111,7 @@ class WebSocket(_WebSocket):
             log.info("Closed connection code=%s reason=%s", code, reason)
         try:
             self.pub.release()
+            self.push.release()
             self.instances.remove(self)
         except KeyError:
             pass

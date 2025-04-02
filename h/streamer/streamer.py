@@ -48,8 +48,11 @@ def start(event):  # pragma: no cover
         # Start greenlets to process messages from RabbitMQ
         gevent.spawn(messages.process_messages, settings, ANNOTATION_TOPIC, WORK_QUEUE),
         gevent.spawn(messages.process_messages, settings, USER_TOPIC, WORK_QUEUE),
-        # Receive tab and tad messages from RabbitMQ
+        # Receive tad messages from RabbitMQ
         gevent.spawn(topic.task_process_messages, settings, topic.TASK_TOPIC, WORK_QUEUE),
+
+        # Receive tab push messages from RabbitMQ
+        gevent.spawn(topic.pull_process_messages, settings, topic.PULL_TOPIC, WORK_QUEUE),
 
         # Receive trace and tad messages from RabbitMQ
         # gevent.spawn(topic.trace_process_messages, settings, TRACE_TOPIC),

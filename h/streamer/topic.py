@@ -12,7 +12,11 @@ from h.streamer.topic_meta import (
     TASK_EXCHANGE,
     TASK_TOPIC,
     TRACE_EXCHANGE,
-    TRACE_TOPIC
+    TRACE_TOPIC,
+    PULL_EXCHANGE,
+    PULL_TOPIC,
+    PUSH_EXCHANGE,
+    PUSH_TOPIC,
 )
 from h.tasks import user_events
 
@@ -22,6 +26,10 @@ __all__ = (
     "TASK_TOPIC",
     "TRACE_EXCHANGE",
     "TRACE_TOPIC",
+    "PULL_EXCHANGE",
+    "PULL_TOPIC",
+    "PUSH_EXCHANGE",
+    "PUSH_TOPIC",
 )
 
 log = logging.getLogger(__name__)
@@ -71,6 +79,7 @@ def task_process_messages(settings, routing_key, work_queue, raise_error=True):
     """
 
     def callback(payload):
+        payload["source"] = "tad"
         message = Topic(routing_key=routing_key, payload=payload)
         try:
             work_queue.put(message, timeout=0.1)
@@ -83,6 +92,39 @@ def task_process_messages(settings, routing_key, work_queue, raise_error=True):
     consumer = Sub(
         settings,
         TASK_EXCHANGE,
+        routing_key=routing_key,
+        identifier="streamer",
+        callback=callback,
+        )
+    consumer.run()
+
+    if raise_error:
+        raise RuntimeError("Realtime consumer quit unexpectedly!")
+
+
+def pull_process_messages(settings, routing_key, work_queue, raise_error=True):
+    """
+    Configure, start, and monitor a realtime consumer for the specified routing key.
+
+    This sets up a :py:class:`h.realtime.Consumer` to route messages from
+    `routing_key` to the passed `work_queue`, and starts it. The consumer
+    should never return. If it does, this function will raise an exception.
+    """
+
+    def callback(payload):
+        payload["source"] = "tab"
+        message = Topic(routing_key=routing_key, payload=payload)
+        try:
+            work_queue.put(message, timeout=0.1)
+        except Full:  # pragma: no cover
+            log.warning(
+                "Streamer work queue full! Unable to queue message from "
+                "h.realtime having waited 0.1s: giving up."
+            )
+
+    consumer = Sub(
+        settings,
+        PULL_EXCHANGE,
         routing_key=routing_key,
         identifier="streamer",
         callback=callback,
@@ -109,14 +151,20 @@ def handle_message(message, registry, session):
             if socket.identity:
                 userid = socket.identity.user.userid
 
-            # TODO celery delay -> save
-            m = request.find_service(
-                    MessageService
-                ).add_message_cache(
-                    message.payload,
-                    userid,
-                    socket.client_id if userid is None else None,
-                )
+            source = message.payload.get("source")
+            if source == "tad":
+                # TODO celery delay -> save
+                m = request.find_service(
+                        MessageService
+                    ).add_message_cache(
+                        message.payload,
+                        userid,
+                        socket.client_id if userid is None else None,
+                    )
 
-            # push to websocket
-            socket.send_json(m)
+                # push to websocket
+                socket.send_json(m)
+            elif source == "tab":
+                client_id = message.payload.get("client_id")
+                log.info(f"TAB PUSH {client_id} | {userid}")
+                socket.send_json(message.payload)
