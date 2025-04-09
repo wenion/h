@@ -51,11 +51,20 @@ def query(request):
     trace_service = request.find_service(name="trace")
 
     query = request.GET.get("q")
-    url = urljoin(request.registry.settings.get("query_url"), "query")
 
-    params = {
-        'q': query
-    }
+    query_url = request.registry.settings.get("query_url")
+    if not query_url:
+        error_info = "Query URL is missing in settings."
+        log.error(error_info)
+        return {
+            'status' : "500",
+            'query' : query,
+            'context' : []
+        }
+
+    url = urljoin(query_url, "query")
+    params = {'q': query}
+
     trace_service.create_server_event(
         userid,
         "request",
@@ -63,20 +72,22 @@ def query(request):
         query,
         request.url
     )
-    response = requests.get(url, params=params)
-    trace_service.create_server_event(
-        userid,
-        "response",
-        "query",
-        query,
-        request.url
-    )
 
-    authorised_list = get_authorised_list()
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
 
-    if response.status_code == 200:
+        trace_service.create_server_event(
+            userid,
+            "response",
+            "query",
+            query,
+            request.url
+        )
+        authorised_list = get_authorised_list()
+
+        # if response.status_code == 200:
         json_data = response.json()
-        context = []
         """
             json format:
             [{"content": str, "title": str, "summary": str, "url": str, "repository": str}, {...}]
@@ -99,30 +110,32 @@ def query(request):
                 "is_bookmark?": True
             }, {}]
         """
-        for index, item in enumerate(json_data):
-            result = {
-                "id": "dsi-"+ str(index),
+        context = [
+            {
+                "id": f"dsi-{index}",
                 "page_content": "",
                 "metadata": {
-                    "id": "dsi-"+ str(index),
-                    "title": item["title"],
-                    "url": item["url"],
-                    "score": str(0.99 - index*0.01),
-                    "summary": item["summary"],
+                    "id": f"dsi-{index}",
+                    "title": item.get("title", ""),
+                    "url": item.get("url", ""),
+                    "score": str(0.99 - index * 0.01),
+                    "summary": item.get("summary", ""),
                     "highlights": "",
-                    "repository": item["repository"],
+                    "repository": item.get("repository", ""),
                 },
                 "is_bookmark": False
             }
-            context.append(result)
+            for index, item in enumerate(json_data)
+        ]
         return {
             'status' : str(response.status_code),
             'query' : query,
             'context' : [context]
         }
-    else:
+    except requests.exceptions.RequestException as e:
+        log.error(f"Error while querying: {str(e)}")
         return {
-            'status' : "proxy reverse can't get the response, status code: " + str(response.status_code),
+            'status' : str(e),
             'query' : query,
             'context' : []
         }
