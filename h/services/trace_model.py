@@ -8,6 +8,21 @@ def hasCommandKey(main_string):
         "`ArrowRight`",
     ])
 
+def binary_pairs(eg: str, value: bool) -> str:
+    eg = eg.lower()
+    if eg == 'yes' or eg == 'no':
+        return 'Yes' if value else 'No'
+    if eg == 'on' or eg == 'off':
+        return 'On' if value else 'Off'
+    if eg == 'enabled' or eg == 'disabled':
+        return 'Enabled' if value else 'Disabled'
+    if eg == 'enable' or eg == 'disable':
+        return 'Enable' if value else 'Disable'
+    if eg == 'pass' or eg == 'fail':
+        return 'Pass' if value else 'Fail'
+    if eg == 'include' or eg == 'exclude':
+        return 'Include' if value else 'Exclude'
+
 def _user_event_finite_state(event, state):
     if state["state"] == "init":
         # Ignore
@@ -100,6 +115,8 @@ def _user_event_finite_state(event, state):
             return {**state, "state": "rc1"}, event
         elif event["type"] == "submit":
             return {**event, "clientX": state["clientX"], "clientY": state["clientY"], "state": "end"}, event
+        elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX":
+            return {**event, "state": "cb1", "payload": state['description']}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "c7":
@@ -108,7 +125,27 @@ def _user_event_finite_state(event, state):
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "cb1":
-        return {**state, "state": "end"}, event
+        value = None
+        name = None
+        interaction_context = state['interaction_context']
+        if interaction_context:
+            if 'name' in interaction_context:
+                name = str(interaction_context['name'])
+            if 'value' in interaction_context:
+                if state['payload'] and isinstance(interaction_context['value'], bool):
+                    value = binary_pairs(state['payload'], interaction_context['value'])
+                else:
+                    value = str(interaction_context['value'])
+
+        if name and value:
+            description = "Select \"" + value + "\" for the \"" + name + "\" option."
+            return {**state, "title": "select", "description": description, "state": "end"}, event
+        elif value and not name:
+            description = "Select \"" + value + "\""
+            return {**state, "title": "select", "description": description, "state": "end"}, event
+        else:
+            description = "Select the \"" + state['description'] + "\" option."
+            return {**state, "title": "select", "state": "end"}, event
     elif state["state"] == "cs1":
         if event["type"] == "change" and event["title"] == "type" and event["tagName"] == "SELECT":
             description = event["description"].strip()
@@ -193,6 +230,7 @@ def address_events(events):
 
     for item in better:
         if item['id'] not in seen_ids:
+            item.pop('interaction_context')
             unique_data.append(item)
             seen_ids.add(item['id'])
 

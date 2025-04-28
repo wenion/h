@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import json
 import pytz
 
 from h.models_redis import UserEvent
@@ -87,8 +88,19 @@ class TraceService:
     @staticmethod
     def basic_user_event(item):
         image_src = None
-        if item.image and item.image != '':
-            image_src = item.pk
+        if getattr(item, 'image', None):  # safer check for attribute
+            image_src = getattr(item, 'pk', None)  # ensure pk exists
+
+        if isinstance(getattr(item, 'interaction_context', None), str):
+            try:
+                item.interaction_context = json.loads(item.interaction_context)
+            except json.JSONDecodeError as e:
+                item.interaction_context = None
+            except:
+                item.interaction_context = None
+        else:
+            item.interaction_context = None
+
         return {
             'id': item.pk,
             'pk': item.pk,
@@ -97,6 +109,7 @@ class TraceService:
             'description': item.label,
             'timestamp': item.timestamp,
             'tagName': item.tag_name,
+            'interaction_context': item.interaction_context,
             # 'textContent': item.text_content,
             'width': item.width,
             'height': item.height,
