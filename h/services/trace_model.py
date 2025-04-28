@@ -165,6 +165,8 @@ def _user_event_finite_state(event, state):
             return {**state, "state": "t1"}, event
         elif event["type"] == "change" and event["title"] == "type" and event["tagName"] != "SELECT" and event["tagName"] != "CHECKBOX":
             return {**event, "state": "t1"}, event
+        elif event["type"] == "scroll":
+            return {**state, "state": "t1"}, event
         else:
             description = state["description"] if state["description"] != "" else "Clear content"
             return {**state, "description": description, "state": "end"}, event
@@ -199,6 +201,7 @@ def _user_event_finite_state(event, state):
             return {**event, "state": "ignore"}, event
     else:
         return state, event
+
 
 def address_events(events):
     if not len(events):
