@@ -74,7 +74,7 @@ def query(request):
     )
 
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
 
         trace_service.create_server_event(
