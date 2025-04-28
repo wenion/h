@@ -175,6 +175,8 @@ class TraceService:
         data['system_time'] = datetime.now(timezone.utc)
         trace = UserEvent(**data)
         trace.save()
+        if not data['session_id']:
+            trace.expire(24 * 60 * 60)
         return TraceService.user_event(trace)
 
     @staticmethod
