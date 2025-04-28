@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from h.db.types import InvalidUUID
 from h.models import Shareflow, ShareflowMetadata, ShareflowImage, User
+from h.models_redis import get_user_role_by_userid
 from h.services.exceptions import ValidationError
 from h.services.user import UserService
 
@@ -178,14 +179,17 @@ class ShareflowService:
         startstamp = int(shareflow_metadata.startstamp.timestamp() * 1000) if shareflow_metadata.startstamp else None
         endstamp = int(shareflow_metadata.endstamp.timestamp() * 1000) if shareflow_metadata.endstamp else None
 
+        userid = shareflow_metadata.user.userid
+        user_role = get_user_role_by_userid(userid)
+
         model.update(
             {
                 "id": shareflow_metadata.pk, # id: set as pk
                 "description": shareflow_metadata.description,
                 "pk": shareflow_metadata.pk,
-                "role": shareflow_metadata.description,
+                "role": user_role.teaching_role,
                 "timestamp": startstamp,
-                "userid": shareflow_metadata.user.userid,
+                "userid": userid,
                 "taskName": shareflow_metadata.task_name,
                 "sessionId": shareflow_metadata.session_id,
                 "groupid": shareflow_metadata.groupid,
