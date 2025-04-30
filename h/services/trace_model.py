@@ -242,6 +242,7 @@ def address_events(events):
     for item in better:
         if item['id'] not in seen_ids:
             item.pop('interaction_context')
+            item.pop('payload',None)
             unique_data.append(item)
             seen_ids.add(item['id'])
 
