@@ -122,7 +122,7 @@ def _user_event_finite_state(event, state):
         elif event["type"] == "submit":
             return {**event, "clientX": state["clientX"], "clientY": state["clientY"], "state": "end"}, event
         elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX":
-            return {**event, "state": "cb1", "payload": state['description']}, event
+            return {**event, "state": "cb1", "image": state["image"],"payload": state["description"]}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "c2":
