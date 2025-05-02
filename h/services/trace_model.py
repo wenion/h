@@ -142,8 +142,9 @@ def _user_event_finite_state(event, state):
             if 'name' in interaction_context:
                 name = str(interaction_context['name'])
             if 'value' in interaction_context:
-                if state['payload'] and isinstance(interaction_context['value'], bool):
-                    value = binary_pairs(state['payload'], interaction_context['value'])
+                payload = state.get('payload', None)
+                if payload and isinstance(interaction_context['value'], bool):
+                    value = binary_pairs(payload, interaction_context['value'])
                 else:
                     value = str(interaction_context['value'])
 
