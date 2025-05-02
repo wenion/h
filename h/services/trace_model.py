@@ -51,6 +51,8 @@ def _user_event_finite_state(event, state):
             return {**event, "state": "ignore"}, event
         # Change
         elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX":
+            if state.get("type") == "pointerdown":
+                return {**event, "title": "click", "state": "cb1", "payload": state["description"]}, event
             return {**event, "title": "click", "state": "cb1"}, event
         elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "SELECT":
             return {**event, "title": "select", "state": "cs1", "description": None}, event
@@ -121,8 +123,8 @@ def _user_event_finite_state(event, state):
             return {**state, "state": "rc1"}, event
         elif event["type"] == "submit":
             return {**event, "clientX": state["clientX"], "clientY": state["clientY"], "state": "end"}, event
-        elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX":
-            return {**event, "state": "cb1", "image": state["image"],"payload": state["description"]}, event
+        # elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX":
+        #     return {**event, "state": "cb1", "image": state["image"],"payload": state["description"]}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "c2":
@@ -135,7 +137,7 @@ def _user_event_finite_state(event, state):
     elif state["state"] == "cb1":
         value = None
         name = None
-        interaction_context = state['interaction_context']
+        interaction_context = state.get('interaction_context', None)
         if interaction_context:
             if 'name' in interaction_context:
                 name = str(interaction_context['name'])
@@ -242,7 +244,7 @@ def address_events(events):
     for item in better:
         if item['id'] not in seen_ids:
             item.pop('interaction_context')
-            item.pop('payload',None)
+            item.pop('payload', None)
             unique_data.append(item)
             seen_ids.add(item['id'])
 
