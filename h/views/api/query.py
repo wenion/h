@@ -110,23 +110,7 @@ def query(request):
                 "is_bookmark?": True
             }, {}]
         """
-        context = [
-            {
-                "id": f"dsi-{index}",
-                "page_content": "",
-                "metadata": {
-                    "id": f"dsi-{index}",
-                    "title": item.get("title", ""),
-                    "url": item.get("url", ""),
-                    "score": str(0.99 - index * 0.01),
-                    "summary": item.get("summary", ""),
-                    "highlights": "",
-                    "repository": item.get("repository", ""),
-                },
-                "is_bookmark": False
-            }
-            for index, item in enumerate(json_data)
-        ]
+        context = json_data["context"][0]
         return {
             'status' : str(response.status_code),
             'query' : query,
