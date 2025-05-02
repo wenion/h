@@ -62,7 +62,7 @@ def query(request):
             'context' : []
         }
 
-    url = urljoin(query_url, "query")
+    url = urljoin(query_url if query_url.endswith("/") else query_url + "/", "query")
     params = {'q': query}
 
     trace_service.create_server_event(
@@ -74,7 +74,7 @@ def query(request):
     )
 
     try:
-        response = requests.get(url, params=params, timeout=10)
+        response = requests.post(url, params=params, timeout=10)
         response.raise_for_status()
 
         trace_service.create_server_event(
