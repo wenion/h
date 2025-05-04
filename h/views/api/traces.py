@@ -18,7 +18,6 @@ from pyramid import i18n
 from pyramid.httpexceptions import HTTPBadRequest
 
 from h.security import Permission
-from h.services.trace_model import address_events
 from h.traversal import UserEventContext
 from h.views.api.config import api_config
 from h.views.api.exceptions import PayloadError
@@ -36,15 +35,7 @@ _ = i18n.TranslationStringFactory(__package__)
 )
 def traces(request):
     """Retrieve the traces for this request's user event record."""
-    id = request.GET.get('id')
-    if id is None:
-        return HTTPBadRequest()
-    userid = request.authenticated_userid
-
-    # result = request.find_service(name="trace").get_user_trace(userid, id)
-    # if not len(result):
-    result = request.find_service(name="trace").get_traces_by_session_id(id)
-    return address_events(result)
+    return get_traces(request)
 
 
 @api_config(
@@ -62,8 +53,15 @@ def get_traces(request):
     if id is None:
         return HTTPBadRequest()
 
-    result = request.find_service(name="shareflow").get_shareflows_by_session_id(id)
-    return result
+    service = request.find_service(name="shareflow")
+    shareflow_metadata = service.get_shareflow_metadata_by_session_id(id)
+
+    all = service.get_shareflows(shareflow_metadata)
+
+    return [
+        service.present_shareflow_for_user(shareflow)
+        for shareflow in all
+    ]
 
 
 @api_config(
@@ -154,3 +152,19 @@ def _json_payload(request):
         return request.json_body
     except ValueError as err:
         raise PayloadError() from err
+
+def create_validate(request, data):
+    try:
+        new_appstruct = {}
+
+        new_appstruct["userid"] = request.authenticated_userid
+        new_appstruct["index"] = data["index"]
+        new_appstruct["title"] = data["title"]
+        new_appstruct["description"] = data["description"]
+        new_appstruct["url"] = data["url"]
+    except Exception as e:
+        raise HTTPBadRequest
+
+    # TODO
+    # timezone
+    return new_appstruct

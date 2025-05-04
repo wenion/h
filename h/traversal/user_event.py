@@ -15,10 +15,10 @@ class UserEventRoot:
 
     def __init__(self, request):
         self._request = request
-        self._shareflow_service = request.find_service(name="shareflow")
+        self._service = request.find_service(name="shareflow")
 
     def __getitem__(self, id):
-        shareflow = self._shareflow_service.get_trace_by_id(id)
+        shareflow = self._service.get_shareflow_by_id(id)
 
         if shareflow is None:
             raise KeyError()

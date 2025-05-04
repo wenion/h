@@ -1,9 +1,7 @@
 from datetime import datetime, timezone
 import json
 import pytz
-
 from h.models_redis import UserEvent
-from h.services.record_item import RecordItemService
 
 
 class TraceService:
@@ -77,13 +75,43 @@ class TraceService:
         return UserEvent.find(UserEvent.userid == userid).count()
 
     @staticmethod
-    def get_trace_by_id(id):
+    def get_image_data_by_pk(pk):
         try:
-          item = UserEvent.get(id)
+          item = UserEvent.get(pk)
         except:
             return None
         else:
-            return item
+            return item.image
+
+    @staticmethod
+    def to_trace_data(item: UserEvent):
+        timestamp = datetime.fromtimestamp(item.timestamp / 1000, tz=timezone.utc)
+
+        interaction_context = None
+        if isinstance(getattr(item, 'interaction_context', None), str):
+            try:
+                interaction_context = json.loads(item.interaction_context)
+            except json.JSONDecodeError as e:
+                interaction_context = None
+            except:
+                interaction_context = None
+
+        image_pk = item.pk if getattr(item, 'image', None) else None
+        return {
+            'pk': item.pk,
+            'type': item.event_type,
+            'title': item.action_type,
+            'description': item.label,
+            'tag_name': item.tag_name,
+            'width': item.width,
+            'height': item.height,
+            'client_x': item.offset_x,
+            'client_y': item.offset_y,
+            'url': item.base_url,
+            'timestamp': timestamp,
+            'interaction_context': interaction_context,
+            'image': image_pk,
+        }
 
     @staticmethod
     def basic_user_event(item):
@@ -180,43 +208,18 @@ class TraceService:
         return TraceService.user_event(trace)
 
     @staticmethod
-    def get_traces_by_session_id(id):
-        query = UserEvent.find(UserEvent.session_id == id)
+    def get_traces_by_session_id_sorted(session_id: str):
+        query = UserEvent.find(UserEvent.session_id == session_id)
         user_events = query.sort_by('timestamp').execute(exhaust_results=True)
 
-        json_events = []
-        for index, item in enumerate(user_events):
-            json_item = {
-                'index': index,
-                **TraceService.basic_user_event(item),
+        events = []
+        for item in user_events:
+            item_dict = {
+                **TraceService.to_trace_data(item),
             }
-            json_events.append(json_item)
+            events.append(item_dict)
 
-        return json_events
-
-    @staticmethod
-    def get_user_trace(userid, id):
-        record_item = RecordItemService.get_record_item_by_id(id)
-
-        user_events = []
-
-        if record_item:
-            query = UserEvent.find(
-                (UserEvent.userid == userid) &
-                (UserEvent.timestamp >= record_item.startstamp) &
-                (UserEvent.timestamp <= record_item.endstamp + 100)
-            )
-            user_events = query.sort_by("timestamp").execute(exhaust_results=True)
-
-        json_events = []
-        for index, item in enumerate(user_events):
-            json_item = {
-                'index': index,
-                **TraceService.basic_user_event(item),
-            }
-            json_events.append(json_item)
-
-        return json_events
+        return events
 
 
 def trace_factory(_context, request):

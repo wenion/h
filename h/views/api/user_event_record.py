@@ -21,6 +21,7 @@ from h.traversal import UserEventRecordContext
 from h.views.api.config import api_config
 from h.views.api.exceptions import PayloadError
 from h.tasks import shareflow
+from h.util.datetime import timestamp_ms_to_utc
 
 _ = i18n.TranslationStringFactory(__package__)
 
@@ -66,14 +67,18 @@ def update_trackings(request):
 )
 def recordings(request):
     """Retrieve the groups for this request's user."""
-    userid = request.authenticated_userid if request.authenticated_userid else ""
+    userid = request.authenticated_userid
 
-    all = request.find_service(name="shareflow").json_shareflow_metadata_search_query(
+    service = request.find_service(name="shareflow")
+
+    all = service.get_shareflow_metadata_list(
         userid = userid,
         shared = True
     )
-
-    return all
+    return [
+        service.present_shareflow_meta_for_user(shareflow_metadata)
+        for shareflow_metadata in all
+    ]
 
 
 @api_config(
@@ -86,25 +91,25 @@ def recordings(request):
 )
 def create(request):
     """Create an record from the POST payload."""
-    payload = _json_payload(request)
-    data = create_validate(request, payload)
+    payload = _validate(request)
+    userid = request.authenticated_userid
 
     # TODO remove
-    redis_data = create_redis_validate(request, payload)
-    record_item = request.find_service(name="record_item").init_user_event_record(redis_data)
+    redis_data = create_redis_validate(payload, userid)
+    record_item_service = request.find_service(name="record_item")
+    record_item = record_item_service.init_user_event_record(redis_data)
 
-    shareflow_service = request.find_service(name="shareflow")
-    shareflow_metadata = shareflow_service.create_shareflow_metadata({
-        **data,
-        # withdraw the frontend's sessionId
-        "session_id": record_item.get("id", None),
-        "pk": record_item.get("id", None), # refer to record_item which stored in redis
-    })
+    service = request.find_service(name="shareflow")
+    shareflow_metadata = service.create_shareflow_metadata_from_record(
+        record_item,
+        userid,
+        timestamp_ms_to_utc(payload['startstamp'])
+    )
 
     request.session.flash(shareflow_metadata.session_id, "recordingSessionId")
     request.session.flash(shareflow_metadata.task_name, "recordingTaskName")
 
-    return shareflow_service.present(shareflow_metadata)
+    return service.present_shareflow_meta_for_user(shareflow_metadata)
 
 
 @api_config(
@@ -116,10 +121,10 @@ def create(request):
     description="Fetch an recording",
 )
 def read(context: UserEventRecordContext, request):
-    user_event_record = context.user_event_record
-    return request.find_service(name="record_item").basic_record_item_by_id(
-        user_event_record
-    )
+    shareflow_metadata = context.shareflow_metadata
+    service = request.find_service(name="shareflow")
+
+    return service.present_shareflow_meta_for_user(shareflow_metadata)
 
 
 @api_config(
@@ -132,18 +137,27 @@ def read(context: UserEventRecordContext, request):
 )
 def update(context: UserEventRecordContext, request):
     """Update the specified annotation with data from the PATCH payload."""
-    data = _json_payload(request)
-    shareflow_metadata = context.shareflow_metadata
+    metadata = context.shareflow_metadata
+    command = _json_payload(request)
 
     service = request.find_service(name="shareflow")
-    updated = service.update_shareflow_metadata(data, shareflow_metadata)
-    json_reply =service.present(updated)
 
-    if 'endstamp' in data:
+    if 'endstamp' in command:
         request.session.pop_flash("recordingSessionId")
         request.session.pop_flash("recordingTaskName")
-        shareflow.add_shareflow_metadata.delay(json_reply)
-    return json_reply
+        endstamp = command.pop("endstamp", None)
+        if endstamp and isinstance(endstamp, int):
+            metadata.endstamp = timestamp_ms_to_utc(endstamp)
+            # generate shareflow
+            shareflow.generate_shareflows.delay(metadata.session_id)
+        else:
+            raise PayloadError()
+    elif 'regenerate' in command:
+        shareflow.regenerate_shareflows.delay(metadata.session_id)
+    elif 'shared' in command and isinstance(command['shared'], bool):
+        metadata.shared = command.pop('shared')
+
+    return service.present_shareflow_meta_for_user(metadata)
 
 
 @api_config(
@@ -173,31 +187,29 @@ def _json_payload(request):
     except ValueError as err:
         raise PayloadError() from err
 
+def _validate(request):
+    payload = _json_payload(request)
 
-def create_validate(request, data):
+    required_fields = [
+        "startstamp", "sessionId", "taskName", "backdate", "description"
+    ]
+    missing_fields = [
+        field for field in required_fields if field not in payload
+    ]
+    if missing_fields:
+        raise PayloadError()
+    return payload
+
+def create_redis_validate(data, userid):
     new_appstruct = {}
 
-    new_appstruct["userid"] = request.authenticated_userid
-    new_appstruct["startstamp"] = data["startstamp"]
-    new_appstruct["session_id"] = data["sessionId"]
-    new_appstruct["task_name"] = data["taskName"]
-    new_appstruct["backdate"] = data["backdate"]
-    new_appstruct["description"] = data["description"]
-
-    # TODO
-    # timezone
-    return new_appstruct
-
-def create_redis_validate(request, data):
-    new_appstruct = {}
-
-    new_appstruct["userid"] = request.authenticated_userid
+    new_appstruct["userid"] = userid
     new_appstruct["startstamp"] = data["startstamp"]
     new_appstruct["endstamp"] = -1
     new_appstruct["session_id"] = data["sessionId"]
     new_appstruct["task_name"] = data["taskName"]
     new_appstruct["description"] = data["description"]
-    # new_appstruct["target_uri"] = data["targetUri"]
+    new_appstruct["target_uri"] = ''
     new_appstruct["backdate"] = data["backdate"]
     new_appstruct["completed"] = 0
     new_appstruct["groupid"] = ''

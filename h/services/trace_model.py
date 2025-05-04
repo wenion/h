@@ -28,11 +28,11 @@ def _user_event_finite_state(event, state):
         # Ignore
         if event["title"] == "push":
             return {**event, "state": "ignore"}, event
-        elif event["type"] == "pointerdown" and event["title"] == "click" and event["tagName"] == "HYPOTHESIS-SIDEBAR":
+        elif event["type"] == "pointerdown" and event["title"] == "click" and event["tag_name"] == "HYPOTHESIS-SIDEBAR":
             return {**event, "state": "ignore"}, event
-        elif event["type"] == "client" and event["title"] == "click" and event["tagName"] == "EXPERT-TRACE_CLOSE":
+        elif event["type"] == "client" and event["title"] == "click" and event["tag_name"] == "EXPERT-TRACE_CLOSE":
             return {**event, "state": "ignore"}, event
-        elif event["tagName"] == "HYPOTHESIS-ADDER":
+        elif event["tag_name"] == "HYPOTHESIS-ADDER":
             return {**event, "state": "ignore"}, event
         elif event["title"] == "click" and event["type"] == "client":
             return {**event, "state": "ignore"}, event
@@ -41,22 +41,22 @@ def _user_event_finite_state(event, state):
         elif event["type"] == "mouseup" and event["title"] == "select":
             return {**event, "state": "ignore"}, event
         # Nav
-        elif event["tagName"] == "Navigate":
+        elif event["tag_name"] == "Navigate":
             return {**event, "state": "n1"}, event
-        elif event["tagName"] == "Switch":
+        elif event["tag_name"] == "Switch":
             return {**event, "state": "n1"}, event
-        elif event["tagName"] == "RECORD" and event["description"] == "start":
+        elif event["tag_name"] == "RECORD" and event["description"] == "start":
             return {**event, "state": "ignore"}, event
-        elif event["tagName"] == "RECORD" and event["description"] == "finish":
+        elif event["tag_name"] == "RECORD" and event["description"] == "finish":
             return {**event, "state": "ignore"}, event
         # Change
-        elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX":
+        elif event["type"] == "change" and event["title"] == "type" and event["tag_name"] == "CHECKBOX":
             if state.get("type") == "pointerdown":
                 return {**event, "title": "click", "state": "cb1", "payload": state["description"]}, event
             return {**event, "title": "click", "state": "cb1"}, event
-        elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "SELECT":
+        elif event["type"] == "change" and event["title"] == "type" and event["tag_name"] == "SELECT":
             return {**event, "title": "select", "state": "cs1", "description": None}, event
-        elif event["type"] == "change" and event["title"] == "type" and event["tagName"] != "SELECT" and event["tagName"] != "CHECKBOX":
+        elif event["type"] == "change" and event["title"] == "type" and event["tag_name"] != "SELECT" and event["tag_name"] != "CHECKBOX":
             return {**event, "state": "t1"}, event
         # Type
         elif event["type"] == "keydown" and event["title"] == "type" and hasCommandKey(event["description"]):
@@ -75,7 +75,7 @@ def _user_event_finite_state(event, state):
             return {**event, "state": "ps2"}, event
         # Select/Click text
         elif event.get("type") == "pointerdown" and event.get("title") == "click":
-            tag = event.get("tagName")
+            tag = event.get("tag_name")
             if tag == "SELECT":
                 return {**event, "state": "cs1"}, event
             elif tag == "CHECKBOX":
@@ -89,48 +89,48 @@ def _user_event_finite_state(event, state):
     elif state["state"] == "i":
         return {**state, "state": "end"}, event
     elif state["state"] == "n1":
-        if event["tagName"] == "Navigate" and event["url"] == state["url"]:
+        if event["tag_name"] == "Navigate" and event["url"] == state["url"]:
             return {**event, "state": "n1"}, event
-        elif event["tagName"] == "Navigate" and event["url"] != state["url"]:
+        elif event["tag_name"] == "Navigate" and event["url"] != state["url"]:
             return {**event, "state": "n2"}, event
-        elif event["tagName"] == "Switch" and event["url"] == state["url"]:
+        elif event["tag_name"] == "Switch" and event["url"] == state["url"]:
             return {**event, "state": "n1"}, event
-        elif event["tagName"] == "Switch" and event["url"] != state["url"]:
+        elif event["tag_name"] == "Switch" and event["url"] != state["url"]:
             return {**event, "state": "n2"}, event
-        elif event["tagName"] == "RECORD" and event["description"] == "start":
+        elif event["tag_name"] == "RECORD" and event["description"] == "start":
             return {**state, "state": "n1"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "n2":
-        if event["tagName"] == "Navigate" and event["url"] == state["url"]:
+        if event["tag_name"] == "Navigate" and event["url"] == state["url"]:
             return {**event, "state": "n2"}, event
-        elif event["tagName"] == "Navigate" and event["url"] != state["url"]:
+        elif event["tag_name"] == "Navigate" and event["url"] != state["url"]:
             return {**event, "state": "n1"}, event
-        elif event["tagName"] == "Switch" and event["url"] == state["url"]:
+        elif event["tag_name"] == "Switch" and event["url"] == state["url"]:
             return {**event, "state": "n2"}, event
-        elif event["tagName"] == "Switch" and event["url"] != state["url"]:
+        elif event["tag_name"] == "Switch" and event["url"] != state["url"]:
             return {**event, "state": "n1"}, event
-        elif event["tagName"] == "RECORD" and event["description"] == "start":
+        elif event["tag_name"] == "RECORD" and event["description"] == "start":
             return {**state, "state": "n2"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "c1":
         if event["type"] == "mouseup" and event["title"] == "select":
             return {**event, "state": "end"}, event
-        elif event["type"] == "pointerdown" and event["title"] == "click" and event["tagName"] != "SELECT" and event["description"] == state["description"]:
+        elif event["type"] == "pointerdown" and event["title"] == "click" and event["tag_name"] != "SELECT" and event["description"] == state["description"]:
             return {**event, "state": "c1"}, event
         elif event["type"] == "contextmenu":
             return {**state, "state": "rc1"}, event
         elif event["type"] == "submit":
-            return {**event, "clientX": state["clientX"], "clientY": state["clientY"], "state": "end"}, event
-        # elif event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX":
+            return {**event, "client_x": state["client_x"], "client_y": state["client_y"], "state": "end"}, event
+        # elif event["type"] == "change" and event["title"] == "type" and event["tag_name"] == "CHECKBOX":
         #     return {**event, "state": "cb1", "image": state["image"],"payload": state["description"]}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "c2":
         return {**state, "state": "end"}, event
     elif state["state"] == "c7":
-        if event["type"] == "change" and event["title"] == "type" and event["tagName"] == "CHECKBOX" and event["description"] == state["description"]:
+        if event["type"] == "change" and event["title"] == "type" and event["tag_name"] == "CHECKBOX" and event["description"] == state["description"]:
             return {**state, "title": "click", "state": "cb1"}, event
         else:
             return {**state, "state": "end"}, event
@@ -158,7 +158,7 @@ def _user_event_finite_state(event, state):
             description = "Select the \"" + state['description'] + "\" option."
             return {**state, "title": "select", "state": "end"}, event
     elif state["state"] == "cs1":
-        if event["type"] == "change" and event["title"] == "type" and event["tagName"] == "SELECT":
+        if event["type"] == "change" and event["title"] == "type" and event["tag_name"] == "SELECT":
             description = event["description"].strip()
             dropdown = " from the \"" + state["description"].strip() + "\"." if state["description"] else "."
             return {
@@ -172,9 +172,9 @@ def _user_event_finite_state(event, state):
     elif state["state"] == "cs2":
         return {**state, "state": "end"}, event
     elif state["state"] == "t1":
-        if event["type"] == "keydown" and event["title"] == "type" and event["description"] == state["description"] and event["tagName"] != "SELECT" and event["tagName"] != "CHECKBOX":
+        if event["type"] == "keydown" and event["title"] == "type" and event["description"] == state["description"] and event["tag_name"] != "SELECT" and event["tag_name"] != "CHECKBOX":
             return {**state, "state": "t1"}, event
-        elif event["type"] == "change" and event["title"] == "type" and event["tagName"] != "SELECT" and event["tagName"] != "CHECKBOX":
+        elif event["type"] == "change" and event["title"] == "type" and event["tag_name"] != "SELECT" and event["tag_name"] != "CHECKBOX":
             return {**event, "state": "t1"}, event
         elif event["type"] == "scroll":
             return {**state, "state": "t1"}, event
@@ -243,10 +243,10 @@ def address_events(events):
     unique_data = []
 
     for item in better:
-        if item['id'] not in seen_ids:
+        if item['pk'] not in seen_ids:
             item.pop('interaction_context')
             item.pop('payload', None)
             unique_data.append(item)
-            seen_ids.add(item['id'])
+            seen_ids.add(item['pk'])
 
     return unique_data

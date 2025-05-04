@@ -63,7 +63,8 @@ class RecordItemService:
         """Create an user event record."""
         user_event_record = UserEventRecord(**data)
         user_event_record.save()
-        return RecordItemService.basic_record_item(user_event_record)
+        return user_event_record
+        # return RecordItemService.basic_record_item(user_event_record)
 
     @staticmethod
     def finish_user_event_record(id, endstamp):
@@ -72,7 +73,8 @@ class RecordItemService:
         user_event_record.endstamp = endstamp
         user_event_record.completed = 1
         user_event_record.save()
-        return RecordItemService.basic_record_item(user_event_record)
+        return user_event_record
+        # return RecordItemService.basic_record_item(user_event_record)
 
     @staticmethod
     def share_user_event_record(id, shared):
