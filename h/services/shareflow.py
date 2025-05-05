@@ -65,7 +65,7 @@ class ShareflowService:
         self,
         shareflow_metadata: ShareflowMetadata,
         version: int,
-    ):
+    ) -> List[Shareflow]:
         session_id = shareflow_metadata.session_id
         user = shareflow_metadata.user
 
@@ -139,7 +139,7 @@ class ShareflowService:
         index: Optional[int],
         version: Optional[int],
         shareflow_image: Optional[ShareflowImage]
-    ) -> dict:
+    ) -> Shareflow:
         data["user"] = user
         data["metadata_ref"] = shareflow_metadata
         if index:
@@ -153,20 +153,6 @@ class ShareflowService:
         self._db.add(shareflow)
         return shareflow
 
-    def update_shareflow(self, shareflow, **kwargs):
-        for key, value in kwargs.items():
-            try:
-                setattr(shareflow, key, value)
-            except ValueError as err:
-                raise ValidationError(err) from err
-
-        try:
-            self._db.flush()
-        except SQLAlchemyError as err:
-            raise
-
-        return shareflow
-    
     def get_shareflow_by_id(self, id: str) -> Shareflow:
         shareflow = (
             self._db.query(Shareflow)
@@ -189,22 +175,6 @@ class ShareflowService:
             raise
 
         return shareflow
-    
-    def get_shareflows_by_session_id(self, id: str):
-        shareflow_metadata = self.get_shareflow_metadata_by_session_id(id)
-        if shareflow_metadata:
-            shareflows = (
-                self._db.query(Shareflow)
-                .filter(
-                    Shareflow.metadata_ref == shareflow_metadata,
-                    Shareflow.deleted.isnot(True)
-                )
-                .order_by(Shareflow.index, Shareflow.timestamp)
-                .all()
-            )
-            return shareflows
-        else:
-            raise InvalidUUID
 
     def get_shareflows(self, shareflow_metadata: ShareflowMetadata):
         shareflows = (
@@ -251,17 +221,11 @@ class ShareflowService:
 
         return model
 
-    def read_shareflow_by_id(self, id_: str):
-        try:
-            return self._db.get(Shareflow, id_)
-        except InvalidUUID:
-            return None
-
     def get_shareflow_metadata_by_session_id(self, session_id):
         query = self._db.query(ShareflowMetadata).filter(
             ShareflowMetadata.session_id == session_id
         )
-        
+
         return query.one_or_none()
 
     @staticmethod
@@ -357,7 +321,7 @@ class ShareflowService:
                 ShareflowMetadata.user_id == userid
             )
         return query.all()
-    
+
     def delete_shareflow_metadata(self, shareflow_metadata):
         self._db.delete(shareflow_metadata)
 

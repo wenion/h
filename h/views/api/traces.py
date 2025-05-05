@@ -1,17 +1,17 @@
 """
-HTTP/REST API for storage and retrieval of annotation data.
+HTTP/REST API for storage and retrieval of shareflow data.
 
 This module contains the views which implement our REST API, mounted by default
 at ``/api``. Currently, the endpoints are limited to:
 
-- basic CRUD (create, read, update, delete) operations on annotations
-- annotation search
+- basic CRUD (create, read, update, delete) operations on shareflows
+- shareflow search
 - a handful of authentication related endpoints
 
 It is worth noting up front that in general, authorization for requests made to
 each endpoint is handled outside of the body of the view functions. In
 particular, requests to the CRUD API endpoints are protected by the Pyramid
-authorization system. You can find the mapping between annotation "permissions"
+authorization system. You can find the mapping between shareflow "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
 from pyramid import i18n
@@ -21,6 +21,7 @@ from h.security import Permission
 from h.traversal import UserEventContext
 from h.views.api.config import api_config
 from h.views.api.exceptions import PayloadError
+from h.util.datetime import timestamp_ms_to_utc
 
 _ = i18n.TranslationStringFactory(__package__)
 
@@ -77,43 +78,61 @@ def update_traces(request):
     if id is None:
         return HTTPBadRequest()
     payload = _json_payload(request)
-
-    shareflow_service = request.find_service(name="shareflow")
-    pre = shareflow_service.get_shareflows_by_session_id(id)
     cur = payload.values()
 
-    ids_pre = {item["id"] for item in pre}
+    service = request.find_service(name="shareflow")
+    shareflow_metadata = service.get_shareflow_metadata_by_session_id(id)
+    shareflow_metadata.version = shareflow_metadata.version + 1
+    pre = service.get_shareflows(shareflow_metadata)
+
+    ids_pre = {item.id for item in pre}
     ids_cur = {item["id"] for item in cur}
     ids_com = ids_pre & ids_cur
 
-    remove = [item for item in pre if item['id'] not in ids_cur]
-    append = [item for item in cur if item['id'] not in ids_pre]
-    both = [item for item in cur if item['id'] in ids_com]
+    remove = [item for item in pre if item.id not in ids_cur]
+    append = [item for item in cur if item["id"] not in ids_pre]
+    both = [item for item in cur if item["id"] in ids_com]
 
     for item in remove:
-        shareflow = shareflow_service.read_shareflow_by_id(item["id"])
-        shareflow_service.delete_shareflow(shareflow)
+        shareflow = service.get_shareflow_by_id(item.id)
+        service.delete_shareflow(shareflow)
 
     if len(append):
-        pass
+        for trace in append:
+            requirements = [
+                'index', 'pk', 'type', 'title', 'description', 'timestamp',
+                'tag_name', 'width', 'height', 'client_x', 'client_y', 'url',
+                'version', 'metadata_id', 'image_id', 'user_id',
+            ]
+            filtered_data = {key: trace[key] for key in requirements if key in trace}
+
+            filtered_data['timestamp'] = timestamp_ms_to_utc(filtered_data['timestamp'])
+            filtered_data['tag_name'] = 'CLIENT'
+
+            user = shareflow_metadata.user
+            service.create_shareflow_from_cache(
+                filtered_data,
+                user,
+                shareflow_metadata,
+                filtered_data['index'],
+                shareflow_metadata.version,
+                None
+            )
 
     for item in both:
-        shareflow = shareflow_service.read_shareflow_by_id(item["id"])
-        update = {
-            "type": item["type"],
-            "title": item["title"],
-            "description": item["description"],
-            "url": item["url"],
-            "index": item["index"],
-        }
-        if shareflow.type != update["type"] or \
-            shareflow.title != update["title"] or \
-            shareflow.description != update["description"] or \
-            shareflow.url != update["url"] or \
-            shareflow.index != update["index"]:
-            shareflow = shareflow_service.update_shareflow(shareflow, **update)
+        shareflow = service.get_shareflow_by_id(item["id"])
+        shareflow.type = item["type"]
+        shareflow.title = item["title"]
+        shareflow.description = item["description"]
+        shareflow.url = item["url"]
+        shareflow.index = item["index"]
+        shareflow.version = shareflow_metadata.version
 
-    return shareflow_service.get_shareflows_by_session_id(id)
+    all = service.get_shareflows(shareflow_metadata)
+    return [
+        service.present_shareflow_for_user(shareflow)
+        for shareflow in all
+    ]
 
 
 @api_config(
