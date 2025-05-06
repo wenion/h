@@ -156,6 +156,10 @@ def update(context: UserEventRecordContext, request):
         shareflow.regenerate_shareflows.delay(metadata.session_id)
     elif 'shared' in command and isinstance(command['shared'], bool):
         metadata.shared = command.pop('shared')
+    elif 'name' in command:
+        metadata.task_name = command.pop('name')
+    elif 'description' in command:
+        metadata.task_name = command.pop('description')
 
     return service.present_shareflow_meta_for_user(metadata)
 
