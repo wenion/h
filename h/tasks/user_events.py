@@ -27,7 +27,10 @@ def log_trace(event):
 
 @celery.task
 def add_event(event):
-    """Task to add the new UserEvent table."""
+    """
+    Task to add the new UserEvent table.
+    Client data structure -> redis structure
+    """
     # pylint:disable=no-member
     new_appstruct = {
         'userid': event["userid"],
