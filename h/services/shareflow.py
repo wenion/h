@@ -266,6 +266,7 @@ class ShareflowService:
             "userid": shareflow_metadata_dict["userid"],
             "taskName": shareflow_metadata.task_name,
             "sessionId": shareflow_metadata.session_id,
+            "version": shareflow_metadata.version,
             "groupid": shareflow_metadata.groupid,
             "shared": shareflow_metadata.shared,
         }
