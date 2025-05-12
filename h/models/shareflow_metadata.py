@@ -1,6 +1,8 @@
 import datetime
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql as pg
+from sqlalchemy.ext.mutable import MutableDict
 
 from h.db import Base
 from h.models.group import Group
@@ -54,6 +56,14 @@ class ShareflowMetadata(Base):
         sa.Integer,
         nullable=False,
         server_default=sa.text("1"),
+    )
+
+    #: Any additional serialisable data provided by the client.
+    extra = sa.Column(
+        MutableDict.as_mutable(pg.JSONB),
+        default=dict,
+        server_default=sa.func.jsonb("{}"),
+        nullable=False,
     )
 
     shared = sa.Column(

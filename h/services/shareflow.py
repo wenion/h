@@ -267,6 +267,7 @@ class ShareflowService:
             "taskName": shareflow_metadata.task_name,
             "sessionId": shareflow_metadata.session_id,
             "version": shareflow_metadata.version,
+            "extra": shareflow_metadata.extra,
             "groupid": shareflow_metadata.groupid,
             "shared": shareflow_metadata.shared,
         }
@@ -291,6 +292,7 @@ class ShareflowService:
                 "pk": shareflow_metadata.pk,
                 "version": shareflow_metadata.version,
                 "role": user_role.teaching_role,
+                "extra": shareflow_metadata.extra,
                 "userid": userid,
                 "groupid": shareflow_metadata.groupid,
                 "shared": shareflow_metadata.shared,

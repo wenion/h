@@ -160,6 +160,8 @@ def update(context: UserEventRecordContext, request):
         metadata.task_name = command.pop('name')
     elif 'description' in command:
         metadata.task_name = command.pop('description')
+    elif 'extra' in command:
+        metadata.extra = command.pop('extra')
 
     return service.present_shareflow_meta_for_user(metadata)
 
