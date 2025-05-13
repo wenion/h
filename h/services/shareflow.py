@@ -181,7 +181,8 @@ class ShareflowService:
             self._db.query(Shareflow)
             .filter(
                 Shareflow.metadata_ref == shareflow_metadata,
-                Shareflow.deleted.isnot(True)
+                Shareflow.deleted.isnot(True),
+                Shareflow.version == shareflow_metadata.version,
             )
             .order_by(Shareflow.index, Shareflow.timestamp)
             .all()
