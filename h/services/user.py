@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 
 from h.models import User, UserIdentity
+from h.models_redis import get_user_role_by_userid
 from h.util.db import on_transaction_end
 from h.util.user import split_user
 
@@ -162,6 +163,10 @@ class UserService:
             raise UserNotActivated()
 
         return user
+
+    @staticmethod
+    def get_user_role_by_userid(userid):
+        return get_user_role_by_userid(userid).dict()
 
     @staticmethod
     def update_preferences(user, **kwargs):

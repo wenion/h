@@ -18,10 +18,14 @@ class MessageService:
         self,
         request,
         organisation_event_service,
+        user_service,
+        trace_service,
     ):
         self.request = request
         self.userid = request.authenticated_userid
         self.organisation_event_service = organisation_event_service
+        self._user_service = user_service
+        self._trace_service = trace_service
 
     @staticmethod
     def _split_user(userid):
@@ -107,6 +111,14 @@ class MessageService:
         else:
             id = id + identifier
 
+        if "extra" in payload:
+            for item in payload["extra"]:
+                if "user_id" in item:
+                    role = self._user_service.get_user_role_by_userid(item["user_id"])
+                    item["role"] = role
+                info = self._trace_service.get_shareflow_metadata_by_session_id(item["session_id"])
+                item["description"] = info.description
+
         m = create_message_cache(
             "instant_message",
             id,
@@ -128,4 +140,6 @@ def message_service_factory(_context, request) -> MessageService:
     return MessageService(
         request,
         organisation_event_service=request.find_service(name="organisation_event"),
+        user_service=request.find_service(name="user"),
+        trace_service=request.find_service(name="shareflow"),
     )
