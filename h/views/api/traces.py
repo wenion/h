@@ -18,10 +18,11 @@ from pyramid import i18n
 from pyramid.httpexceptions import HTTPBadRequest
 
 from h.security import Permission
+from h.tasks import user_events
 from h.traversal import UserEventContext
+from h.util.datetime import timestamp_ms_to_utc
 from h.views.api.config import api_config
 from h.views.api.exceptions import PayloadError
-from h.util.datetime import timestamp_ms_to_utc
 
 _ = i18n.TranslationStringFactory(__package__)
 
@@ -129,10 +130,20 @@ def update_traces(request):
         shareflow.version = shareflow_metadata.version
 
     all = service.get_shareflows(shareflow_metadata)
-    return [
+    readable_shareflow = [
         service.present_shareflow_for_user(shareflow)
         for shareflow in all
     ]
+
+    data = {
+        "shareflow_metadata": service.present_shareflow_meta_for_user(
+            shareflow_metadata
+        ),
+        "update": readable_shareflow
+    }
+    user_events.update_shareflow.delay(data)
+
+    return readable_shareflow
 
 
 @api_config(

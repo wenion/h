@@ -1,7 +1,16 @@
+from abc import ABC
+
+from celery import Task
 from h.celery import celery, get_task_logger
+from h.celery_pub import publish_trace_event
 
 log = get_task_logger(__name__)
 
+
+# See: https://docs.celeryproject.org/en/stable/userguide/tasks.html#automatic-retry-for-known-exceptions
+class _BaseTaskWithRetry(ABC, Task):
+    autoretry_for = (Exception,)
+    retry_kwargs = {"countdown": 5, "max_retries": 1}
 
 @celery.task
 def job_start(event):
@@ -63,3 +72,14 @@ def add_event(event):
         job_start.delay(event)
     if user_dict["tag_name"] == "RECORD" and user_dict["text_content"] == "finish":
         job_finish.delay(event)
+
+
+@celery.task(base=_BaseTaskWithRetry, acks_late=True)
+def update_shareflow(payload):
+    data = {
+        "messageType": "UpdateShareflow",
+        "shareflowMeta": payload.get("shareflow_metadata", None),
+        # miss interactionContext
+        "update": payload.get("update", None),
+    }
+    publish_trace_event(data)
