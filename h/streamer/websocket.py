@@ -1,6 +1,7 @@
 import copy
 import json
 import logging
+import trafilatura
 import weakref
 from collections import namedtuple
 
@@ -96,6 +97,7 @@ class WebSocket(_WebSocket):
                     user_events.add_event.delay(payload)
             elif "messageType" in payload and payload["messageType"] == "PageData":
                 if self.identity:
+                    payload["textContent"] = trafilatura.extract(payload["textContent"])
                     payload['userid'] = self.identity.user.userid
                     self.push.send_push(payload)
             else:
