@@ -79,7 +79,7 @@ class Publisher:
 
         :raise RealtimeMessageQueueError: When we cannot queue the message
         """
-        self._publish("annotation", payload)
+        self._publish(self.exchange, "annotation", payload)
 
     def publish_user(self, payload):
         """
@@ -87,17 +87,17 @@ class Publisher:
 
         :raise RealtimeMessageQueueError: When we cannot queue the message
         """
-        self._publish("user", payload)
+        self._publish(self.exchange, "user", payload)
 
-    def _publish(self, routing_key, payload):
+    def _publish(self, exchange, routing_key, payload):
         try:
             with producer_pool[self.connection].acquire(
                 block=True, timeout=1
             ) as producer:
                 producer.publish(
                     payload,
-                    exchange=self.exchange,
-                    declare=[self.exchange],
+                    exchange=exchange,
+                    declare=[exchange],
                     routing_key=routing_key,
                     retry=True,
                     # This is the retry for the producer, the connection
@@ -111,11 +111,11 @@ class Publisher:
             raise RealtimeMessageQueueError() from err
 
 
-def get_exchange():
+def get_exchange(name="realtime", type="direct", is_durable=False, delivery_mode="transient"):
     """Get a configured `kombu.Exchange` to use for realtime messages."""
 
     return kombu.Exchange(
-        "realtime", type="direct", durable=False, delivery_mode="transient"
+        name, type=type, durable=is_durable, delivery_mode=delivery_mode
     )
 
 
