@@ -50,44 +50,34 @@ def query(request):
     user_role = get_user_role_by_userid(userid)
     trace_service = request.find_service(name="trace")
 
-    query = request.GET.get("q")
-
-    query_url = request.registry.settings.get("query_url")
-    if not query_url:
-        error_info = "Query URL is missing in settings."
-        log.error(error_info)
+    querying = request.GET.get("q")
+    if querying is None or querying.strip() == "":
         return {
-            'status' : "500",
-            'query' : query,
-            'context' : []
+            'status': "500",
+            'query': 'missing query or invaild query',
+            'context': []
         }
-
-    url = urljoin(query_url, "query")
-    params = {'q': query}
+    params = {'q': querying}
 
     trace_service.create_server_event(
         userid,
         "request",
         "query",
-        query,
+        querying,
         request.url
     )
 
     try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
+        response = request.rpc.call("query", params)
 
         trace_service.create_server_event(
             userid,
             "response",
             "query",
-            query,
+            querying,
             request.url
         )
         authorised_list = get_authorised_list()
-
-        # if response.status_code == 200:
-        json_data = response.json()
         """
             json format:
             [{"content": str, "title": str, "summary": str, "url": str, "repository": str}, {...}]
@@ -110,33 +100,12 @@ def query(request):
                 "is_bookmark?": True
             }, {}]
         """
-        context = [
-            {
-                "id": f"dsi-{index}",
-                "page_content": "",
-                "metadata": {
-                    "id": f"dsi-{index}",
-                    "title": item.get("title", ""),
-                    "url": item.get("url", ""),
-                    "score": str(0.99 - index * 0.01),
-                    "summary": item.get("summary", ""),
-                    "highlights": "",
-                    "repository": item.get("repository", ""),
-                },
-                "is_bookmark": False
-            }
-            for index, item in enumerate(json_data)
-        ]
-        return {
-            'status' : str(response.status_code),
-            'query' : query,
-            'context' : [context]
-        }
-    except requests.exceptions.RequestException as e:
+        return response
+    except Exception as e:
         log.error(f"Error while querying: {str(e)}")
         return {
             'status' : str(e),
-            'query' : query,
+            'query' : querying,
             'context' : []
         }
 '''

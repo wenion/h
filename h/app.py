@@ -88,6 +88,7 @@ def includeme(config):  # pragma: no cover
     config.include("h.realtime")
     config.include("h.renderers")
     config.include("h.routes")
+    config.include("h.rpc")
     config.include("h.search")
     config.include("h.security")
     config.include("h.services")
