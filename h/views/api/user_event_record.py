@@ -162,6 +162,16 @@ def update(context: UserEventRecordContext, request):
         metadata.task_name = command.pop('description')
     elif 'extra' in command:
         metadata.extra = command.pop('extra')
+    elif 'pin' in command:
+        request.realtime.publish_tad({
+            "messageType": "PinShareflow",
+            "shareflowMeta": {
+                "session_id": metadata.session_id,
+                "task_name": metadata.task_name,
+            },
+            "status": "pin" if command.get("pin") else "unpin",
+            "userid": metadata.user.userid
+        })
 
     return service.present_shareflow_meta_for_user(metadata)
 

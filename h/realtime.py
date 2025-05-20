@@ -73,6 +73,10 @@ class Publisher:
         self.connection = get_connection(request.registry.settings, fail_fast=True)
         self.exchange = get_exchange()
 
+        self.tad_exchange = kombu.Exchange(
+            "trace", type="topic", durable=True, delivery_mode="persistent"
+        )
+
     def publish_annotation(self, payload):
         """
         Publish an annotation message with the routing key 'annotation'.
@@ -88,6 +92,9 @@ class Publisher:
         :raise RealtimeMessageQueueError: When we cannot queue the message
         """
         self._publish(self.exchange, "user", payload)
+
+    def publish_tad(self, payload):
+        self._publish(self.tad_exchange, "request.user.event", payload)
 
     def _publish(self, exchange, routing_key, payload):
         try:

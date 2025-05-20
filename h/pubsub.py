@@ -75,60 +75,26 @@ class Sub(ConsumerMixin):
         return base64.urlsafe_b64encode(data).strip(b"=")
 
 
-class Pub:
+def publish(connection, exchange, routing_key, payload):
     """
-    A realtime publisher for publishing messages to all subscribers.
-
-    An instance of this publisher is available on Pyramid requests
-    with `request.realtime`.
-
-    :param request: a `pyramid.request.Request`
+        This functino is used in the streamer service only.
     """
-
-    def __init__(self, settings, name):
-        """
-        Init a Producer based on the application's settings.
-        
-        :param settings: A dictionary containing the message broker's
-            connection details.
-            Expected format : {'broker_url': '<address>'}
-            Example: {'broker_url': 'amqp://guest:guest@localhost:5672//'}
-        :param name: exchange's name
-        """
-
-        self.connection = get_connection(settings, fail_fast=True)
-        self.connection.connect()
-
-        self.exchange = kombu.Exchange(
-            name, type="topic", durable=True, delivery_mode="persistent"
-        )
-        self.producer = self.connection.Producer()
-
-    def publish(self, message, topic_routing):
-        try:
-            self.producer.publish(
-                message,
-                exchange=self.exchange,
-                routing_key=topic_routing,
-                declare=[self.exchange],
+    try:
+        with producer_pool[connection].acquire(
+            block=True, timeout=1
+        ) as producer:
+            producer.publish(
+                payload,
+                exchange=exchange,
+                declare=[exchange],
+                routing_key=routing_key,
                 retry=True,
                 # This is the retry for the producer, the connection
                 # retry is separate
                 retry_policy=RETRY_POLICY_VERY_QUICK,
             )
-        # except ConnectionError as e:
-        #     print(f"Connection error: {e}")
-        except (OperationalError, LimitExceeded) as err:
-            # If we fail to connect (OperationalError), or we don't get a
-            # producer from the pool in time (LimitExceeded) raise
-            raise RealtimeMessageQueueError() from err
 
-    def release(self):
-        # self.produce.release()
-        self.connection.close()
-
-    close = release
-
-
-def includeme(config):  # pragma: nocover
-    config.add_request_method(Pub, name="pub", reify=True)
+    except (OperationalError, LimitExceeded) as err:
+        # If we fail to connect (OperationalError), or we don't get a
+        # producer from the pool in time (LimitExceeded) raise
+        raise RealtimeMessageQueueError() from err

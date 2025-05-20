@@ -1,9 +1,11 @@
 import logging
 from collections import namedtuple
 
+import kombu
 from gevent.queue import Full
 
-from h.pubsub import Sub
+from h.realtime import get_connection
+from h.pubsub import Sub, publish
 from h.services.message import MessageService
 from h.streamer import websocket
 from h.streamer.contexts import request_context
@@ -33,6 +35,23 @@ __all__ = (
 )
 
 log = logging.getLogger(__name__)
+
+
+class Pub:
+    def __init__(self, request):
+        self.connection = get_connection(request.registry.settings, fail_fast=True)
+        self.tab_exchange = kombu.Exchange(
+            "push", type="topic", durable=True, delivery_mode="persistent"
+        )
+        self.tad_exchange = kombu.Exchange(
+            "trace", type="topic", durable=True, delivery_mode="persistent"
+        )
+
+    def publish_trace(self, payload):
+        publish(self.connection, self.tad_exchange, TRACE_TOPIC, payload)
+
+    def push_knowledge(self, payload):
+        publish(self.connection, self.tab_exchange, PUSH_TOPIC, payload)
 
 # TODO Multithreading issues
 def trace_process_messages(settings, routing_key, raise_error=True):
@@ -168,3 +187,6 @@ def handle_message(message, registry, session):
                 client_id = message.payload.get("client_id")
                 log.info(f"TAB PUSH {client_id} | {userid}")
                 socket.send_json(message.payload)
+
+def includeme(config):  # pragma: nocover
+     config.add_request_method(Pub, name="pub", reify=True)

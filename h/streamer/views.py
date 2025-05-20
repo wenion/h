@@ -15,6 +15,7 @@ def websocket_view(request):
             "h.ws.streamer_work_queue": streamer.WORK_QUEUE,
             "h.ws.identity": request.identity,
             "h.ws.settings": request.registry.settings,
+            "h.ws.pub": request.pub,
         }
     )
 

@@ -58,6 +58,9 @@ def get_traces(request):
     service = request.find_service(name="shareflow")
     shareflow_metadata = service.get_shareflow_metadata_by_session_id(id)
 
+    if shareflow_metadata is None:
+        raise HTTPBadRequest()
+
     all = service.get_shareflows(shareflow_metadata)
 
     return [

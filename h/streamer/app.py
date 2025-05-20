@@ -22,6 +22,7 @@ def create_app(_global_config, **settings):
     # We include links in order to set up the alternative link registrations
     # for annotations.
     config.include("h.links")
+    config.include("h.streamer.topic")
 
     # And finally we add routes. Static routes are not resolvable by HTTP
     # clients, but can be used for URL generation within the websocket server.

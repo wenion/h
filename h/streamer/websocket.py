@@ -11,7 +11,6 @@ from ws4py.websocket import WebSocket as _WebSocket
 
 from h.streamer.filter import FILTER_SCHEMA, SocketFilter
 # from h.streamer.page_request import handle_web_page
-from h.streamer.topic_meta import TraceTopicPub, PushTopicPub
 from h.tasks import user_events
 
 log = logging.getLogger(__name__)
@@ -62,10 +61,9 @@ class WebSocket(_WebSocket):
             heartbeat_freq=30.0,
         )
 
-        self.pub = TraceTopicPub(environ["h.ws.settings"])
-        self.push = PushTopicPub(environ["h.ws.settings"])
         self.debug = environ["h.ws.debug"]
         self.identity = environ["h.ws.identity"]
+        self.pub = environ["h.ws.pub"]
 
         self._work_queue = environ["h.ws.streamer_work_queue"]
 
@@ -92,14 +90,15 @@ class WebSocket(_WebSocket):
                     # complete more details
                     payload['userid'] = self.identity.user.userid
                     # send to RabbitMQ topic exchange
-                    self.pub.send_trace(payload)
+                    self.pub.publish_trace(payload)
                     # TODO Multithreading issues, remove later
                     user_events.add_event.delay(payload)
             elif "messageType" in payload and payload["messageType"] == "PageData":
                 if self.identity:
+                    # extract main textual content
                     payload["textContent"] = trafilatura.extract(payload["textContent"])
                     payload['userid'] = self.identity.user.userid
-                    self.push.send_push(payload)
+                    self.pub.push_knowledge(payload)
             else:
                 self._work_queue.put(Message(socket=self, payload=payload), timeout=0.1)
         except Full:  # pragma: no cover
@@ -112,8 +111,6 @@ class WebSocket(_WebSocket):
         if self.debug:
             log.info("Closed connection code=%s reason=%s", code, reason)
         try:
-            self.pub.release()
-            self.push.release()
             self.instances.remove(self)
         except KeyError:
             pass
