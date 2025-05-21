@@ -86,14 +86,15 @@ def update_traces(request):
 
     service = request.find_service(name="shareflow")
     shareflow_metadata = service.get_shareflow_metadata_by_session_id(id)
-    shareflow_metadata.version = shareflow_metadata.version + 1
-    pre = service.get_shareflows(shareflow_metadata)
+    # shareflow_metadata.version = shareflow_metadata.version + 1
+    _pre = service.get_shareflows(shareflow_metadata)
+    pre = [service.present_shareflow_for_user(item) for item in _pre]
 
-    ids_pre = {item.id for item in pre}
+    ids_pre = {item["id"] for item in pre}
     ids_cur = {item["id"] for item in cur}
     ids_com = ids_pre & ids_cur
 
-    remove = [item for item in pre if item.id not in ids_cur]
+    remove = [item for item in pre if item["id"] not in ids_cur]
     append = [item for item in cur if item["id"] not in ids_pre]
     both = [item for item in cur if item["id"] in ids_com]
 
@@ -130,7 +131,7 @@ def update_traces(request):
         shareflow.description = item["description"]
         shareflow.url = item["url"]
         shareflow.index = item["index"]
-        shareflow.version = shareflow_metadata.version
+        # shareflow.version = shareflow_metadata.version
 
     all = service.get_shareflows(shareflow_metadata)
     readable_shareflow = [
@@ -138,13 +139,13 @@ def update_traces(request):
         for shareflow in all
     ]
 
-    data = {
-        "shareflow_metadata": service.present_shareflow_meta_for_user(
-            shareflow_metadata
-        ),
-        "update": readable_shareflow
-    }
-    user_events.update_shareflow.delay(data)
+    # data = {
+    #     "shareflow_metadata": service.present_shareflow_meta_for_user(
+    #         shareflow_metadata
+    #     ),
+    #     "update": readable_shareflow
+    # }
+    # user_events.update_shareflow.delay(data)
 
     return readable_shareflow
 
