@@ -19,7 +19,7 @@ class KmassEditProfileSchema(CSRFSchema):
                 ('Public Health and Preventive Medicine', 'Public Health and Preventive Medicine'),
                 ('Education', 'Education'),
                 ('Law', 'Law'),
-                ('Others', 'Others'),
+                ('Other', 'Other'),
             )
         )
     )
@@ -34,6 +34,7 @@ class KmassEditProfileSchema(CSRFSchema):
                 ('Lecturer', 'Lecturer'),
                 ('Admin Tutor', 'Admin Tutor'),
                 ('Tutor', 'Tutor'),
+                ('Other', 'Other'),
             )
         ),
     )

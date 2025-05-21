@@ -51,6 +51,18 @@ class SignupController:
 
         template_context = {"heading": _("Account registration successful")}
         try:
+            joined_year = appstruct["joined_year"]
+            if isinstance(joined_year, int):
+                joined_year = int(joined_year)
+            else:
+                joined_year = None
+
+            years_of_experience = appstruct["years_of_experience"]
+            if isinstance(years_of_experience, int):
+                years_of_experience = int(years_of_experience)
+            else:
+                years_of_experience = None
+
             signup_service.signup(
                 username=appstruct["username"],
                 email=appstruct["email"],
@@ -62,8 +74,8 @@ class SignupController:
                 teaching_role=appstruct["teaching_role"],
                 teaching_unit=appstruct["teaching_unit"],
                 campus=appstruct["campus"],
-                joined_year=int(appstruct["joined_year"]),
-                years_of_experience=int(appstruct["years_of_experience"]),
+                joined_year=joined_year,
+                years_of_experience=years_of_experience,
             )
         except ConflictError as exc:
             template_context["heading"] = _("Account already registered")

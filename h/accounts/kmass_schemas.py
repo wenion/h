@@ -185,9 +185,10 @@ class RegisterSchema(CSRFSchema):
                 ('Public Health and Preventive Medicine', 'Public Health and Preventive Medicine'),
                 ('Education', 'Education'),
                 ('Law', 'Law'),
-                ('Others', 'Others'),
+                ('Other', 'Other'),
             )
-        )
+        ),
+        missing="",
     )
 
     teaching_role = colander.SchemaNode(
@@ -200,13 +201,16 @@ class RegisterSchema(CSRFSchema):
                 ('Lecturer', 'Lecturer'),
                 ('Admin Tutor', 'Admin Tutor'),
                 ('Tutor', 'Tutor'),
+                ('Other', 'Other'),
             )
         ),
+        missing="",
     )
 
     teaching_unit = colander.SchemaNode(
         colander.String(),
         title=_("Teaching unit"),
+        missing="",
     )
 
     campus = colander.SchemaNode(
@@ -227,8 +231,10 @@ class RegisterSchema(CSRFSchema):
                 ('Monash Suzhou, China', 'Monash Suzhou, China'),
                 ('IITB Monash Academy, India', 'IITB Monash Academy, India'),
                 ('Prato Centre, Italy', 'Prato Centre, Italy'),
+                ('Other', 'Other'),
             )
         ),
+        missing="",
     )
 
     joined_year = colander.SchemaNode(
@@ -238,6 +244,7 @@ class RegisterSchema(CSRFSchema):
             colander.Regex("^\d{4}$", msg=("Must have only number")),
         ),
         title=_("Year joined Monash"),
+        missing="",  # Allow field to be omitted or empty
     )
 
     years_of_experience = colander.SchemaNode(
@@ -247,6 +254,7 @@ class RegisterSchema(CSRFSchema):
             colander.Regex("^\d+$", msg=("Must have only number")),
         ),
         title=_("Year of teaching experience"),
+        missing="",  # Allow field to be omitted or empty
     )
 
     privacy_accepted = colander.SchemaNode(
