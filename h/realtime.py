@@ -93,6 +93,9 @@ class Publisher:
         """
         self._publish(self.exchange, "user", payload)
 
+    def publish_shareflow_metadata(self, payload):
+        self._publish(self.exchange, "shareflow_metadata", payload)
+
     def publish_tad(self, payload):
         self._publish(self.tad_exchange, "request.user.event", payload)
 

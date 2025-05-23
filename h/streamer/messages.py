@@ -97,6 +97,44 @@ def handle_user_event(message, sockets, _request, _session):
 
         socket.send_json(reply)
 
+def handle_shareflow_metadata_event(message, sockets, request, session):
+    id_ = message["shareflow_metadata_id"]
+
+    shareflow_service = request.find_service(name="shareflow")
+    shareflow_metadata = shareflow_service.get_shareflow_metadata_by_id(id_)
+
+    if shareflow_metadata is None:
+        log.warning("received event for missing shareflow metadata: %s", id_)
+        return
+
+    groups = shareflow_service.get_groups_from_shareflow_metadata(shareflow_metadata)
+    tuple_list = [group.get_members() for group in groups]
+    user_list = []
+    for tup in tuple_list:
+        user_list.extend(tup)
+
+    matching_sockets = SocketFilter.matching_user(sockets, user_list)
+    try:
+        # Check to see if the generator has any items
+        first_socket = next(matching_sockets)
+    except StopIteration:
+        # Nothing matched
+        return
+
+    # Create a generator which has the first socket back again
+    matching_sockets = chain(  # pylint: disable=redefined-variable-type
+        (first_socket,), matching_sockets
+    )
+
+    reply = shareflow_service.present_shareflow_meta_for_user(shareflow_metadata)
+    for socket in matching_sockets:
+        # Don't send notifications back to the person who sent them
+        if message["src_client_id"] == socket.client_id:
+            continue
+        socket.send_json({
+            "type": "shareflow-notification",
+            **reply
+        })
 
 def handle_annotation_event(message, sockets, request, session):
     id_ = message["annotation_id"]

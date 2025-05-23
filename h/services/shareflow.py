@@ -273,10 +273,10 @@ class ShareflowService:
 
     def present_shareflow_meta_for_user(self, shareflow_metadata: ShareflowMetadata):
         shareflow_metadata_dict = self.shareflow_metadata_dict(shareflow_metadata)
-        gs_list = self.get_groups_from_shareflow_metadata(
+        groups_list = self.get_groups_from_shareflow_metadata(
             shareflow_metadata
         )
-        groups = [gs.group.pubid for gs in gs_list]
+        groups = [group.pubid for group in groups_list]
 
         model =  {
             "id": shareflow_metadata.pk, # id: set as pk
@@ -353,7 +353,6 @@ class ShareflowService:
             .distinct()
             .all()
         )
-
         return combined_list
 
     def get_shareflow_metadata_from_groups(self, groups: list[Group]) -> list[ShareflowMetadata]:
@@ -365,17 +364,17 @@ class ShareflowService:
             .all()
         )
 
+    def get_groups_from_shareflow_metadata(self, shareflow_metadata: ShareflowMetadata) -> list[Group]:
+        return (
+            self._db.query(Group)
+            .join(GroupShareflowMetadata, Group.id == GroupShareflowMetadata.group_id)
+            .filter(GroupShareflowMetadata.shareflow_metadata_id == shareflow_metadata.id)
+            .distinct()
+            .all()
+        )
+
     def delete_shareflow_metadata(self, shareflow_metadata):
         self._db.delete(shareflow_metadata)
-
-    def get_groups_from_shareflow_metadata(self, shareflow_metadata: ShareflowMetadata):
-        shareflow_metadata_id = shareflow_metadata.id
-
-        all = self._db.query(GroupShareflowMetadata).filter(
-            GroupShareflowMetadata.shareflow_metadata_id == shareflow_metadata_id,
-        ).all()
-
-        return all
 
     def add_group_to_shareflow_metadata(self, shareflow_metadata: ShareflowMetadata, group: Group):
         shareflow_metadata_id = shareflow_metadata.id

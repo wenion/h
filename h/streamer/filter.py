@@ -97,3 +97,16 @@ class SocketFilter:
                     value = normalize_uri(value)
 
                 yield field, value
+
+    @classmethod
+    def matching_user(cls, sockets, user_list):
+        for socket in sockets:
+            # Some sockets might not yet have the filter applied (or had a non
+            # parsable filter etc.)
+            for user in user_list:
+                try:
+                    if socket.identity.user.userid == user.userid:
+                        yield socket
+                        break
+                except Exception as e:
+                    continue

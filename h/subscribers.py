@@ -3,7 +3,7 @@ from kombu.exceptions import OperationalError
 from pyramid.events import BeforeRender, subscriber
 
 from h import __version__, emails
-from h.events import AnnotationEvent
+from h.events import AnnotationEvent, ShareflowMetadataEvent
 from h.exceptions import RealtimeMessageQueueError
 from h.notification import reply
 from h.services.annotation_read import AnnotationReadService
@@ -120,3 +120,18 @@ def add_annotation_event(event):
             event.action + " highlight" if annotation.text =="" else event.action + " annotation",
             page_title
         )
+
+@subscriber(ShareflowMetadataEvent)
+def shareflow_metadata_sync(event):
+    """Ensure an shareflow metadata is synchronised to the Client."""
+
+    data = {
+        "action": event.action,
+        "shareflow_metadata_id": event.shareflow_metadata_id,
+        "src_client_id": event.request.headers.get("X-Client-Id"),
+    }
+    try:
+        event.request.realtime.publish_shareflow_metadata(data)
+
+    except RealtimeMessageQueueError as err:
+        report_exception(err)

@@ -16,6 +16,7 @@ objects and Pyramid ACLs in :mod:`h.traversal`.
 """
 from pyramid import i18n
 
+from h.events import ShareflowMetadataEvent
 from h.security import Permission
 from h.traversal import UserEventRecordContext
 from h.views.api.config import api_config
@@ -162,6 +163,7 @@ def update(context: UserEventRecordContext, request):
         elif action == 'remove' and metadata and group:
             service.remove_group_to_shareflow_metadata(metadata, group)
 
+        _publish_shareflow_metadata_event(request, metadata, action)
     elif 'shared' in command and isinstance(command['shared'], bool):
         metadata.shared = command.pop('shared')
     elif 'name' in command:
@@ -240,3 +242,8 @@ def create_redis_validate(data, userid):
     new_appstruct["shared"] = 0
 
     return new_appstruct
+
+def _publish_shareflow_metadata_event(request, shareflow_metadata, action):
+    """Publish an event to the shareflow queue for this shareflow action."""
+    event = ShareflowMetadataEvent(request, shareflow_metadata.id, action)
+    request.notify_after_commit(event)

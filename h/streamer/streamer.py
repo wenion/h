@@ -20,10 +20,12 @@ WORK_QUEUE = gevent.queue.Queue(maxsize=4096)
 
 # Message queues that the streamer processes messages from
 ANNOTATION_TOPIC = "annotation"
+SHAREFLOW_METADATA_TOPIC = "shareflow_metadata"
 USER_TOPIC = "user"
 
 TOPIC_HANDLERS = {
     ANNOTATION_TOPIC: messages.handle_annotation_event,
+    SHAREFLOW_METADATA_TOPIC: messages.handle_shareflow_metadata_event,
     USER_TOPIC: messages.handle_user_event,
 }
 
@@ -47,6 +49,7 @@ def start(event):  # pragma: no cover
     greenlets = [
         # Start greenlets to process messages from RabbitMQ
         gevent.spawn(messages.process_messages, settings, ANNOTATION_TOPIC, WORK_QUEUE),
+        gevent.spawn(messages.process_messages, settings, SHAREFLOW_METADATA_TOPIC, WORK_QUEUE),
         gevent.spawn(messages.process_messages, settings, USER_TOPIC, WORK_QUEUE),
         # Receive tad messages from RabbitMQ
         gevent.spawn(topic.task_process_messages, settings, topic.TASK_TOPIC, WORK_QUEUE),
