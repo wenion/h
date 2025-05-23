@@ -70,7 +70,7 @@ def recordings(request):
     user = request.user
 
     service = request.find_service(name="shareflow")
-    all = service.get_shareflow_metadata_list(
+    all = service.get_shareflow_metadata_list_by_user(
         user = user,
         shared = True
     )

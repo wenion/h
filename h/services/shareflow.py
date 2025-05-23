@@ -239,6 +239,12 @@ class ShareflowService:
 
         return query.one_or_none()
 
+    def get_shareflow_metadata_by_id(self, id_: str) -> Optional[ShareflowMetadata]:
+        try:
+            return self._db.get(ShareflowMetadata, id_)
+        except InvalidUUID:
+            return None
+
     @staticmethod
     def normalize_to_iso_utc_z(value):
         """
@@ -323,21 +329,18 @@ class ShareflowService:
         except:
             return None
 
-    def get_shareflow_metadata_list(
+    def get_shareflow_metadata_list_by_user(
         self,
         user: User,
         shared: bool = True
     ) -> List[ShareflowMetadata]:
-        groups = self._group_list_service.request_groups(user=user)
-        group_ids = [group.id for group in groups]
-        group_query = (
-            self._db.query(ShareflowMetadata.id)
-            .join(GroupShareflowMetadata, GroupShareflowMetadata.shareflow_metadata_id == ShareflowMetadata.id)
-            .filter(GroupShareflowMetadata.group_id.in_(group_ids))
-        )
+        group_query = []
 
-        if not shared:
-            group_query = []
+        if shared:
+            groups = self._group_list_service.request_groups(user=user)
+            group_shareflow_metadata_list = self.get_shareflow_metadata_from_groups(groups)
+            group_query = [shareflow_metadata.id for shareflow_metadata in group_shareflow_metadata_list]
+            print('group_query', group_query)
 
         combined_list = (
             self._db.query(ShareflowMetadata)
@@ -353,8 +356,7 @@ class ShareflowService:
 
         return combined_list
 
-
-    def get_shareflows_for_groups(self, groups: list[Group]) -> list[ShareflowMetadata]:
+    def get_shareflow_metadata_from_groups(self, groups: list[Group]) -> list[ShareflowMetadata]:
         return (
             self._db.query(ShareflowMetadata)
             .join(GroupShareflowMetadata, GroupShareflowMetadata.shareflow_metadata_id == ShareflowMetadata.id)
