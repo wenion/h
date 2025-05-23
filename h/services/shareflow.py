@@ -7,9 +7,17 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from h.db.types import InvalidUUID
-from h.models import User, Group, Shareflow, ShareflowMetadata, ShareflowImage
+from h.models import (
+    Shareflow,
+    ShareflowMetadata,
+    ShareflowImage,
+    Group,
+    GroupShareflowMetadata,
+    User,
+)
 from h.models_redis import get_user_role_by_userid, UserEventRecord
 from h.services.exceptions import ValidationError
+from h.services.group_list import GroupListService
 from h.services.user import UserService
 from h.services.trace import TraceService
 from h.services.trace_model import address_events
@@ -19,10 +27,12 @@ class ShareflowService:
     def __init__(
         self,
         session: Session,
+        group_list_service: GroupListService,
         user_service: UserService,
         trace_service: TraceService,
     ):
         self._db = session
+        self._group_list_service = group_list_service
         self._user_service = user_service
         self._trace_service = trace_service
 
@@ -257,6 +267,10 @@ class ShareflowService:
 
     def present_shareflow_meta_for_user(self, shareflow_metadata: ShareflowMetadata):
         shareflow_metadata_dict = self.shareflow_metadata_dict(shareflow_metadata)
+        gs_list = self.get_groups_from_shareflow_metadata(
+            shareflow_metadata
+        )
+        groups = [gs.group.pubid for gs in gs_list]
 
         model =  {
             "id": shareflow_metadata.pk, # id: set as pk
@@ -270,6 +284,7 @@ class ShareflowService:
             "version": shareflow_metadata.version,
             "extra": shareflow_metadata.extra,
             "groupid": shareflow_metadata.groupid,
+            "groups": groups,
             "shared": shareflow_metadata.shared,
         }
 
@@ -310,28 +325,96 @@ class ShareflowService:
 
     def get_shareflow_metadata_list(
         self,
-        userid: str,
+        user: User,
         shared: bool = True
     ) -> List[ShareflowMetadata]:
-        if shared:
-            query = self._db.query(ShareflowMetadata).filter(
+        groups = self._group_list_service.request_groups(user=user)
+        group_ids = [group.id for group in groups]
+        group_query = (
+            self._db.query(ShareflowMetadata.id)
+            .join(GroupShareflowMetadata, GroupShareflowMetadata.shareflow_metadata_id == ShareflowMetadata.id)
+            .filter(GroupShareflowMetadata.group_id.in_(group_ids))
+        )
+
+        if not shared:
+            group_query = []
+
+        combined_list = (
+            self._db.query(ShareflowMetadata)
+            .filter(
                 or_(
-                    ShareflowMetadata.user.has(User.userid == userid),
-                    ShareflowMetadata.shared.is_(shared)
+                    ShareflowMetadata.user == user,
+                    ShareflowMetadata.id.in_(group_query)
                 )
             )
-        else:
-            query = self._db.query(ShareflowMetadata).filter(
-                ShareflowMetadata.user_id == userid
-            )
-        return query.all()
+            .distinct()
+            .all()
+        )
+
+        return combined_list
+
+
+    def get_shareflows_for_groups(self, groups: list[Group]) -> list[ShareflowMetadata]:
+        return (
+            self._db.query(ShareflowMetadata)
+            .join(GroupShareflowMetadata, GroupShareflowMetadata.shareflow_metadata_id == ShareflowMetadata.id)
+            .filter(GroupShareflowMetadata.group_id.in_([group.id for group in groups]))
+            .distinct()
+            .all()
+        )
 
     def delete_shareflow_metadata(self, shareflow_metadata):
         self._db.delete(shareflow_metadata)
 
+    def get_groups_from_shareflow_metadata(self, shareflow_metadata: ShareflowMetadata):
+        shareflow_metadata_id = shareflow_metadata.id
+
+        all = self._db.query(GroupShareflowMetadata).filter(
+            GroupShareflowMetadata.shareflow_metadata_id == shareflow_metadata_id,
+        ).all()
+
+        return all
+
+    def add_group_to_shareflow_metadata(self, shareflow_metadata: ShareflowMetadata, group: Group):
+        shareflow_metadata_id = shareflow_metadata.id
+        group_id = group.id
+
+        existing = self._db.query(GroupShareflowMetadata).filter(
+            GroupShareflowMetadata.group_id == group_id,
+            GroupShareflowMetadata.shareflow_metadata_id == shareflow_metadata_id,
+        ).one_or_none()
+
+        if existing:
+            return existing
+
+        group_shareflow_metadata = GroupShareflowMetadata(
+            group_id=group_id,
+            shareflow_metadata_id=shareflow_metadata_id
+        )
+        self._db.add(group_shareflow_metadata)
+        return group_shareflow_metadata
+
+
+    def remove_group_to_shareflow_metadata(self, shareflow_metadata, group):
+        shareflow_metadata_id = shareflow_metadata.id
+        group_id = group.id
+
+        association = self._db.query(GroupShareflowMetadata).filter(
+            GroupShareflowMetadata.group_id == group_id,
+            GroupShareflowMetadata.shareflow_metadata_id == shareflow_metadata_id,
+        ).one_or_none()
+
+        if association:
+            self._db.delete(association)
+            return True  # Indicate successful removal
+
+        return False  # Association didn't exist
+
+
 def shareflow_service_factory(_context, request):
     return ShareflowService(
         request.db,
+        request.find_service(name="group_list"),
         request.find_service(name="user"),
-        request.find_service(name="trace")
+        request.find_service(name="trace"),
     )

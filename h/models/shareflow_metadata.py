@@ -95,3 +95,8 @@ class ShareflowMetadata(Base):
         foreign_keys=[groupid],
         lazy="select",
     )
+
+    def __repr__(self):
+        return (
+            f"<{self.task_name} - {self.user.username}>"
+        )

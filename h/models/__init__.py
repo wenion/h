@@ -32,6 +32,7 @@ from h.models.feature_cohort import FeatureCohort, FeatureCohortUser
 from h.models.flag import Flag
 from h.models.group import Group, GroupMembership, GroupMembershipRoles
 from h.models.group_scope import GroupScope
+from h.models.group_shareflow_metadata import GroupShareflowMetadata
 from h.models.job import Job
 from h.models.organization import Organization
 from h.models.setting import Setting
@@ -64,6 +65,7 @@ __all__ = (
     "Group",
     "GroupMembership",
     "GroupScope",
+    "GroupShareflowMetadata",
     "Job",
     "Organization",
     "Setting",

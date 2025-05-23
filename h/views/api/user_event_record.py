@@ -67,12 +67,11 @@ def update_trackings(request):
 )
 def recordings(request):
     """Retrieve the groups for this request's user."""
-    userid = request.authenticated_userid
+    user = request.user
 
     service = request.find_service(name="shareflow")
-
     all = service.get_shareflow_metadata_list(
-        userid = userid,
+        user = user,
         shared = True
     )
     return [
@@ -141,6 +140,7 @@ def update(context: UserEventRecordContext, request):
     command = _json_payload(request)
 
     service = request.find_service(name="shareflow")
+    group_service = request.find_service(name="group")
 
     if 'endstamp' in command:
         request.session.pop_flash("recordingSessionId")
@@ -154,6 +154,14 @@ def update(context: UserEventRecordContext, request):
             raise PayloadError()
     elif 'regenerate' in command:
         shareflow.regenerate_shareflows.delay(metadata.session_id)
+    elif 'group' in command:
+        action = command.get('action')
+        group = group_service.fetch_by_pubid(command.get('group'))
+        if action == 'add' and metadata and group:
+            service.add_group_to_shareflow_metadata(metadata, group)
+        elif action == 'remove' and metadata and group:
+            service.remove_group_to_shareflow_metadata(metadata, group)
+
     elif 'shared' in command and isinstance(command['shared'], bool):
         metadata.shared = command.pop('shared')
     elif 'name' in command:
