@@ -163,13 +163,13 @@ def update(context: UserEventRecordContext, request):
         elif action == 'remove' and metadata and group:
             service.remove_group_to_shareflow_metadata(metadata, group)
 
-        _publish_shareflow_metadata_event(request, metadata, action)
+        _publish_shareflow_metadata_event(request, metadata)
     elif 'shared' in command and isinstance(command['shared'], bool):
         metadata.shared = command.pop('shared')
-    elif 'name' in command:
+    elif 'name' in command or 'description' in command:
         metadata.task_name = command.pop('name')
-    elif 'description' in command:
-        metadata.task_name = command.pop('description')
+        metadata.description = command.pop('description')
+        _publish_shareflow_metadata_event(request, metadata)
     elif 'extra' in command:
         metadata.extra = command.pop('extra')
     elif 'pin' in command:
@@ -243,7 +243,7 @@ def create_redis_validate(data, userid):
 
     return new_appstruct
 
-def _publish_shareflow_metadata_event(request, shareflow_metadata, action):
+def _publish_shareflow_metadata_event(request, shareflow_metadata):
     """Publish an event to the shareflow queue for this shareflow action."""
-    event = ShareflowMetadataEvent(request, shareflow_metadata.id, action)
+    event = ShareflowMetadataEvent(request, shareflow_metadata.id)
     request.notify_after_commit(event)

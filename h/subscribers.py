@@ -126,7 +126,6 @@ def shareflow_metadata_sync(event):
     """Ensure an shareflow metadata is synchronised to the Client."""
 
     data = {
-        "action": event.action,
         "shareflow_metadata_id": event.shareflow_metadata_id,
         "src_client_id": event.request.headers.get("X-Client-Id"),
     }
