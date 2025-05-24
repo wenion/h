@@ -110,3 +110,13 @@ class SocketFilter:
                         break
                 except Exception as e:
                     continue
+
+    @classmethod
+    def matching_client_id(cls, sockets, client_id):
+        for socket in sockets:
+            try:
+                if socket.client_id == client_id:
+                    yield socket
+                    break
+            except Exception as e:
+                continue

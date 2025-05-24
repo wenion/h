@@ -9,6 +9,7 @@ from h.pubsub import Sub, publish
 from h.services.message import MessageService
 from h.streamer import websocket
 from h.streamer.contexts import request_context
+from h.streamer.filter import SocketFilter
 from h.streamer.topic_meta import (
     Topic,
     TASK_EXCHANGE,
@@ -158,19 +159,18 @@ def handle_message(message, registry, session):
     # N.B. We iterate over a non-weak list of instances because there's nothing
     # to stop connections being added or dropped during iteration, and if that
     # happens Python will throw a "Set changed size during iteration" error.
-    sockets = list(websocket.WebSocket.instances)
-    for socket in sockets:
-        if not hasattr(socket, "client_id") or \
-            message.payload["client_id"] != socket.client_id:
-            continue
+    socket = next(
+        SocketFilter.matching_client_id(
+            websocket.WebSocket.instances,
+            message.payload["client_id"]
+        ), None
+    )
 
-        # TODO
+    if socket:
         with request_context(registry) as request:
-            userid = None
-            if socket.identity:
-                userid = socket.identity.user.userid
-
             source = message.payload.get("source")
+            userid = socket.identity.user.userid if socket.identity else None
+
             if source == "tad":
                 # TODO celery delay -> save
                 m = request.find_service(
@@ -184,8 +184,6 @@ def handle_message(message, registry, session):
                 # push to websocket
                 socket.send_json(m)
             elif source == "tab":
-                client_id = message.payload.get("client_id")
-                log.info(f"TAB PUSH {client_id} | {userid}")
                 socket.send_json(message.payload)
 
 def includeme(config):  # pragma: nocover
