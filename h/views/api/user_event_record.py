@@ -151,6 +151,7 @@ def update(context: UserEventRecordContext, request):
             metadata.endstamp = timestamp_ms_to_utc(endstamp)
             # generate shareflow
             shareflow.generate_shareflows.delay(metadata.session_id)
+            _publish_shareflow_metadata_event(request, metadata)
         else:
             raise PayloadError()
     elif 'regenerate' in command:

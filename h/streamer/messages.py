@@ -109,7 +109,7 @@ def handle_shareflow_metadata_event(message, sockets, request, session):
 
     groups = shareflow_service.get_groups_from_shareflow_metadata(shareflow_metadata)
     tuple_list = [group.get_members() for group in groups]
-    user_list = []
+    user_list = [shareflow_metadata.user]
     for tup in tuple_list:
         user_list.extend(tup)
 
