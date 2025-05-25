@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
+import jsonschema
 import re
+from datetime import datetime, timezone
 
 from h import util
 from h.exceptions import InvalidUserId
@@ -11,6 +12,49 @@ from h.models_redis import (
 from h.services.organisation_event import OrganisationEventService
 from h.services.organisation_event_push_log import OrganisationEventPushLogService
 
+
+tad_payload_schema = {
+    "type": "object",
+    "properties": {
+        "client_id": {"type": "string"},
+        "type": {"type": "string"},
+        "title": {"type": "string"},
+        "content": {"type": "string"},
+        "extra": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "task_name": {"type": "string"},
+                    "session_id": {"type": "string"},
+                    "user_id": {"type": "string"},
+                    "current_step": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "expert_step": {"type": "string"},
+                },
+                "required": [
+                    "task_name",
+                    "session_id",
+                    "user_id",
+                    "expert_step"
+                ],
+                "additionalProperties": True
+            }
+        },
+        "url": {"type": "string"},
+    },
+    "required": [
+        "client_id",
+        "type",
+        "title",
+        "content",
+        "extra",
+        "url",
+    ],  # These are required fields
+    "additionalProperties": True  # Disallow extra properties
+}
 
 
 class MessageService:
@@ -111,13 +155,25 @@ class MessageService:
         else:
             id = id + identifier
 
+        try:
+            jsonschema.validate(instance=payload, schema=tad_payload_schema)
+        except jsonschema.ValidationError as ve:
+            payload['title'] = "Error"
+            payload['content'] = "jsonschema.ValidationError"
+        except jsonschema.SchemaError as se:
+            payload['title'] = "Error"
+            payload['content'] = "jsonschema.SchemaError"
+        except Exception as e:
+            payload['title'] = "Error"
+            payload['content'] = "Exception"
+
         if "extra" in payload:
             for item in payload["extra"]:
-                if "user_id" in item:
-                    role = self._user_service.get_user_role_by_userid(item["user_id"])
+                meta = self._trace_service.get_shareflow_metadata_by_session_id(item.get("session_id"))
+                if meta:
+                    item["description"] = meta.description
+                    role = self._user_service.get_user_role_by_userid(item.get("user_id"))
                     item["role"] = role
-                info = self._trace_service.get_shareflow_metadata_by_session_id(item["session_id"])
-                item["description"] = info.description
 
         m = create_message_cache(
             "instant_message",
