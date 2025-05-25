@@ -2,7 +2,7 @@ from abc import ABC
 
 from celery import Task
 from h.celery import celery, get_task_logger
-from h.celery_pub import publish_trace_event
+# from h.celery_pub import publish_trace_event
 
 log = get_task_logger(__name__)
 
@@ -72,14 +72,3 @@ def add_event(event):
         job_start.delay(event)
     if user_dict["tag_name"] == "RECORD" and user_dict["text_content"] == "finish":
         job_finish.delay(event)
-
-
-@celery.task(base=_BaseTaskWithRetry, acks_late=True)
-def update_shareflow(payload):
-    data = {
-        "messageType": "UpdateShareflow",
-        "shareflowMeta": payload.get("shareflow_metadata", None),
-        # miss interactionContext
-        "update": payload.get("update", None),
-    }
-    publish_trace_event(data)

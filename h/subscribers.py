@@ -4,7 +4,11 @@ from kombu.exceptions import OperationalError
 from pyramid.events import BeforeRender, subscriber
 
 from h import __version__, emails
-from h.events import AnnotationEvent, ShareflowMetadataEvent
+from h.events import (
+    AnnotationEvent,
+    ShareflowDataListEvent,
+    ShareflowMetadataEvent,
+    )
 from h.exceptions import RealtimeMessageQueueError
 from h.notification import reply
 from h.services.annotation_read import AnnotationReadService
@@ -153,5 +157,33 @@ def shareflow_metadata_sync_cache(event):
             event.index
         )
         item.groupid = json.dumps(group_ids)
+        item.groups = json.dumps(group_ids)
 
         record_item_service.init_user_event_record(item.dict())
+
+@subscriber(ShareflowDataListEvent)
+def publish_shareflow_data_list(event):
+    """Ensure an shareflow metadata is synchronised to the Tad."""
+    with event.request.tm:
+        service = event.request.find_service(name="shareflow")
+        meta = event.data
+
+        shareflow_metadata = (
+            service.get_shareflow_metadata_by_session_id(meta["id"])
+        )
+        all = service.get_shareflows(shareflow_metadata)
+        update = [
+            service.present_shareflow_for_tad(shareflow)
+            for shareflow in all
+        ]
+
+        data = {
+            "messageType": "UpdateShareflow",
+            "shareflowMeta": meta,
+            "update": update,
+        }
+
+        try:
+            event.request.realtime.publish_tad(data)
+        except RealtimeMessageQueueError as err:
+            report_exception(err)

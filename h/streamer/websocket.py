@@ -91,7 +91,7 @@ class WebSocket(_WebSocket):
                     payload['userid'] = self.identity.user.userid
                     group_ids = [group.pubid for group in self.identity.user.groups]
                     payload["groups"] = group_ids
-                    # send to RabbitMQ topic exchange
+                    # send to RabbitMQ topic exchange tad
                     self.pub.publish_trace(payload)
                     # TODO Multithreading issues, remove later
                     user_events.add_event.delay(payload)

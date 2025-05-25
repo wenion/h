@@ -14,3 +14,10 @@ class ShareflowMetadataEvent:
         self.request = request
         self.index = shareflow_metadata_pk
         self.shareflow_metadata_id = shareflow_metadata_id
+
+class ShareflowDataListEvent:
+    """An event representing an action on an shareflow data list."""
+
+    def __init__(self, request, data):
+        self.request = request
+        self.data = data

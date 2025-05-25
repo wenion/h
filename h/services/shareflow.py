@@ -15,7 +15,11 @@ from h.models import (
     GroupShareflowMetadata,
     User,
 )
-from h.models_redis import get_user_role_by_userid, UserEventRecord
+from h.models_redis import (
+    get_user_role_by_userid,
+    UserEvent,
+    UserEventRecord,
+)
 from h.services.exceptions import ValidationError
 from h.services.group_list import GroupListService
 from h.services.user import UserService
@@ -227,6 +231,63 @@ class ShareflowService:
                 'clientY': shareflow.client_y,
                 'url': shareflow.url,
                 'image': shareflow.image_id,
+            }
+        )
+
+        return model
+
+    def present_shareflow_for_tad(
+        self,
+        shareflow: Shareflow,
+        user_event: dict = None
+    ):
+        model = {}
+        timestamp = int(shareflow.timestamp.timestamp() * 1000)
+        event_source = user_event.event_source if user_event else ''
+        interaction_context = (
+            user_event.interaction_context
+                if user_event else shareflow.description
+        )
+        x_path = user_event.x_path if user_event else ''
+        session_id = user_event.session_id if user_event else ''
+        task_name = user_event.task_name if user_event else ''
+        title = user_event.title if user_event else shareflow.title
+        text_content = (
+            user_event.text_content if user_event else shareflow.description
+        )
+
+        model.update(
+            {
+                'id': shareflow.id,
+                'index': shareflow.index,
+                'metadata_id': shareflow.metadata_id,
+                'pk': shareflow.pk,
+                'type': shareflow.type,
+                'custom': shareflow.title,
+                'label': shareflow.description,
+                'tagName': shareflow.tag_name,
+                'textContent': text_content,
+                'interactionContext': interaction_context,
+                'xpath': x_path,
+                'eventSource': event_source,
+                'width': shareflow.width,
+                'height': shareflow.height,
+                'clientX': shareflow.client_x,
+                'clientY': shareflow.client_y,
+                'screenCapture': False,
+                'url': shareflow.url,
+                'tabId': '',
+                'windowId': '',
+                'timestamp': timestamp,
+                'image': '',
+                'userid': '',
+                'title': title,
+                'region': '',
+                'sessionId': session_id,
+                'taskName': task_name,
+                'ipAddress': '',
+                'groups': '',
+                'client_id': '',
             }
         )
 

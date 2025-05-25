@@ -17,8 +17,8 @@ objects and Pyramid ACLs in :mod:`h.traversal`.
 from pyramid import i18n
 from pyramid.httpexceptions import HTTPBadRequest
 
+from h.events import ShareflowDataListEvent
 from h.security import Permission
-from h.tasks import user_events
 from h.traversal import UserEventContext
 from h.util.datetime import timestamp_ms_to_utc
 from h.views.api.config import api_config
@@ -139,13 +139,8 @@ def update_traces(request):
         for shareflow in all
     ]
 
-    # data = {
-    #     "shareflow_metadata": service.present_shareflow_meta_for_user(
-    #         shareflow_metadata
-    #     ),
-    #     "update": readable_shareflow
-    # }
-    # user_events.update_shareflow.delay(data)
+    data = service.present_shareflow_meta_for_user(shareflow_metadata)
+    _publish_shareflow_event(request, data)
 
     return readable_shareflow
 
@@ -202,3 +197,11 @@ def create_validate(request, data):
     # TODO
     # timezone
     return new_appstruct
+
+def _publish_shareflow_event(request, data):
+    """Publish an event to the shareflow queue for this shareflow action."""
+    event = ShareflowDataListEvent(
+        request,
+        data,
+    )
+    request.notify_after_commit(event)
