@@ -245,5 +245,9 @@ def create_redis_validate(data, userid):
 
 def _publish_shareflow_metadata_event(request, shareflow_metadata):
     """Publish an event to the shareflow queue for this shareflow action."""
-    event = ShareflowMetadataEvent(request, shareflow_metadata.id)
+    event = ShareflowMetadataEvent(
+        request,
+        shareflow_metadata.session_id,
+        shareflow_metadata.id
+    )
     request.notify_after_commit(event)

@@ -373,6 +373,15 @@ class ShareflowService:
             .all()
         )
 
+    def get_groups_from_shareflow_metadata_id(self, shareflow_metadata_id) -> list[Group]:
+        return (
+            self._db.query(Group)
+            .join(GroupShareflowMetadata, Group.id == GroupShareflowMetadata.group_id)
+            .filter(GroupShareflowMetadata.shareflow_metadata_id == shareflow_metadata_id)
+            .distinct()
+            .all()
+        )
+
     def delete_shareflow_metadata(self, shareflow_metadata):
         self._db.delete(shareflow_metadata)
 

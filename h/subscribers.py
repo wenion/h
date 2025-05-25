@@ -1,3 +1,4 @@
+import json
 from h_pyramid_sentry import report_exception
 from kombu.exceptions import OperationalError
 from pyramid.events import BeforeRender, subscriber
@@ -134,3 +135,23 @@ def shareflow_metadata_sync(event):
 
     except RealtimeMessageQueueError as err:
         report_exception(err)
+
+@subscriber(ShareflowMetadataEvent)
+def shareflow_metadata_sync_cache(event):
+    """Ensure an shareflow metadata is synchronised to the Redis."""
+
+    with event.request.tm:
+        service = event.request.find_service(name="shareflow")
+
+        groups = service.get_groups_from_shareflow_metadata_id(
+            event.shareflow_metadata_id
+        )
+        group_ids = [group.pubid for group in groups]
+
+        record_item_service = event.request.find_service(name="record_item")
+        item = record_item_service.get_record_item_by_id(
+            event.index
+        )
+        item.groupid = json.dumps(group_ids)
+
+        record_item_service.init_user_event_record(item.dict())
