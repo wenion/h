@@ -401,7 +401,6 @@ class ShareflowService:
             groups = self._group_list_service.request_groups(user=user)
             group_shareflow_metadata_list = self.get_shareflow_metadata_from_groups(groups)
             group_query = [shareflow_metadata.id for shareflow_metadata in group_shareflow_metadata_list]
-            print('group_query', group_query)
 
         combined_list = (
             self._db.query(ShareflowMetadata)
