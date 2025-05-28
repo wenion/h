@@ -99,7 +99,7 @@ def update_traces(request):
     both = [item for item in cur if item["id"] in ids_com]
 
     for item in remove:
-        shareflow = service.get_shareflow_by_id(item.id)
+        shareflow = service.get_shareflow_by_id(item["id"])
         service.delete_shareflow(shareflow)
 
     if len(append):
