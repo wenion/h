@@ -169,7 +169,7 @@ def update(context: UserEventRecordContext, request):
         metadata.shared = command.pop('shared')
     elif 'name' in command or 'description' in command:
         metadata.task_name = command.pop('name')
-        metadata.description = command.pop('description')
+        metadata.description = command.pop('description', '')
         _publish_shareflow_metadata_event(request, metadata)
     elif 'extra' in command:
         metadata.extra = command.pop('extra')
