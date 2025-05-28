@@ -42,9 +42,9 @@ class ShareflowMetadata(Base):
     startstamp = sa.Column(sa.DateTime, nullable=True)
     endstamp = sa.Column(sa.DateTime, nullable=True)
 
-    session_id = sa.Column(sa.UnicodeText(), nullable=False, unique=True)
-    task_name = sa.Column(sa.UnicodeText(), nullable=False, unique=True)
-    description = sa.Column(sa.UnicodeText(), nullable=False, unique=True)
+    session_id = sa.Column(sa.UnicodeText(), nullable=False)
+    task_name = sa.Column(sa.UnicodeText(), nullable=False)
+    description = sa.Column(sa.UnicodeText(), nullable=False)
 
     backdate = sa.Column(
         sa.Integer,
