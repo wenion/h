@@ -28,61 +28,20 @@ class RecordItemService:
                 return None
 
     @staticmethod
-    def basic_record_item(item):
-        return {
-            'id': item.pk,
-            'sessionId': item.pk,
-            'session_id': item.pk,
-            'taskName': item.task_name,
-            'task_name': item.task_name,
-            'description': item.description,
-            # 'groupid': item.groupid,
-            'role': 'unknown',
-            'shared': True if item.shared else False,
-            'timestamp': item.startstamp,
-            'startstamp': item.startstamp,
-            'endstamp': item.endstamp,
-            'userid': item.userid,
-        }
-
-    @staticmethod
-    def record_item_search_query(userid, shared):
-        shared_int = 1 if shared else 0
-        user_event_records = UserEventRecord.find(
-            (UserEventRecord.userid == userid) |
-            (UserEventRecord.shared == shared_int)
-            ).all()
-        
-        all = []
-        for item in user_event_records:
-            all.append(RecordItemService.basic_record_item(item))
-        return all
-
-    @staticmethod
     def init_user_event_record(data):
         """Create an user event record."""
         user_event_record = UserEventRecord(**data)
         user_event_record.save()
         return user_event_record
-        # return RecordItemService.basic_record_item(user_event_record)
 
     @staticmethod
     def finish_user_event_record(id, endstamp):
         """Update an user event record."""
-        user_event_record = UserEventRecord.get(id)
+        user_event_record = RecordItemService.get_record_item_by_id(id)
         user_event_record.endstamp = endstamp
         user_event_record.completed = 1
         user_event_record.save()
         return user_event_record
-        # return RecordItemService.basic_record_item(user_event_record)
-
-    @staticmethod
-    def share_user_event_record(id, shared):
-        """Update an user event record."""
-        user_event_record = UserEventRecord.get(id)
-        user_event_record.shared = shared
-        user_event_record.save()
-        return RecordItemService.basic_record_item(user_event_record)
 
     @staticmethod
     def delete_user_event_record(id):
