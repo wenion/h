@@ -1,4 +1,5 @@
 from redis_om.model import NotFoundError
+from pydantic.error_wrappers import ValidationError
 
 from h.models_redis import UserEventRecord
 
@@ -19,7 +20,7 @@ class RecordItemService:
             return item
         except NotFoundError:
             user_event_records = UserEventRecord.find(
-                UserEventRecord.session_id == session_id_or_id
+                UserEventRecord.pk == session_id_or_id
             ).all()
             if len(user_event_records):
                 return user_event_records[0]
