@@ -16,16 +16,15 @@ class RecordItemService:
     def get_record_item_by_id(session_id_or_id):
         try:
             item = UserEventRecord.get(session_id_or_id)
+            return item
         except NotFoundError:
             user_event_records = UserEventRecord.find(
                 UserEventRecord.session_id == session_id_or_id
             ).all()
             if len(user_event_records):
-                item = user_event_records[0]
+                return user_event_records[0]
             else:
                 return None
-        finally:
-            return item
 
     @staticmethod
     def basic_record_item(item):
