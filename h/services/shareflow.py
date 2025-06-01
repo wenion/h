@@ -1,6 +1,7 @@
-from datetime import datetime
 import pytz
+from datetime import datetime
 from typing import List, Optional
+from urllib.parse import urljoin
 
 from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
@@ -30,11 +31,13 @@ from h.services.trace_model import address_events
 class ShareflowService:
     def __init__(
         self,
+        base_url: str,
         session: Session,
         group_list_service: GroupListService,
         user_service: UserService,
         trace_service: TraceService,
     ):
+        self._base_url = base_url
         self._db = session
         self._group_list_service = group_list_service
         self._user_service = user_service
@@ -214,6 +217,13 @@ class ShareflowService:
         model = {}
         timestamp = int(shareflow.timestamp.timestamp() * 1000)
 
+        image_url = None
+        if shareflow.image_id:
+            image_url = urljoin(
+                self._base_url,
+                "api/image/" + str(shareflow.image_id) + ".jpg"
+            )
+
         model.update(
             {
                 'id': shareflow.id,
@@ -230,7 +240,7 @@ class ShareflowService:
                 'clientX': shareflow.client_x,
                 'clientY': shareflow.client_y,
                 'url': shareflow.url,
-                'image': shareflow.image_id,
+                'image': image_url,
             }
         )
 
@@ -483,6 +493,7 @@ class ShareflowService:
 
 def shareflow_service_factory(_context, request):
     return ShareflowService(
+        request.route_url("index"),
         request.db,
         request.find_service(name="group_list"),
         request.find_service(name="user"),
