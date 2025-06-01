@@ -16,6 +16,10 @@ from h.models_redis.message_cache import (
     create_message_cache,
     fetch_message_cache_by_user_id
 )
+from h.models_redis.version_control import (
+    VersionControlMeta,
+    VersionControlNode
+)
 
 __all__ = (
     "UserRole",
@@ -27,6 +31,8 @@ __all__ = (
     "Rating",
     "UserFile",
     "MessageCache",
+    "VersionControlMeta",
+    "VersionControlNode",
     "get_message_cache",
     "create_message_cache",
     "fetch_message_cache_by_user_id",

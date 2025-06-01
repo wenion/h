@@ -148,6 +148,8 @@ def includeme(config):  # pylint: disable=too-many-statements
         factory="h.traversal:UserEventRoot",
         traverse="/{id}",
     )
+    config.add_route("api.histories", "/api/histories")
+    config.add_route("api.history", "/api/history")
 
     config.add_route(
         "api.annotation_flag",

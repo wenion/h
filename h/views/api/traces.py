@@ -14,6 +14,7 @@ particular, requests to the CRUD API endpoints are protected by the Pyramid
 authorization system. You can find the mapping between shareflow "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
+import json
 from pyramid import i18n
 from pyramid.httpexceptions import HTTPBadRequest
 
@@ -44,6 +45,48 @@ def traces(request):
     versions=["v1", "v2"],
     route_name="api.traces",
     request_method="GET",
+    request_param="response_mode=version",
+    permission=Permission.Profile.UPDATE,
+    link_name="traces.read",
+    description="Fetch the user's traces",
+)
+def get_traces_and_create_cache(request):
+    id = request.GET.get('id')
+    if id is None:
+        raise HTTPBadRequest()
+
+    service = request.find_service(name="shareflow")
+    shareflow_metadata = service.get_shareflow_metadata_by_session_id(id)
+
+    if shareflow_metadata is None:
+        raise HTTPBadRequest()
+
+    all = service.get_shareflows(shareflow_metadata)
+    data = [
+        service.present_shareflow_for_user(shareflow)
+        for shareflow in all
+    ]
+
+    version_service = request.find_service(name="version_control")
+    version_meta = version_service.get(id)
+    version_head = version_service.head(id)
+
+    if version_head:
+        if version_head.created > shareflow_metadata.updated:
+            version_data = json.loads(version_head.data)
+            update(request, shareflow_metadata, version_data)
+            return version_data
+        else:
+            version_service.delete(version_meta.pk)
+
+    version_service.create(id, json.dumps(data))
+    return data
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.traces",
+    request_method="GET",
     request_param="response_mode=metadata",
     permission=Permission.Profile.UPDATE,
     link_name="traces.read",
@@ -67,6 +110,85 @@ def get_traces(request):
         service.present_shareflow_for_user(shareflow)
         for shareflow in all
     ]
+
+
+def update(request, shareflow_metadata, cur):
+    service = request.find_service(name="shareflow")
+    _pre = service.get_shareflows(shareflow_metadata)
+    pre = [service.present_shareflow_for_user(item) for item in _pre]
+
+    ids_pre = {item["id"] for item in pre}
+    ids_cur = {item["id"] for item in cur}
+    ids_com = ids_pre & ids_cur
+
+    remove = [item for item in pre if item["id"] not in ids_cur]
+    append = [item for item in cur if item["id"] not in ids_pre]
+    both = [item for item in cur if item["id"] in ids_com]
+
+    for item in remove:
+        shareflow = service.get_shareflow_by_id(item["id"])
+        service.delete_shareflow(shareflow)
+
+    if len(append):
+        for trace in append:
+            requirements = [
+                'index', 'pk', 'type', 'title', 'description', 'timestamp',
+                'tag_name', 'width', 'height', 'client_x', 'client_y', 'url',
+                'version', 'metadata_id', 'image_id', 'user_id',
+            ]
+            filtered_data = {key: trace[key] for key in requirements if key in trace}
+
+            filtered_data['timestamp'] = timestamp_ms_to_utc(filtered_data['timestamp'])
+            filtered_data['tag_name'] = 'CLIENT'
+
+            user = shareflow_metadata.user
+            service.create_shareflow_from_cache(
+                filtered_data,
+                user,
+                shareflow_metadata,
+                filtered_data['index'],
+                shareflow_metadata.version,
+                None
+            )
+
+    for item in both:
+        shareflow = service.get_shareflow_by_id(item["id"])
+        shareflow.type = item["type"]
+        shareflow.title = item["title"]
+        shareflow.description = item["description"]
+        shareflow.url = item["url"]
+        shareflow.index = item["index"]
+
+    all = service.get_shareflows(shareflow_metadata)
+    return all
+
+
+@api_config(
+    versions=["v1", "v2"],
+    route_name="api.traces",
+    request_method=("PATCH", "PUT"),
+    request_param="response_mode=auto",
+    # permission=Permission.Annotation.READ,
+    link_name="traces.update",
+    description="Update a list of traces",
+)
+def auto_update_traces(request):
+    id = request.GET.get('id')
+    if id is None:
+        raise HTTPBadRequest()
+
+    payload = _json_payload(request)
+    data = list(payload.values())
+
+    version_service = request.find_service(name="version_control")
+    version_meta = version_service.get(id)
+
+    if version_meta:
+        version_service.upgrade(version_meta.pk, json.dumps(data))
+    else:
+        version_meta = version_service.create(id, json.dumps(data))
+
+    return data
 
 
 @api_config(
@@ -138,6 +260,11 @@ def update_traces(request):
         service.present_shareflow_for_user(shareflow)
         for shareflow in all
     ]
+
+    version_service = request.find_service(name="version_control")
+    version_meta = version_service.get(id)
+    if version_meta:
+        version_service.delete(version_meta.pk)
 
     data = service.present_shareflow_meta_for_user(shareflow_metadata)
     _publish_shareflow_event(request, data)
