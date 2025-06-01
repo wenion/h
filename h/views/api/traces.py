@@ -253,6 +253,8 @@ def update_traces(request):
         shareflow.description = item["description"]
         shareflow.url = item["url"]
         shareflow.index = item["index"]
+        if "tagName" in item:
+            shareflow.tag_name = item["tagName"]
         # shareflow.version = shareflow_metadata.version
 
     all = service.get_shareflows(shareflow_metadata)
