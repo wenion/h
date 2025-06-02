@@ -27,6 +27,7 @@ def create_app(_global_config, **settings):
     # And finally we add routes. Static routes are not resolvable by HTTP
     # clients, but can be used for URL generation within the websocket server.
     config.add_route("ws", "/ws")
+    config.add_route("index", "/")
     config.add_route("annotation", "/a/{id}", static=True)
     config.add_route("api.annotation", "/api/annotations/{id}", static=True)
 
