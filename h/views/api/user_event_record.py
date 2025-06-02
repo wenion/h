@@ -15,6 +15,7 @@ authorization system. You can find the mapping between annotation "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
 from pyramid import i18n
+from pyramid.response import Response
 
 from h.events import ShareflowMetadataEvent
 from h.security import Permission
@@ -93,23 +94,29 @@ def create(request):
     """Create an record from the POST payload."""
     payload = _validate(request)
     userid = request.authenticated_userid
+    should_generate = payload.pop("generate", False)
 
     # TODO remove
     redis_data = create_redis_validate(payload, userid)
     record_item_service = request.find_service(name="record_item")
     record_item = record_item_service.init_user_event_record(redis_data)
 
+    startstamp = redis_data['startstamp']
+    session_id = redis_data['session_id']
+    task_name = redis_data['task_name']
+    request.session.flash(session_id, "recordingSessionId")
+    request.session.flash(task_name, "recordingTaskName")
+
     service = request.find_service(name="shareflow")
-    shareflow_metadata = service.create_shareflow_metadata_from_record(
-        record_item,
-        userid,
-        timestamp_ms_to_utc(payload['startstamp'])
-    )
-
-    request.session.flash(shareflow_metadata.session_id, "recordingSessionId")
-    request.session.flash(shareflow_metadata.task_name, "recordingTaskName")
-
-    return service.present_shareflow_meta_for_user(shareflow_metadata)
+    if should_generate:
+        shareflow_metadata = service.create_shareflow_metadata_from_record(
+            record_item,
+            userid,
+            timestamp_ms_to_utc(startstamp)
+        )
+        return service.present_shareflow_meta_for_user(shareflow_metadata)
+    else:
+        return Response(status=204)
 
 
 @api_config(
@@ -147,11 +154,13 @@ def update(context: UserEventRecordContext, request):
         request.session.pop_flash("recordingSessionId")
         request.session.pop_flash("recordingTaskName")
         endstamp = command.pop("endstamp", None)
+        generate = command.pop("generate", False)
         if endstamp and isinstance(endstamp, int):
             metadata.endstamp = timestamp_ms_to_utc(endstamp)
             # generate shareflow
-            shareflow.generate_shareflows.delay(metadata.session_id)
-            _publish_shareflow_metadata_event(request, metadata)
+            if generate:
+                shareflow.generate_shareflows.delay(metadata.session_id)
+                _publish_shareflow_metadata_event(request, metadata)
         else:
             raise PayloadError()
     elif 'regenerate' in command:
