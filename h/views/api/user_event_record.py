@@ -116,7 +116,7 @@ def create(request):
         )
         return service.present_shareflow_meta_for_user(shareflow_metadata)
     else:
-        return Response(status=204)
+        return {"id": record_item.pk, "taskName": record_item.task_name}
 
 
 @api_config(
