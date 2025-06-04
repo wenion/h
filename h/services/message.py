@@ -1,5 +1,6 @@
 import jsonschema
 import re
+import logging
 from datetime import datetime, timezone
 
 from h import util
@@ -11,6 +12,8 @@ from h.models_redis import (
 )
 from h.services.organisation_event import OrganisationEventService
 from h.services.organisation_event_push_log import OrganisationEventPushLogService
+
+log = logging.getLogger(__name__)
 
 
 tad_payload_schema = {
@@ -32,7 +35,9 @@ tad_payload_schema = {
                         "type": "array",
                         "items": {"type": "string"}
                     },
-                    "expert_step": {"type": "string"},
+                    "expert_step": {
+                        "type": ["string", "null"]
+                    }
                 },
                 "required": [
                     "task_name",
@@ -158,12 +163,15 @@ class MessageService:
         try:
             jsonschema.validate(instance=payload, schema=tad_payload_schema)
         except jsonschema.ValidationError as ve:
+            log.warning("ValidationError", payload, userid, identifier)
             payload['title'] = "Error"
             payload['content'] = "jsonschema.ValidationError"
         except jsonschema.SchemaError as se:
+            log.warning("ValidationError", payload)
             payload['title'] = "Error"
             payload['content'] = "jsonschema.SchemaError"
         except Exception as e:
+            log.warning("Exception", payload)
             payload['title'] = "Error"
             payload['content'] = "Exception"
 
