@@ -145,6 +145,7 @@ def read(context: UserEventRecordContext, request):
 def update(context: UserEventRecordContext, request):
     """Update the specified annotation with data from the PATCH payload."""
     metadata = context.shareflow_metadata
+    userid = request.authenticated_userid
     command = _json_payload(request)
 
     service = request.find_service(name="shareflow")
@@ -190,7 +191,7 @@ def update(context: UserEventRecordContext, request):
                 "task_name": metadata.task_name,
             },
             "status": "pin" if command.get("pin") else "unpin",
-            "userid": metadata.user.userid
+            "userid": userid
         })
 
     return service.present_shareflow_meta_for_user(metadata)
