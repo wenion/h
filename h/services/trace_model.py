@@ -22,6 +22,10 @@ def binary_pairs(eg: str, value: bool) -> str:
         return 'Pass' if value else 'Fail'
     if eg == 'include' or eg == 'exclude':
         return 'Include' if value else 'Exclude'
+    if value == True:
+        return 'True'
+    if value == False:
+        return 'False'
 
 def _user_event_finite_state(event, state):
     if state["state"] == "init":
@@ -79,6 +83,10 @@ def _user_event_finite_state(event, state):
             if tag == "SELECT":
                 return {**event, "state": "cs1"}, event
             elif tag == "CHECKBOX":
+                interaction_context = event.get('interaction_context', None)
+                if interaction_context and 'value' in interaction_context:
+                    value = str(interaction_context['value'])
+                    return {**event, "state": "c7", "payload": value}, event
                 return {**event, "state": "c7"}, event
             elif tag == "BUTTON":
                 return {**event, "state": "c2"}, event
@@ -131,7 +139,10 @@ def _user_event_finite_state(event, state):
         return {**state, "state": "end"}, event
     elif state["state"] == "c7":
         if event["type"] == "change" and event["title"] == "type" and event["tag_name"] == "CHECKBOX" and event["description"] == state["description"]:
-            return {**state, "title": "click", "state": "cb1"}, event
+            if "payload" in state:
+                return {**event, "title": "click", "state": "cb1", "payload": state["payload"]}, event
+            else:
+                return {**event, "title": "click", "state": "cb1"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "cb1":
@@ -143,12 +154,23 @@ def _user_event_finite_state(event, state):
                 name = str(interaction_context['name'])
             if 'value' in interaction_context:
                 payload = state.get('payload', None)
-                if payload and isinstance(interaction_context['value'], bool):
-                    value = binary_pairs(payload, interaction_context['value'])
-                else:
-                    value = str(interaction_context['value'])
+                # convert interaction_context['value'] to bool:
+                _value = interaction_context['value']
+                if isinstance(_value, bool):
+                   pass
+                elif _value.lower() == '1' or _value.lower() == 'true':
+                    _value = True
+                elif _value.lower() == '0' or _value.lower() == 'false':
+                    _value = False
+                value = binary_pairs(payload, _value)
 
         if name and value:
+            if value.lower() == 'on' or value.lower() == 'off':
+                description = ("Enable \"" if value.lower() == 'on' else "Disable \"") + name + "\"."
+                return {**state, "title": "select", "description": description, "state": "end"}, event
+            elif value.lower() == 'true' or value.lower() == 'false':
+                description = ("Check \"" if value.lower() == 'true' else "Uncheck \"") + name + "\" option."
+                return {**state, "title": "select", "description": description, "state": "end"}, event
             description = "Select \"" + value + "\" for the \"" + name + "\" option."
             return {**state, "title": "select", "description": description, "state": "end"}, event
         elif value and not name:
