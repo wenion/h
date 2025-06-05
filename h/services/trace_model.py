@@ -185,6 +185,7 @@ def _user_event_finite_state(event, state):
             dropdown = " from the \"" + state["description"].strip() + "\"." if state["description"] else "."
             return {
                 **event,
+                "image": state["image"],
                 "state": "cs2",
                 "title": "select",
                 "description": "Select \"" + description + "\"" + dropdown
