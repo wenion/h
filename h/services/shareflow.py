@@ -1,4 +1,5 @@
 import pytz
+import re
 from datetime import datetime
 from typing import List, Optional
 from urllib.parse import urljoin
@@ -72,11 +73,22 @@ class ShareflowService:
         self._db.add(shareflow_meta)
         return shareflow_meta
 
+    def is_valid_data_url(self, data_url: str) -> bool:
+        pattern = re.compile(
+            r'^data:([a-z]+/[a-z0-9\-\+\.]+);base64,[A-Za-z0-9+/=]+$',
+            re.IGNORECASE
+        )
+        return bool(pattern.match(data_url))
+
     def create_shareflow_image(self, image) -> ShareflowImage:
-        shareflow_image = ShareflowImage()
-        shareflow_image.set_image(image)
-        self._db.add(shareflow_image)
-        return shareflow_image
+        if self.is_valid_data_url(image):
+            shareflow_image = ShareflowImage()
+            shareflow_image.set_image(image)
+            self._db.add(shareflow_image)
+            return shareflow_image
+        else:
+            print("create_shareflow_image", image[:100])
+            return None
 
     def generate_shareflows(
         self,
@@ -130,6 +142,8 @@ class ShareflowService:
             if trace.get('image', None):
                 image_data = self._trace_service.get_image_data_by_pk(trace["pk"])
                 shareflow_image = self.create_shareflow_image(image_data)
+                if not shareflow_image:
+                    print("image trace", trace["pk"], trace["description"])
 
             requirements = [
                 'index', 'pk', 'type', 'title', 'description', 'timestamp',
