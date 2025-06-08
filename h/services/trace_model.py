@@ -9,23 +9,23 @@ def hasCommandKey(main_string):
     ])
 
 def binary_pairs(eg: str, value: bool) -> str:
-    eg = eg.lower()
-    if eg == 'yes' or eg == 'no':
-        return 'Yes' if value else 'No'
-    if eg == 'on' or eg == 'off':
-        return 'On' if value else 'Off'
-    if eg == 'enabled' or eg == 'disabled':
-        return 'Enabled' if value else 'Disabled'
-    if eg == 'enable' or eg == 'disable':
-        return 'Enable' if value else 'Disable'
-    if eg == 'pass' or eg == 'fail':
-        return 'Pass' if value else 'Fail'
-    if eg == 'include' or eg == 'exclude':
-        return 'Include' if value else 'Exclude'
-    if value == True:
-        return 'True'
-    if value == False:
-        return 'False'
+    if eg:
+        eg = eg.lower()
+
+    pairs = {
+        ('yes', 'no'): ('Yes', 'No'),
+        ('on', 'off'): ('On', 'Off'),
+        ('enabled', 'disabled'): ('Enabled', 'Disabled'),
+        ('enable', 'disable'): ('Enable', 'Disable'),
+        ('pass', 'fail'): ('Pass', 'Fail'),
+        ('include', 'exclude'): ('Include', 'Exclude')
+    }
+
+    for keys, values in pairs.items():
+        if eg in keys:
+            return values[0] if value else values[1]
+
+    return 'True' if value else 'False'
 
 def _user_event_finite_state(event, state):
     if state["state"] == "init":
@@ -154,15 +154,25 @@ def _user_event_finite_state(event, state):
                 name = str(interaction_context['name'])
             if 'value' in interaction_context:
                 payload = state.get('payload', None)
-                # convert interaction_context['value'] to bool:
-                _value = interaction_context['value']
+
+                _value = interaction_context.get('value', None)
+                bool_value = None
                 if isinstance(_value, bool):
-                   pass
-                elif _value.lower() == '1' or _value.lower() == 'true':
-                    _value = True
-                elif _value.lower() == '0' or _value.lower() == 'false':
-                    _value = False
-                value = binary_pairs(payload, _value)
+                   bool_value = _value
+                   value = "True" if _value else "False"
+                elif isinstance(_value, str):
+                    _val = _value.lower()
+                    if _val in ('1', 'true', 't'):
+                        bool_value = True
+                    elif _val in ('0', 'false', 'f'):
+                        bool_value = False
+                    else:
+                        value = _value
+                else:
+                    value = str(_value)
+
+                if payload and isinstance(bool_value, bool):
+                    value = binary_pairs(payload, bool_value)
 
         if name and value:
             if value.lower() == 'on' or value.lower() == 'off':
