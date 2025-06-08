@@ -188,7 +188,7 @@ def _user_event_finite_state(event, state):
             return {**state, "title": "select", "description": description, "state": "end"}, event
         else:
             description = "Select the \"" + state['description'] + "\" option."
-            return {**state, "title": "select", "state": "end"}, event
+            return {**state, "title": "select", "description": description, "state": "end"}, event
     elif state["state"] == "cs1":
         if event["type"] == "change" and event["title"] == "type" and event["tag_name"] == "SELECT":
             description = event["description"].strip()
