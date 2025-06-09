@@ -140,9 +140,9 @@ def _user_event_finite_state(event, state):
     elif state["state"] == "c7":
         if event["type"] == "change" and event["title"] == "type" and event["tag_name"] == "CHECKBOX" and event["description"] == state["description"]:
             if "payload" in state:
-                return {**event, "title": "click", "state": "cb1", "payload": state["payload"]}, event
+                return {**event, "title": "click", "state": "cb1", "payload": state["payload"], "image": state["image"]}, event
             else:
-                return {**event, "title": "click", "state": "cb1"}, event
+                return {**event, "title": "click", "state": "cb1", "image": state["image"]}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "cb1":
