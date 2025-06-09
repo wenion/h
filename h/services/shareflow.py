@@ -103,7 +103,7 @@ class ShareflowService:
         for index, trace in enumerate(traces):
             shareflow_image = None
             if trace.get('image', None):
-                image_data = self._trace_service.get_image_data_by_pk(trace["pk"])
+                image_data = self._trace_service.get_image_data_by_pk(trace["image"])
                 shareflow_image = self.create_shareflow_image(image_data)
 
             requirements = [
@@ -140,10 +140,8 @@ class ShareflowService:
         for index, trace in enumerate(traces):
             shareflow_image = None
             if trace.get('image', None):
-                image_data = self._trace_service.get_image_data_by_pk(trace["pk"])
+                image_data = self._trace_service.get_image_data_by_pk(trace["image"])
                 shareflow_image = self.create_shareflow_image(image_data)
-                if not shareflow_image:
-                    print("image trace", trace["pk"], trace["description"])
 
             requirements = [
                 'index', 'pk', 'type', 'title', 'description', 'timestamp',
