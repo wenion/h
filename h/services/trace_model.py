@@ -139,10 +139,11 @@ def _user_event_finite_state(event, state):
         return {**state, "state": "end"}, event
     elif state["state"] == "c7":
         if event["type"] == "change" and event["title"] == "type" and event["tag_name"] == "CHECKBOX" and event["description"] == state["description"]:
+            image = event['image'] if event['image'] else state["image"]
             if "payload" in state:
-                return {**event, "title": "click", "state": "cb1", "payload": state["payload"], "image": state["image"], "client_x": state["client_x"], "client_y": state["client_y"]}, event
+                return {**event, "title": "click", "state": "cb1", "payload": state["payload"], "image": image, "client_x": state["client_x"], "client_y": state["client_y"]}, event
             else:
-                return {**event, "title": "click", "state": "cb1", "image": state["image"], "client_x": state["client_x"], "client_y": state["client_y"]}, event
+                return {**event, "title": "click", "state": "cb1", "image": image, "client_x": state["client_x"], "client_y": state["client_y"]}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "cb1":
@@ -193,9 +194,10 @@ def _user_event_finite_state(event, state):
         if event["type"] == "change" and event["title"] == "type" and event["tag_name"] == "SELECT":
             description = event["description"].strip()
             dropdown = " from the \"" + state["description"].strip() + "\"." if state["description"] else "."
+            image = event['image'] if event['image'] else state["image"]
             return {
                 **event,
-                "image": state["image"],
+                "image": image,
                 "client_x": state["client_x"],
                 "client_y": state["client_y"],
                 "state": "cs2",
