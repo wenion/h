@@ -165,7 +165,7 @@ def update(context: UserEventRecordContext, request):
         else:
             raise PayloadError()
     elif 'regenerate' in command:
-        shareflow.regenerate_shareflows.delay(metadata.session_id)
+        service.regenerate_shareflows(metadata)
     elif 'group' in command:
         action = command.get('action')
         group = group_service.fetch_by_pubid(command.get('group'))
