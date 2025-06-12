@@ -95,6 +95,15 @@ class WebSocket(_WebSocket):
                     self.pub.publish_trace(payload)
                     # TODO Multithreading issues, remove later
                     user_events.add_event.delay(payload)
+                    ack = payload.get('syn')
+                    id = payload.get('id')
+                    if id:
+                        response = {
+                            'id': id,
+                            'type': 'ack',
+                            'ack': ack,
+                        }
+                        self._work_queue.put(Message(socket=self, payload=response), timeout=0.1)
             elif "messageType" in payload and payload["messageType"] == "PageData":
                 if self.identity:
                     # extract main textual content
@@ -248,3 +257,11 @@ def handle_unknown_message(message, session=None):  # pylint: disable=unused-arg
 
 
 MESSAGE_HANDLERS[None] = handle_unknown_message
+
+
+def handle_ack_message(message, session=None):  # pylint: disable=unused-argument
+    """Handle the message type being missing or not recognised."""
+    message.reply(message.payload)
+
+
+MESSAGE_HANDLERS["ack"] = handle_ack_message
