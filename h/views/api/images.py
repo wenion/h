@@ -1,8 +1,10 @@
 import base64
+from datetime import datetime, timedelta
+from email.utils import formatdate
 from pyramid import i18n, httpexceptions
-from h.views.api.config import api_config
 from pyramid.response import Response
 
+from h.views.api.config import api_config
 from h.security import Permission
 
 _ = i18n.TranslationStringFactory(__package__)
@@ -39,6 +41,18 @@ def read(context, request):
     # print('user', user)
     shareflow_image = context.image
     if shareflow_image:
-        return Response(shareflow_image.image_data, content_type='image/jpeg')
+        one_year_from_now = datetime.utcnow() + timedelta(days=365)
+        expires_http = formatdate(timeval=one_year_from_now.timestamp(), usegmt=True)
+        response = Response(
+            shareflow_image.image_data,
+            content_type='image/jpeg'
+        )
+        response.headers.update({
+            'Cache-Control': 'public, max-age=31536000, immutable',
+            'Expires': expires_http,
+            # Optional:
+            'ETag': '"541-v1"',  # you can hash the file content for dynamic etags
+        })
+        return response
     else:
         return httpexceptions.HTTPNotFound()
