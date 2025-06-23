@@ -389,7 +389,7 @@ class ShareflowService:
                 "id": shareflow_metadata.id, # id: set as pk
                 "created": self.normalize_to_iso_utc_z(shareflow_metadata.created),
                 "updated": self.normalize_to_iso_utc_z(shareflow_metadata.updated),
-                "startstamp": self.normalize_to_iso_utc_z(shareflow_metadata.startstamp),
+                "startstamp": self.normalize_to_iso_utc_z(shareflow_metadata.updated),
                 "endstamp": self.normalize_to_iso_utc_z(shareflow_metadata.endstamp),
                 "session_id": shareflow_metadata.session_id,
                 "task_name": shareflow_metadata.task_name,
