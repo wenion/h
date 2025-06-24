@@ -131,7 +131,7 @@ def shareflow_metadata_sync(event):
     """Ensure an shareflow metadata is synchronised to the Client."""
 
     data = {
-        "shareflow_metadata_id": event.shareflow_metadata_id,
+        "data": event.data,
         "src_client_id": event.request.headers.get("X-Client-Id"),
     }
     try:
@@ -145,16 +145,12 @@ def shareflow_metadata_sync_cache(event):
     """Ensure an shareflow metadata is synchronised to the Redis."""
 
     with event.request.tm:
-        service = event.request.find_service(name="shareflow")
-
-        groups = service.get_groups_from_shareflow_metadata_id(
-            event.shareflow_metadata_id
-        )
-        group_ids = [group.pubid for group in groups]
+        index = event.data['id']
+        group_ids = event.data['groups']
 
         record_item_service = event.request.find_service(name="record_item")
         item = record_item_service.get_record_item_by_id(
-            event.index
+            index
         )
         item.groupid = json.dumps(group_ids)
         item.groups = json.dumps(group_ids)

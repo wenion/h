@@ -77,7 +77,7 @@ def recordings(request):
         shared = True
     )
     return [
-        service.present_shareflow_meta_for_user(shareflow_metadata)
+        service.present_shareflow_meta_for_user(shareflow_metadata, user)
         for shareflow_metadata in all
     ]
 
@@ -93,6 +93,7 @@ def recordings(request):
 def create(request):
     """Create an record from the POST payload."""
     payload = _validate(request)
+    user = request.user
     userid = request.authenticated_userid
     should_generate = payload.pop("generate", False)
 
@@ -114,7 +115,7 @@ def create(request):
             userid,
             timestamp_ms_to_utc(startstamp)
         )
-        return service.present_shareflow_meta_for_user(shareflow_metadata)
+        return service.present_shareflow_meta_for_user(shareflow_metadata, user)
     else:
         return {"id": record_item.pk, "taskName": record_item.task_name}
 
@@ -128,10 +129,11 @@ def create(request):
     description="Fetch an recording",
 )
 def read(context: UserEventRecordContext, request):
+    user = request.user
     shareflow_metadata = context.shareflow_metadata
     service = request.find_service(name="shareflow")
 
-    return service.present_shareflow_meta_for_user(shareflow_metadata)
+    return service.present_shareflow_meta_for_user(shareflow_metadata, user)
 
 
 @api_config(
@@ -145,8 +147,11 @@ def read(context: UserEventRecordContext, request):
 def update(context: UserEventRecordContext, request):
     """Update the specified annotation with data from the PATCH payload."""
     metadata = context.shareflow_metadata
+    user = request.user
     userid = request.authenticated_userid
     command = _json_payload(request)
+
+    publish = False
 
     service = request.find_service(name="shareflow")
     group_service = request.find_service(name="group")
@@ -161,7 +166,7 @@ def update(context: UserEventRecordContext, request):
             # generate shareflow
             if generate:
                 shareflow.generate_shareflows.delay(metadata.session_id)
-                _publish_shareflow_metadata_event(request, metadata)
+                publish = True
         else:
             raise PayloadError()
     elif 'regenerate' in command:
@@ -174,13 +179,13 @@ def update(context: UserEventRecordContext, request):
         elif action == 'remove' and metadata and group:
             service.remove_group_to_shareflow_metadata(metadata, group)
 
-        _publish_shareflow_metadata_event(request, metadata)
+        publish = True
     elif 'shared' in command and isinstance(command['shared'], bool):
         metadata.shared = command.pop('shared')
     elif 'name' in command or 'description' in command:
         metadata.task_name = command.pop('name')
         metadata.description = command.pop('description', '')
-        _publish_shareflow_metadata_event(request, metadata)
+        publish = True
     elif 'extra' in command:
         metadata.extra = command.pop('extra')
     elif 'pin' in command:
@@ -194,7 +199,10 @@ def update(context: UserEventRecordContext, request):
             "userid": userid
         })
 
-    return service.present_shareflow_meta_for_user(metadata)
+    update = service.present_shareflow_meta_for_user(metadata, user)
+    if publish:
+        _publish_shareflow_metadata_event(request, update)
+    return update
 
 
 @api_config(
@@ -258,7 +266,6 @@ def _publish_shareflow_metadata_event(request, shareflow_metadata):
     """Publish an event to the shareflow queue for this shareflow action."""
     event = ShareflowMetadataEvent(
         request,
-        shareflow_metadata.session_id,
-        shareflow_metadata.id
+        shareflow_metadata,
     )
     request.notify_after_commit(event)

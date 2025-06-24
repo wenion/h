@@ -10,10 +10,9 @@ class AnnotationEvent:
 class ShareflowMetadataEvent:
     """An event representing an action on an shareflow metadata."""
 
-    def __init__(self, request, shareflow_metadata_pk, shareflow_metadata_id):
+    def __init__(self, request, shareflow_metadata):
         self.request = request
-        self.index = shareflow_metadata_pk
-        self.shareflow_metadata_id = shareflow_metadata_id
+        self.data = shareflow_metadata
 
 class ShareflowDataListEvent:
     """An event representing an action on an shareflow data list."""

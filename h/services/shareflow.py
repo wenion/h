@@ -354,12 +354,15 @@ class ShareflowService:
         # Case 3: Already a string with Z or unrecognized format
         return value
 
-    def present_shareflow_meta_for_user(self, shareflow_metadata: ShareflowMetadata):
-        shareflow_metadata_dict = self.shareflow_metadata_dict(shareflow_metadata)
-        groups_list = self.get_groups_from_shareflow_metadata(
-            shareflow_metadata
+    def present_shareflow_meta_for_user(
+        self,
+        shareflow_metadata: ShareflowMetadata,
+        current_user: User
+    ):
+        shareflow_metadata_dict = self.shareflow_metadata_dict(
+            shareflow_metadata,
+            current_user
         )
-        groups = [group.pubid for group in groups_list]
 
         model =  {
             "id": shareflow_metadata.pk, # id: set as pk
@@ -373,17 +376,32 @@ class ShareflowService:
             "version": shareflow_metadata.version,
             "extra": shareflow_metadata.extra,
             "groupid": shareflow_metadata.groupid,
-            "groups": groups,
+            "groups": shareflow_metadata_dict["groups"],
             "shared": shareflow_metadata.shared,
         }
 
         return model
 
-    def shareflow_metadata_dict(self, shareflow_metadata: ShareflowMetadata):
+    def shareflow_metadata_dict(
+        self,
+        shareflow_metadata: ShareflowMetadata,
+        current_user: User
+    ):
         model = {}
 
         userid = shareflow_metadata.user.userid
         user_role = get_user_role_by_userid(userid)
+
+        request_groups = None
+        if userid != current_user.userid:
+            request_groups = self._group_list_service.request_groups(user=current_user)
+
+        groups_list = self.get_groups_from_shareflow_metadata(
+            shareflow_metadata,
+            request_groups
+        )
+        groups = [group.pubid for group in groups_list]
+
         model.update(
             {
                 "id": shareflow_metadata.id, # id: set as pk
@@ -400,6 +418,7 @@ class ShareflowService:
                 "extra": shareflow_metadata.extra,
                 "userid": userid,
                 "groupid": shareflow_metadata.groupid,
+                "groups": groups,
                 "shared": shareflow_metadata.shared,
             }
         )
@@ -446,14 +465,22 @@ class ShareflowService:
             .all()
         )
 
-    def get_groups_from_shareflow_metadata(self, shareflow_metadata: ShareflowMetadata) -> list[Group]:
-        return (
+    def get_groups_from_shareflow_metadata(
+        self,
+        shareflow_metadata: ShareflowMetadata,
+        groups: list[Group] | None
+    ) -> list[Group]:
+        query = (
             self._db.query(Group)
             .join(GroupShareflowMetadata, Group.id == GroupShareflowMetadata.group_id)
             .filter(GroupShareflowMetadata.shareflow_metadata_id == shareflow_metadata.id)
-            .distinct()
-            .all()
         )
+
+        if groups is not None:
+            group_ids = [g.id for g in groups]
+            query = query.filter(Group.id.in_(group_ids))
+
+        return query.distinct().all()
 
     def get_groups_from_shareflow_metadata_id(self, shareflow_metadata_id) -> list[Group]:
         return (
