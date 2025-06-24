@@ -201,6 +201,7 @@ def auto_update_traces(request):
 )
 def update_traces(request):
     id = request.GET.get('id')
+    user = request.user
     if id is None:
         return HTTPBadRequest()
     payload = _json_payload(request)
@@ -268,7 +269,7 @@ def update_traces(request):
     if version_meta:
         version_service.delete(version_meta.pk)
 
-    data = service.present_shareflow_meta_for_user(shareflow_metadata)
+    data = service.present_shareflow_meta_for_user(shareflow_metadata, user)
     _publish_shareflow_event(request, data)
 
     return readable_shareflow
