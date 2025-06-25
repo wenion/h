@@ -78,7 +78,7 @@ def add_event(event):
         'action_type':event.get('custom'),
     }
     user_dict = celery.request.find_service(name="trace").create_user_event(new_appstruct)
-    log_trace(user_dict)
+    # log_trace(user_dict)
 
     # if user_dict["tag_name"] == "RECORD" and user_dict["text_content"] == "start":
     #     job_start.delay(event)
