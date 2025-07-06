@@ -192,6 +192,9 @@ def update(context: UserEventRecordContext, request):
         })
 
         publish = True
+    elif 'score' in command:
+        score = command.pop('score')
+        service.add_user_shareflow_metadata(metadata, user, score)
     elif 'shared' in command and isinstance(command['shared'], bool):
         metadata.shared = command.pop('shared')
     elif 'name' in command or 'description' in command:

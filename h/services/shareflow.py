@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List, Optional
 from urllib.parse import urljoin
 
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -16,6 +16,7 @@ from h.models import (
     Group,
     GroupShareflowMetadata,
     User,
+    UserShareflowMetadata,
 )
 from h.models_redis import (
     get_user_role_by_userid,
@@ -378,6 +379,8 @@ class ShareflowService:
             "groupid": shareflow_metadata.groupid,
             "groups": shareflow_metadata_dict["groups"],
             "shared": shareflow_metadata.shared,
+            "score": shareflow_metadata_dict["score"],
+            "scores": shareflow_metadata_dict["scores"],
         }
 
         return model
@@ -402,6 +405,9 @@ class ShareflowService:
         )
         groups = [group.pubid for group in groups_list]
 
+        score = self.get_score_from_user_shareflow_metadata(shareflow_metadata, current_user)
+        scores = self.get_total_score(shareflow_metadata)
+
         model.update(
             {
                 "id": shareflow_metadata.id, # id: set as pk
@@ -420,6 +426,8 @@ class ShareflowService:
                 "groupid": shareflow_metadata.groupid,
                 "groups": groups,
                 "shared": shareflow_metadata.shared,
+                "score": score,
+                "scores": scores,
             }
         )
 
@@ -529,6 +537,65 @@ class ShareflowService:
 
         return False  # Association didn't exist
 
+    def add_user_shareflow_metadata(self, shareflow_metadata: ShareflowMetadata, user: User, data = 1):
+        shareflow_metadata_id = shareflow_metadata.id
+        user_id = user.id
+        score = data
+
+        existing = self._db.query(UserShareflowMetadata).filter(
+            UserShareflowMetadata.user_id == user_id,
+            UserShareflowMetadata.shareflow_metadata_id == shareflow_metadata_id,
+        ).one_or_none()
+
+        if existing:
+            existing.score = score
+            return existing
+
+        user_shareflow_metadata = UserShareflowMetadata(
+            user_id=user_id,
+            shareflow_metadata_id=shareflow_metadata_id,
+            score=score
+        )
+        self._db.add(user_shareflow_metadata)
+        return user_shareflow_metadata
+
+    def remove_user_shareflow_metadata(self, shareflow_metadata, user):
+        shareflow_metadata_id = shareflow_metadata.id
+        user_id = user.id
+
+        association = self._db.query(UserShareflowMetadata).filter(
+            UserShareflowMetadata.user_id == user_id,
+            UserShareflowMetadata.shareflow_metadata_id == shareflow_metadata_id,
+        ).one_or_none()
+
+        if association:
+            self._db.delete(association)
+            return True  # Indicate successful removal
+
+        return False  # Association didn't exist
+
+    def get_score_from_user_shareflow_metadata(self, shareflow_metadata, user):
+        shareflow_metadata_id = shareflow_metadata.id
+        user_id = user.id
+
+        existing = self._db.query(UserShareflowMetadata).filter(
+            UserShareflowMetadata.shareflow_metadata_id == shareflow_metadata_id,
+            UserShareflowMetadata.user_id == user_id,
+        ).one_or_none()
+
+        if existing:
+            return existing.score
+        else:
+            return 0
+
+    def get_total_score(self, shareflow_metadata):
+        shareflow_metadata_id = shareflow_metadata.id
+        total_score = (
+            self._db.query(func.sum(UserShareflowMetadata.score))
+            .filter(UserShareflowMetadata.shareflow_metadata_id == shareflow_metadata_id)
+            .scalar()
+        )
+        return total_score or 0  # Returns 0 if no matching records are found
 
 def shareflow_service_factory(_context, request):
     return ShareflowService(

@@ -44,6 +44,7 @@ from h.models.token import Token
 from h.models.user import User
 from h.models.user_deletion import UserDeletion
 from h.models.user_identity import UserIdentity
+from h.models.user_shareflow_metadata import UserShareflowMetadata
 from h.models.organisation_event import OrganisationEvent
 from h.models.organisation_event_push_log import OrganisationEventPushLog
 
@@ -77,6 +78,7 @@ __all__ = (
     "User",
     "UserDeletion",
     "UserIdentity",
+    "UserShareflowMetadata",
     "OrganisationEvent",
     "OrganisationEventPushLog",
 )
