@@ -179,6 +179,18 @@ def update(context: UserEventRecordContext, request):
         elif action == 'remove' and metadata and group:
             service.remove_group_to_shareflow_metadata(metadata, group)
 
+        request.realtime.publish_tad({
+            "messageType": "ShareShareFlow",
+            "shareflowMeta": {
+                "session_id": metadata.session_id,
+                "task_name": metadata.task_name,
+                "creator": userid
+            },
+            "status": "share" if action == 'add' else "unshare",
+            "userid": userid,
+            "groupid": group.pubid
+        })
+
         publish = True
     elif 'shared' in command and isinstance(command['shared'], bool):
         metadata.shared = command.pop('shared')
