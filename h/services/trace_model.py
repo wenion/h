@@ -215,6 +215,8 @@ def _user_event_finite_state(event, state):
             return {**event, "state": "t1"}, event
         elif event["type"] == "scroll":
             return {**state, "state": "t1"}, event
+        elif event["type"] == "wheel":
+            return {**state, "state": "t1"}, event
         else:
             description = state["description"] if state["description"] != "" else "Clear content"
             return {**state, "description": description, "state": "end"}, event
