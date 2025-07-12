@@ -92,6 +92,9 @@ def _user_event_finite_state(event, state):
                 return {**event, "state": "c2"}, event
             else:
                 return {**event, "state": "c1"}, event
+        # Scroll
+        elif event.get('title') == 'scroll':
+            return {**event, "state": "s1"}, event
         else:
             return {**event, "state": "i"}, event
     elif state["state"] == "i":
@@ -223,6 +226,11 @@ def _user_event_finite_state(event, state):
     elif state["state"] == "cp1":
         if event["type"] == "copy" and event["title"] == "copy":
             return {**event, "state": "cp2"}, event
+        else:
+            return {**state, "state": "end"}, event
+    elif state["state"] == "s1":
+        if event.get('title') == 'scroll' and event.get('description') == state.get('description'):
+            return {**event, "state": "s1"}, event
         else:
             return {**state, "state": "end"}, event
     elif state["state"] == "cp2":
