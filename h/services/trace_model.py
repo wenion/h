@@ -271,6 +271,10 @@ def address_events(events):
         elif state["state"] == "ignore":
             s = {**state, "state": "init"}
             index += 1
+        elif index == len(events) - 1:
+            better.append(state)
+            s = {**state, "state": "end"}
+            index += 1
         else:
             s = state
             index += 1
