@@ -213,6 +213,41 @@ def update(context: UserEventRecordContext, request):
             "status": "pin" if command.get("pin") else "unpin",
             "userid": userid
         })
+    elif 'request_segmentation' in command:
+        if not metadata.extra:
+            all = service.get_shareflows(metadata)
+            steps = [
+                service.present_shareflow_for_user(shareflow)
+                for shareflow in all
+            ]
+            params = {
+                'content': steps
+            }
+            try:
+                response = request.rpc.call("segmentation", params)
+                metadata.extra = {'sections': response.get('sections')}
+                publish = True
+            except Exception as e:
+                pass
+    elif 'request_summary' in command:
+        all = service.get_shareflows(metadata)
+        steps = [
+            service.present_shareflow_for_user(shareflow)
+            for shareflow in all
+        ]
+        url = command.pop("url", '')
+        data = {
+            'title': metadata.task_name,
+            'url': url,
+            'content': steps
+        }
+        try:
+            response = request.rpc.call("summary", data)
+            update = service.present_shareflow_meta_for_user(metadata, user)
+            update['description'] = response.get('summary')
+            return update
+        except Exception as e:
+            pass
 
     update = service.present_shareflow_meta_for_user(metadata, user)
     if publish:
