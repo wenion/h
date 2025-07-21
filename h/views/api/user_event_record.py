@@ -198,8 +198,10 @@ def update(context: UserEventRecordContext, request):
     elif 'shared' in command and isinstance(command['shared'], bool):
         metadata.shared = command.pop('shared')
     elif 'name' in command or 'description' in command:
-        metadata.task_name = command.pop('name')
-        metadata.description = command.pop('description', '')
+        if 'name' in command:
+            metadata.task_name = command.pop('name')
+        if 'description' in command:
+            metadata.description = command.pop('description', '')
         publish = True
     elif 'extra' in command:
         metadata.extra = command.pop('extra')
