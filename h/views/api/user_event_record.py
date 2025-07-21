@@ -15,7 +15,7 @@ authorization system. You can find the mapping between annotation "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
 from pyramid import i18n
-from pyramid.response import Response
+from pyramid.httpexceptions import HTTPBadRequest
 
 from h.events import ShareflowMetadataEvent
 from h.security import Permission
@@ -149,6 +149,9 @@ def update(context: UserEventRecordContext, request):
     metadata = context.shareflow_metadata
     user = request.user
     userid = request.authenticated_userid
+
+    if not user:
+        raise HTTPBadRequest()
     command = _json_payload(request)
 
     publish = False
