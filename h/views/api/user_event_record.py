@@ -208,6 +208,7 @@ def update(context: UserEventRecordContext, request):
         publish = True
     elif 'extra' in command:
         metadata.extra = command.pop('extra')
+        publish = True
     elif 'pin' in command:
         request.realtime.publish_tad({
             "messageType": "PinShareflow",
@@ -219,21 +220,23 @@ def update(context: UserEventRecordContext, request):
             "userid": userid
         })
     elif 'request_segmentation' in command:
-        if not metadata.extra:
-            all = service.get_shareflows(metadata)
-            steps = [
-                service.present_shareflow_for_user(shareflow)
-                for shareflow in all
-            ]
-            params = {
-                'content': steps
-            }
-            try:
-                response = request.rpc.call("segmentation", params)
-                metadata.extra = {'sections': response.get('sections')}
-                publish = True
-            except Exception as e:
-                pass
+        all = service.get_shareflows(metadata)
+        steps = [
+            service.present_shareflow_for_user(shareflow)
+            for shareflow in all
+        ]
+        params = {
+            'content': steps
+        }
+        try:
+            response = request.rpc.call("segmentation", params)
+            extra = {'sections': response.get('sections')}
+        except Exception as e:
+            pass
+        else:
+            update = service.present_shareflow_meta_for_user(metadata, user)
+            update["extra"] = extra
+            return update
     elif 'request_summary' in command:
         all = service.get_shareflows(metadata)
         steps = [
