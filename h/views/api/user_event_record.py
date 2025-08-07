@@ -65,6 +65,7 @@ def update_trackings(request):
     route_name="api.recordings",
     request_method="GET",
     link_name="recordings.read",
+    permission=Permission.Annotation.CREATE,
     description="Fetch the user's groups",
 )
 def recordings(request):
