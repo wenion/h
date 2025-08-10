@@ -85,7 +85,7 @@ def external(request):
         try:
             validate(instance=data, schema=request_summary_schema)
         except ValidationError as e:
-            raise HTTPBadRequest()
+            raise HTTPBadRequest("Request Schema Error")
 
         shareflow_meta = data.get('shareflow_meta')
         data = {
@@ -99,7 +99,7 @@ def external(request):
             shareflow_meta['description'] = response.get('summary')
             return shareflow_meta
         except Exception as e:
-            raise HTTPBadRequest()
+            raise HTTPBadRequest("Request RPC LLM Error")
 
     elif method == 'request_segmentation':
         pass
