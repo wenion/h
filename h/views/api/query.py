@@ -59,6 +59,22 @@ def query(request):
         }
     params = {'q': querying}
 
+    external_url = request.registry.settings.get("external_url")
+    if external_url:
+        data = {
+            "method": "request_query",
+            'q': querying
+        }
+        try:
+            resp = requests.post(external_url, json=data, timeout=20)
+            resp.raise_for_status()
+            result = resp.json()
+            return result
+        except requests.exceptions.Timeout:
+            raise HTTPBadRequest("Query Request timed out")
+        except requests.exceptions.RequestException as e:
+            raise HTTPBadRequest("Query RequestException")
+
     trace_service.create_server_event(
         userid,
         "request",
