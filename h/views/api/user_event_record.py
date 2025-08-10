@@ -227,18 +227,37 @@ def update(context: UserEventRecordContext, request):
             service.present_shareflow_for_user(shareflow)
             for shareflow in all
         ]
-        params = {
-            'content': steps
-        }
-        try:
-            response = request.rpc.call("segmentation", params)
-            extra = {'sections': response.get('sections')}
-        except Exception as e:
-            pass
+        external_url = request.registry.settings.get("external_url")
+        update = service.present_shareflow_meta_for_user(metadata, user)
+        extra = update["extra"]
+        if not external_url:
+            params = {
+                'content': steps
+            }
+            try:
+                response = request.rpc.call("segmentation", params)
+                extra = {'sections': response.get('sections')}
+            except Exception as e:
+                raise HTTPBadRequest("RPC LLM Error")
         else:
-            update = service.present_shareflow_meta_for_user(metadata, user)
-            update["extra"] = extra
-            return update
+            # post
+            data = {
+                "method": "request_segmentation",
+                "shareflow_meta": update,
+                "steps": steps,
+            }
+            try:
+                resp = requests.post(external_url, json=data, timeout=20)
+                resp.raise_for_status()
+                result = resp.json()
+                extra = result['extra']
+            except requests.exceptions.Timeout:
+                raise HTTPBadRequest("Request timed out")
+            except requests.exceptions.RequestException as e:
+                raise HTTPBadRequest("RequestException")
+        update["extra"] = extra
+        return update
+
     elif 'request_summary' in command:
         all = service.get_shareflows(metadata)
         steps = [
