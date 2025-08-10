@@ -24,7 +24,7 @@ request_summary_schema = {
             "properties": {
                 "description": {
                     "type": "string",
-                    "minLength": 1
+                    "minLength": 0
                 }
             },
             "additionalProperties": True
