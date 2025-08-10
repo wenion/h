@@ -14,6 +14,7 @@ particular, requests to the CRUD API endpoints are protected by the Pyramid
 authorization system. You can find the mapping between annotation "permissions"
 objects and Pyramid ACLs in :mod:`h.traversal`.
 """
+import requests
 from pyramid import i18n
 from pyramid.httpexceptions import HTTPBadRequest
 
@@ -245,18 +246,41 @@ def update(context: UserEventRecordContext, request):
             for shareflow in all
         ]
         url = command.pop("url", '')
-        data = {
-            'title': metadata.task_name,
-            'url': url,
-            'content': steps
-        }
-        try:
-            response = request.rpc.call("summary", data)
-            update = service.present_shareflow_meta_for_user(metadata, user)
-            update['description'] = response.get('summary')
-            return update
-        except Exception as e:
-            pass
+        external_url = request.registry.settings.get("external_url")
+        if not external_url:
+            # rpc
+            data = {
+                'title': metadata.task_name,
+                'url': url,
+                'content': steps
+            }
+            try:
+                response = request.rpc.call("summary", data)
+                update = service.present_shareflow_meta_for_user(metadata, user)
+                update['description'] = response.get('summary')
+                return update
+            except Exception as e:
+                pass
+        else:
+            # post
+            meta_dict = service.present_shareflow_meta_for_user(metadata, user)
+            data = {
+                "method": "request_summary",
+                "title":  metadata.task_name,
+                "url": url,
+                "shareflow_meta": meta_dict,
+                "steps": steps,
+            }
+            try:
+                resp = requests.post(external_url, json=data, timeout=20)
+                resp.raise_for_status()
+                result = resp.json()
+                meta_dict['description'] = result['description']
+                return meta_dict
+            except requests.exceptions.Timeout:
+                raise HTTPBadRequest("Request timed out")
+            except requests.exceptions.RequestException as e:
+                raise HTTPBadRequest("RequestException")
 
     update = service.present_shareflow_meta_for_user(metadata, user)
     if publish:
