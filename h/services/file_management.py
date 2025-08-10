@@ -9,6 +9,7 @@ from h.models_redis import FileMeta
 
 MAPPING_TYPE = {
     'application/pdf' : 'pdf',
+    'application/x-mimearchive' : 'mhtml',
     'text/html': 'html',
     'text/plain': 'txt',
     'text/csv': 'csv',
