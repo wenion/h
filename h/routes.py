@@ -151,6 +151,8 @@ def includeme(config):  # pylint: disable=too-many-statements
     config.add_route("api.histories", "/api/histories")
     config.add_route("api.history", "/api/history")
 
+    config.add_route("api.external", "/api/external")
+
     config.add_route(
         "api.annotation_flag",
         "/api/annotations/{id:[A-Za-z0-9_-]{20,22}}/flag",
