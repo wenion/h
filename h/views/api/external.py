@@ -201,3 +201,23 @@ def external(request):
             return shareflow_meta
         except Exception as e:
             raise HTTPBadRequest("Request RPC LLM Error")
+
+    elif method == 'request_query':
+        querying = data.get('q')
+        if querying is None or querying.strip() == "":
+            return {
+                'status': "500",
+                'query': 'missing query or invaild query',
+                'context': []
+            }
+
+        params = {'q': querying}
+        try:
+            response = request.rpc.call("query", params)
+            return response
+        except Exception as e:
+            return {
+                'status' : str(e),
+                'query' : querying,
+                'context' : []
+            }
