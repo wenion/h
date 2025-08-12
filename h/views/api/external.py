@@ -189,9 +189,7 @@ def external(request):
             raise HTTPBadRequest("Request Schema Error")
 
         shareflow_meta = data.get('shareflow_meta')
-        params = {
-            'content': data.get('steps')
-        }
+
         try:
             response = rpc_svc.segmentation(data.get('steps'))
             extra = {'sections': response.get('sections')}
@@ -209,7 +207,6 @@ def external(request):
                 'context': []
             }
 
-        params = {'q': querying}
         try:
             response = rpc_svc.query(querying)
             return response
@@ -219,3 +216,18 @@ def external(request):
                 'query' : querying,
                 'context' : []
             }
+
+    elif method == 'request_ingest_knowledge':
+        title = data.get('title')
+        content = data.get('content')
+        url = data.get('url')
+        repo = data.get('repository')
+
+        if title and content and url and repo:
+            try:
+                rpc_svc.ingest_knowledge(title, content, url, repo)
+            except Exception as e:
+                raise HTTPBadRequest("ingest_knowledge RPC Error")
+        else:
+            raise HTTPBadRequest("ingest_knowledge params Error")
+

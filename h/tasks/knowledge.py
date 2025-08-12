@@ -2,6 +2,8 @@
 """
 A module for knowledge database manipulation.
 """
+import requests
+from pyramid.httpexceptions import HTTPBadRequest
 
 from h.celery import celery, get_task_logger
 
@@ -12,10 +14,29 @@ log = get_task_logger(__name__)
 
 @celery.task(bind=True, max_retries=3, acks_late=True)
 def ingest_knowledge(self, title, content, url, repo):
-    rpc_svc = celery.request.find_service(name="rpc")
-    try:
-        rpc_svc.ingest_knowledge(title, content, url, repo)
-    except Exception as e:
-        log.warning(
-            "ingest_knowledge failed"
-        )
+    external_url = celery.request.registry.settings.get("external_url")
+    if external_url:
+        data = {
+            "method": "request_ingest_knowledge",
+            'title': title,
+            'content': content,
+            'url': url,
+            'repository': repo,
+        }
+        try:
+            resp = requests.post(external_url, json=data, timeout=20)
+            resp.raise_for_status()
+            result = resp.json()
+            return result
+        except requests.exceptions.Timeout:
+            raise HTTPBadRequest("ingest_knowledge Request timed out")
+        except requests.exceptions.RequestException as e:
+            raise HTTPBadRequest("ingest_knowledge RequestException")
+    else:
+        rpc_svc = celery.request.find_service(name="rpc")
+        try:
+            rpc_svc.ingest_knowledge(title, content, url, repo)
+        except Exception as e:
+            log.warning(
+                "ingest_knowledge failed"
+            )
