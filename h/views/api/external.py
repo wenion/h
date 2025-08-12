@@ -164,6 +164,7 @@ def external(request):
         raise HTTPBadRequest("Request JSON Error")
 
     method = data.get('method')
+    rpc_svc = request.find_service(name="rpc")
     if method == 'request_summary':
         try:
             validate(instance=data, schema=request_summary_schema)
@@ -171,13 +172,10 @@ def external(request):
             raise HTTPBadRequest("Request Schema Error")
 
         shareflow_meta = data.get('shareflow_meta')
-        data = {
-            'title': data.get('title'),
-            'url': data.get('url'),
-            'content': data.get('steps')
-        }
         try:
-            response = request.rpc.call("summary", data)
+            response = rpc_svc.summary(
+                data.get('title'), data.get('url'), data.get('steps')
+            )
 
             shareflow_meta['description'] = response.get('summary')
             return shareflow_meta
@@ -195,7 +193,7 @@ def external(request):
             'content': data.get('steps')
         }
         try:
-            response = request.rpc.call("segmentation", params)
+            response = rpc_svc.segmentation(data.get('steps'))
             extra = {'sections': response.get('sections')}
             shareflow_meta['extra'] = extra
             return shareflow_meta
@@ -213,7 +211,7 @@ def external(request):
 
         params = {'q': querying}
         try:
-            response = request.rpc.call("query", params)
+            response = rpc_svc.query(querying)
             return response
         except Exception as e:
             return {

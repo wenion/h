@@ -235,7 +235,8 @@ def update(context: UserEventRecordContext, request):
                 'content': steps
             }
             try:
-                response = request.rpc.call("segmentation", params)
+                rpc_svc = request.find_service(name="rpc")
+                response = rpc_svc.segmentation(steps)
                 extra = {'sections': response.get('sections')}
             except Exception as e:
                 raise HTTPBadRequest("RPC LLM Error")
@@ -268,13 +269,9 @@ def update(context: UserEventRecordContext, request):
         external_url = request.registry.settings.get("external_url")
         if not external_url:
             # rpc
-            data = {
-                'title': metadata.task_name,
-                'url': url,
-                'content': steps
-            }
             try:
-                response = request.rpc.call("summary", data)
+                rpc_svc = request.find_service(name="rpc")
+                response = rpc_svc.summary(metadata.task_name, url, steps)
                 update = service.present_shareflow_meta_for_user(metadata, user)
                 update['description'] = response.get('summary')
                 return update

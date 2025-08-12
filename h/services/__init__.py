@@ -195,3 +195,6 @@ def includeme(config):  # pragma: no cover
     config.register_service_factory(
         "h.services.version_control.version_control_factory", name="version_control"
     )
+    config.register_service_factory(
+        "h.services.rpc.rpc_service_factory", name="rpc"
+    )

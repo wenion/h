@@ -84,7 +84,8 @@ def query(request):
     )
 
     try:
-        response = request.rpc.call("query", params)
+        rpc_svc = request.find_service(name="rpc")
+        response = rpc_svc.query(querying)
 
         trace_service.create_server_event(
             userid,
