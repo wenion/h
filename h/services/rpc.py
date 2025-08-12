@@ -19,6 +19,16 @@ class RPCService:
             {'content': content}
         )
 
+    def ingest_knowledge(self, title: str, content: str, url: str, repository: str):
+        return self.request.rpc.call(
+            "ingest_knowledge",
+            {
+                'title': title,
+                'content': content,
+                'url': url,
+                'repository': repository
+            }
+        )
 
 def rpc_service_factory(_context, request):
     return RPCService(request)

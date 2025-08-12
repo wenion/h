@@ -12,7 +12,7 @@ from h.events import (
 from h.exceptions import RealtimeMessageQueueError
 from h.notification import reply
 from h.services.annotation_read import AnnotationReadService
-from h.tasks import mailer
+from h.tasks import mailer, knowledge
 
 
 @subscriber(BeforeRender)
@@ -125,6 +125,56 @@ def add_annotation_event(event):
             event.action + " highlight" if annotation.text =="" else event.action + " annotation",
             page_title
         )
+
+def extract_exacts(annotation: dict) -> list[str]:
+    """Return all 'exact' strings from TextQuoteSelector entries in annotation['target']."""
+    exacts = []
+    for t in annotation.get("target", []):
+        selectors = t.get("selector", [])
+        # Some APIs return a dict instead of a list — normalize to list
+        if isinstance(selectors, dict):
+            selectors = [selectors]
+        for sel in selectors:
+            if isinstance(sel, dict) and sel.get("type") == "TextQuoteSelector" and "exact" in sel:
+                exacts.append(sel["exact"])
+    return exacts
+
+@subscriber(AnnotationEvent)
+def async_annotation_event(event):
+
+    request = event.request
+
+    with request.tm:
+        action = event.action
+        annotation = request.find_service(AnnotationReadService).get_annotation_by_id(
+            event.annotation_id
+        )
+
+        if action == "delete":
+            pass
+        elif action == "create":
+            anno_json_svc = request.find_service(name="annotation_json")
+            anno_json = anno_json_svc.present(annotation)
+
+            # privacy check
+            if anno_json["group"] != "__world__":
+                return
+            read_list = anno_json["permissions"]["read"]
+            if len(read_list) and read_list[0] == anno_json.get("user"):
+                return
+
+            exacts = extract_exacts(anno_json)
+            if len(exacts):
+                content = " ".join(exacts)
+            else:
+                return
+            title = anno_json.get("text")
+            if title.strip() == "":
+                return
+            url = anno_json.get("uri", "")
+            repo = "Annotation"
+
+            knowledge.ingest_knowledge.delay(title, content, url, repo)
 
 @subscriber(ShareflowMetadataEvent)
 def shareflow_metadata_sync(event):
